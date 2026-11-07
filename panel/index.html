@@ -94,7 +94,6 @@
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -152,8 +151,29 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const fs = firebase.firestore();
-try { fs.settings({experimentalForceLongPolling:true, merge:true}); } catch(e) { console.warn(e); }
+// גישה לנתונים בבקשות רגילות (REST), בלי חיבור חי, כדי לעבור דרך סינון רשת
+const DOCS = "projects/kiydroid/databases/(default)/documents";
+const API = "https://firestore.googleapis.com/v1/";
+async function token(){ return auth.currentUser.getIdToken(); }
+function val(v){ if(!v) return null; if("stringValue" in v) return v.stringValue; if("integerValue" in v) return Number(v.integerValue);
+  if("doubleValue" in v) return v.doubleValue; if("booleanValue" in v) return v.booleanValue; return null; }
+async function listCol(col){
+  const out={}; let pt="";
+  do{
+    const r=await fetch(API+DOCS+"/"+col+"?pageSize=300"+(pt?"&pageToken="+encodeURIComponent(pt):""),{headers:{Authorization:"Bearer "+await token()}});
+    if(!r.ok) throw {code:"http "+r.status};
+    const j=await r.json();
+    (j.documents||[]).forEach(d=>{ const id=decodeURIComponent(d.name.split("/").pop()); const o={};
+      Object.keys(d.fields||{}).forEach(k=>o[k]=val(d.fields[k])); out[id]=o; });
+    pt=j.nextPageToken||"";
+  }while(pt);
+  return out;
+}
+async function commit(writes){
+  const r=await fetch(API+DOCS+":commit",{method:"POST",headers:{Authorization:"Bearer "+await token(),"Content-Type":"application/json"},body:JSON.stringify({writes})});
+  if(!r.ok) throw {code:"http "+r.status};
+}
+const docName = (col,id) => DOCS+"/"+col+"/"+id;
 
 // המסלולים וההגדרות כפי שהם קיימים באפליקציה
 const NAV_APPS = ["וויז","פנגו","מוביט","רכבת ישראל","Gett","מוזיקה יהודית","הקראת טקסט של Google"];
@@ -180,7 +200,7 @@ const SENS_WARN = "אפשרות זו מסתירה ומשביתה אפליקצי�
 let configs = {};   // devices/{name}: מה שאתה הגדרת
 let reports = {};   // deviceApps/{name}: מה שהמכשיר דיווח
 let drafts = {};    // עריכה שלא נשמרה
-let sel = null, unsubs = [];
+let sel = null, pollTimer = null;
 const $ = id => document.getElementById(id);
 const norm = s => (s||"").replace(/\s+/g," ").trim();
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -214,17 +234,24 @@ function working(name){ // מה שמוצג בעורך
 
 // ---------- auth ----------
 auth.onAuthStateChanged(u=>{
-  unsubs.forEach(f=>f()); unsubs=[];
+  clearInterval(pollTimer); pollTimer=null;
   if(!u){ $("loginCard").hidden=false; $("appArea").hidden=true; $("logoutBtn").hidden=true; $("who").textContent=""; return; }
   $("loginCard").hidden=true; $("appArea").hidden=false; $("logoutBtn").hidden=false; $("who").textContent=u.email;
-  const diag={devices:"טוען…", deviceApps:"טוען…"};
-  const showDiag=()=>{ $("listErr").textContent = (diag.devices.startsWith("שגיאה")||diag.deviceApps.startsWith("שגיאה"))
-      ? "הגדרות: "+diag.devices+" · דיווחי מכשירים: "+diag.deviceApps : "";
-    $("diag").textContent="אבחון: הגדרות "+diag.devices+" · דיווחים "+diag.deviceApps; };
-  const onErr = col => e => { console.error(col, e); diag[col]="שגיאה ("+(e&&e.code||"?")+")"; showDiag(); };
-  unsubs.push(fs.collection("devices").onSnapshot({includeMetadataChanges:true}, s=>{ configs={}; s.forEach(d=>configs[d.id]=fromConfig(d.data())); diag.devices=s.size+" רשומות"+(s.metadata&&s.metadata.fromCache?" (מהזיכרון, אין חיבור לשרת)":""); showDiag(); refresh(); }, onErr("devices")));
-  unsubs.push(fs.collection("deviceApps").onSnapshot({includeMetadataChanges:true}, s=>{ reports={}; s.forEach(d=>reports[d.id]=d.data()); diag.deviceApps=s.size+" רשומות"+(s.metadata&&s.metadata.fromCache?" (מהזיכרון, אין חיבור לשרת)":""); showDiag(); refresh(); }, onErr("deviceApps")));
+  load(); pollTimer=setInterval(load, 10000);
 });
+let loading=false;
+async function load(){
+  if(loading) return; loading=true;
+  const diag=[];
+  try{ const d=await listCol("devices"); configs={}; Object.keys(d).forEach(id=>configs[id]=fromConfig(d[id])); diag.push("הגדרות "+Object.keys(d).length); }
+  catch(e){ diag.push("הגדרות: שגיאה ("+(e.code||e.message||"?")+")"); }
+  try{ reports=await listCol("deviceApps"); diag.push("דיווחים "+Object.keys(reports).length); }
+  catch(e){ diag.push("דיווחים: שגיאה ("+(e.code||e.message||"?")+")"); }
+  const bad=diag.some(x=>x.includes("שגיאה"));
+  $("listErr").textContent = bad ? "לא הצלחתי לקרוא מהשרת: "+diag.join(" · ") : "";
+  $("diag").textContent = "אבחון: "+diag.join(" · ")+" · עודכן "+new Date().toLocaleTimeString("he-IL");
+  loading=false; refresh();
+}
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
   try{ await auth.signInWithEmailAndPassword($("email").value.trim(), $("pass").value); }
@@ -243,7 +270,8 @@ async function save(){
   const payload={deviceName:sel, rev, filter_mode:c.filter_mode, settings:c.settings};
   if(Array.isArray(c.hiddenApps)) payload.hiddenApps=c.hiddenApps;
   try{
-    await fs.collection("devices").doc(sel).set({json:JSON.stringify(payload), updatedAt:Date.now()});
+    await commit([{update:{name:docName("devices",sel), fields:{json:{stringValue:JSON.stringify(payload)}, updatedAt:{integerValue:String(Date.now())}}}}]);
+    load();
     delete drafts[sel];
     $("saveMsg").textContent="נשמר ✓ המכשיר יקבל את זה תוך עד 15 דקות.";
   }catch(e){ $("saveMsg").textContent="השמירה נכשלה: אין הרשאת כתיבה."; }
@@ -326,9 +354,8 @@ $("addBtn").onclick=()=>{
 $("newName").addEventListener("keydown",e=>{if(e.key==="Enter")$("addBtn").click();});
 $("delBtn").onclick=async()=>{
   if(!sel||!confirm("למחוק את \""+sel+"\" מהפאנל? ההגדרות שכבר הוחלו במכשיר נשארות, אבל הוא יפסיק לקבל שינויים מרחוק.")) return;
-  try{ await fs.collection("devices").doc(sel).delete(); }catch(e){}
-  try{ await fs.collection("deviceApps").doc(sel).delete(); }catch(e){}
-  delete drafts[sel]; sel=null; renderList(); renderEditor();
+  try{ await commit([{delete:docName("devices",sel)},{delete:docName("deviceApps",sel)}]); }catch(e){ alert("המחיקה נכשלה"); }
+  delete drafts[sel]; sel=null; renderList(); renderEditor(); load();
 };
 window.addEventListener("beforeunload",e=>{ if(Object.keys(drafts).length){ e.preventDefault(); e.returnValue=""; }});
 </script>
