@@ -142,17 +142,26 @@ const auth = firebase.auth();
 const fs = firebase.firestore();
 const COL = "devices";
 
-const CATALOG = [
-  {t:"Waze",p:"com.waze"},{t:"Google Maps",p:"com.google.android.apps.maps"},
-  {t:"Moovit",p:"com.tranzmate"},{t:"חיפוש Google",p:"com.google.android.googlequicksearchbox"},
-  {t:"Gmail",p:"com.google.android.gm"},{t:"Google Play",p:"com.android.vending"}
+// המסלולים וההגדרות כפי שהם קיימים באפליקציה (MyApp prefs / filter_mode)
+const NAV_APPS = ["וויז","פנגו","מוביט","רכבת ישראל","Gett","מוזיקה יהודית","הקראת טקסט של Google"];
+const MODES = [
+  {v:"KosherMode",         t:"מסלול כשר",         d:"אין חיבור לאינטרנט בכלל."},
+  {v:"NavigationMode",     t:"מסלול ניווט",       d:"אינטרנט רק ל: "+NAV_APPS.join(", ")+"."},
+  {v:"NavigationMailMode", t:"מסלול ניווט ומייל", d:"אינטרנט רק ל: "+NAV_APPS.join(", ")+", וג'ימייל."}
 ];
 const SETTINGS = [
-  {k:"lockdownVpn",b:"נעילת VPN",s:"בלי האפליקציה אין אינטרנט כלל"},
-  {k:"hideSettingsButton",b:"הסתר כפתור הגדרות",s:"מסתיר את כפתור ⚡ במכשיר"},
-  {k:"blockAds",b:"חסימת פרסומות",s:"חוסם פרסומות של Waze"}
+  {k:"app_installation_block",  b:"חסום התקנת אפליקציות"},
+  {k:"app_uninstall_block",     b:"מניעת הסרת אפליקציות"},
+  {k:"hide_store_icon",         b:"הסתר את חנות האפליקציות"},
+  {k:"disable_sensible_apps",   b:"השבת אפליקציות רגישות"},
+  {k:"call_block",              b:"חסום שיחות יוצאות"},
+  {k:"message_block",           b:"חסום הודעות"},
+  {k:"wifi_block",              b:"חסום וויפי לחלוטין"},
+  {k:"bluetooth_sharing_block", b:"חסום העברת קבצים דרך בלוטות"},
+  {k:"usb_sharing_block",       b:"חסום העברת קבצים דרך USB"},
+  {k:"external_storage_block",  b:"חסום גישה לאחסון חיצוני"}
 ];
-const MODES = [["navigation","ניווט"],["navigationMail","ניווט + דואר"],["kosher","כשר (בסיסי)"]];
+const MODE_KEYS = MODES.map(m=>m.v);
 
 let devices = {}, sel = null, dirty = false, unsub = null;
 const $ = id => document.getElementById(id);
@@ -161,12 +170,21 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const fmt = ms => ms ? new Date(ms).toLocaleString("he-IL",{dateStyle:"short",timeStyle:"short"}) : "";
 
 function defaults(name){
-  return {name, mode:"navigation", allowedApps:[{package:"com.waze",enabled:true}], install:[],
-    settings:{lockdownVpn:true,hideSettingsButton:true,blockAds:true}, message:"", configVersion:0, updatedAt:0};
+  const s={}; SETTINGS.forEach(d=>s[d.k]=false);
+  return {name, filter_mode:"NavigationMode", settings:s, configVersion:0, updatedAt:0};
+}
+function clean(name,v){ // מאחד מסמך קיים עם ברירות המחדל, ומתעלם משדות ישנים
+  const c=defaults(name);
+  if(v){
+    if(MODE_KEYS.includes(v.filter_mode)) c.filter_mode=v.filter_mode;
+    if(v.settings) SETTINGS.forEach(d=>{ if(typeof v.settings[d.k]==="boolean") c.settings[d.k]=v.settings[d.k]; });
+    c.configVersion=v.configVersion||0; c.updatedAt=v.updatedAt||0;
+  }
+  return c;
 }
 function payload(c){
   return {deviceName:c.name, configVersion:c.configVersion, updatedAt:new Date(c.updatedAt||Date.now()).toISOString(),
-    mode:c.mode, allowedApps:c.allowedApps, install:c.install||[], settings:c.settings, message:c.message||""};
+    filter_mode:c.filter_mode, settings:c.settings};
 }
 
 // ---------- auth ----------
@@ -189,7 +207,7 @@ function subscribe(){
   unsub = fs.collection(COL).onSnapshot(snap=>{
     $("listErr").textContent="";
     const next={};
-    snap.forEach(d=>{ const v=d.data(); next[d.id]=Object.assign(defaults(d.id),v,{name:d.id}); });
+    snap.forEach(d=>{ next[d.id]=clean(d.id,d.data()); });
     devices = Object.assign(next, dirty && sel && devices[sel] ? {[sel]:devices[sel]} : {});
     renderList(); if(!dirty) renderEditor();
   }, err=>{ $("listErr").textContent="אין הרשאה לקרוא את הרשימה. ודא שכללי האבטחה הודבקו."; });
@@ -198,8 +216,8 @@ async function save(){
   const c = devices[sel]; if(!c) return;
   const btn=$("saveBtn"); btn.disabled=true; $("saveMsg").textContent="שומר…";
   const next = Object.assign({},c,{configVersion:(c.configVersion||0)+1, updatedAt:Date.now()});
-  const doc = {mode:next.mode, allowedApps:next.allowedApps, install:next.install, settings:next.settings,
-    message:next.message, configVersion:next.configVersion, updatedAt:next.updatedAt, json:JSON.stringify(payload(next))};
+  const doc = {filter_mode:next.filter_mode, settings:next.settings,
+    configVersion:next.configVersion, updatedAt:next.updatedAt, json:JSON.stringify(payload(next))};
   try{ await fs.collection(COL).doc(sel).set(doc); devices[sel]=next; dirty=false;
        $("saveMsg").textContent="נשמר ✓ גרסה "+next.configVersion+". המכשיר יקבל את זה בדקות הקרובות."; }
   catch(e){ $("saveMsg").textContent="השמירה נכשלה: אין הרשאת כתיבה."; }
@@ -228,32 +246,18 @@ function renderEditor(){
   const box=$("editor");
   if(!sel||!devices[sel]){ box.innerHTML='<div class="empty">בחר מכשיר מהרשימה או הוסף מכשיר חדש.</div>'; $("edTitle").textContent="בחר מכשיר"; $("delBtn").hidden=true; return; }
   const c=devices[sel]; $("edTitle").textContent=sel; $("delBtn").hidden=false;
-  const rows=c.allowedApps.map((a,i)=>{ const k=CATALOG.find(x=>x.p===a.package);
-    return `<div class="app"><label class="sw"><input type="checkbox" data-app="${i}" ${a.enabled?"checked":""}><span></span></label>
-      <div class="m"><div class="t">${esc(k?k.t:a.package)}</div><div class="p">${esc(a.package)}</div></div>
-      <button class="del" data-del="${i}" aria-label="הסר">✕</button></div>`; }).join("");
-  const picks=CATALOG.filter(x=>!c.allowedApps.some(a=>a.package===x.p)).map(x=>`<button data-add="${x.p}">+ ${esc(x.t)}</button>`).join("");
-  const sets=SETTINGS.map(d=>`<div class="tl"><div class="tt"><b>${d.b}</b><small>${d.s}</small></div>
-      <label class="sw"><input type="checkbox" data-set="${d.k}" ${c.settings[d.k]?"checked":""}><span></span></label></div>`).join("");
+  const modes=MODES.map(m=>`<label class="tl" style="cursor:pointer"><input type="radio" name="fMode" value="${m.v}" ${c.filter_mode===m.v?"checked":""} style="width:auto">
+      <div class="tt"><b>${m.t}</b><small>${esc(m.d)}</small></div></label>`).join("");
+  const sets=SETTINGS.map(d=>`<div class="tl"><div class="tt"><b>${d.b}</b></div>
+      <label class="sw"><input type="checkbox" data-set="${d.k}" ${c.settings[d.k]?"checked":""} aria-label="${d.b}"><span></span></label></div>`).join("");
   box.innerHTML=`
-    <div class="field"><label>מצב סינון</label><select id="fMode">${MODES.map(m=>`<option value="${m[0]}" ${c.mode===m[0]?"selected":""}>${m[1]}</option>`).join("")}</select></div>
-    <div class="field"><label>אפליקציות עם אינטרנט</label><div class="apps">${rows||'<div class="empty" style="padding:10px">אין אפליקציות</div>'}</div>
-      <div class="pick">${picks}<button data-custom="1">+ אחר…</button></div>
-      <div class="addrow" id="customRow" hidden style="margin-top:8px"><input id="customPkg" placeholder="שם חבילה, למשל com.example.app"><button class="btn" id="customGo">הוסף</button></div></div>
+    <div class="field"><label>מסלול</label>${modes}</div>
     <div class="field"><label>הגדרות</label>${sets}</div>
-    <div class="field"><label>הודעה למכשיר (אופציונלי)</label><textarea id="fMsg"></textarea></div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn primary" id="saveBtn">שמור ושלח למכשיר</button>
       <span class="info" id="saveMsg">${c.configVersion?("גרסה "+c.configVersion+" · "+fmt(c.updatedAt)):"עדיין לא נשמר"}</span></div>`;
-  $("fMsg").value=c.message||"";
-  box.querySelectorAll("[data-app]").forEach(el=>el.onchange=e=>{c.allowedApps[+e.target.dataset.app].enabled=e.target.checked;touch();});
-  box.querySelectorAll("[data-del]").forEach(el=>el.onclick=e=>{c.allowedApps.splice(+e.currentTarget.dataset.del,1);touch();renderEditor();touch();});
-  box.querySelectorAll("[data-add]").forEach(el=>el.onclick=e=>{c.allowedApps.push({package:e.currentTarget.dataset.add,enabled:true});touch();renderEditor();touch();});
-  box.querySelector("[data-custom]").onclick=()=>{$("customRow").hidden=false;$("customPkg").focus();};
-  $("customGo").onclick=()=>{const v=$("customPkg").value.trim(); if(v){c.allowedApps.push({package:v,enabled:true});touch();renderEditor();touch();}};
+  box.querySelectorAll('input[name="fMode"]').forEach(el=>el.onchange=e=>{c.filter_mode=e.target.value;touch();});
   box.querySelectorAll("[data-set]").forEach(el=>el.onchange=e=>{c.settings[e.target.dataset.set]=e.target.checked;touch();});
-  $("fMode").onchange=e=>{c.mode=e.target.value;touch();};
-  $("fMsg").oninput=e=>{c.message=e.target.value;touch();};
   $("saveBtn").onclick=save;
 }
 
