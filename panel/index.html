@@ -153,6 +153,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const fs = firebase.firestore();
+try { fs.settings({experimentalForceLongPolling:true, merge:true}); } catch(e) { console.warn(e); }
 
 // המסלולים וההגדרות כפי שהם קיימים באפליקציה
 const NAV_APPS = ["וויז","פנגו","מוביט","רכבת ישראל","Gett","מוזיקה יהודית","הקראת טקסט של Google"];
@@ -221,8 +222,8 @@ auth.onAuthStateChanged(u=>{
       ? "הגדרות: "+diag.devices+" · דיווחי מכשירים: "+diag.deviceApps : "";
     $("diag").textContent="אבחון: הגדרות "+diag.devices+" · דיווחים "+diag.deviceApps; };
   const onErr = col => e => { console.error(col, e); diag[col]="שגיאה ("+(e&&e.code||"?")+")"; showDiag(); };
-  unsubs.push(fs.collection("devices").onSnapshot(s=>{ configs={}; s.forEach(d=>configs[d.id]=fromConfig(d.data())); diag.devices=s.size+" רשומות"; showDiag(); refresh(); }, onErr("devices")));
-  unsubs.push(fs.collection("deviceApps").onSnapshot(s=>{ reports={}; s.forEach(d=>reports[d.id]=d.data()); diag.deviceApps=s.size+" רשומות"; showDiag(); refresh(); }, onErr("deviceApps")));
+  unsubs.push(fs.collection("devices").onSnapshot({includeMetadataChanges:true}, s=>{ configs={}; s.forEach(d=>configs[d.id]=fromConfig(d.data())); diag.devices=s.size+" רשומות"+(s.metadata&&s.metadata.fromCache?" (מהזיכרון, אין חיבור לשרת)":""); showDiag(); refresh(); }, onErr("devices")));
+  unsubs.push(fs.collection("deviceApps").onSnapshot({includeMetadataChanges:true}, s=>{ reports={}; s.forEach(d=>reports[d.id]=d.data()); diag.deviceApps=s.size+" רשומות"+(s.metadata&&s.metadata.fromCache?" (מהזיכרון, אין חיבור לשרת)":""); showDiag(); refresh(); }, onErr("deviceApps")));
 });
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
