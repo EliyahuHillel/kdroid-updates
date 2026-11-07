@@ -80,6 +80,17 @@
   .login{max-width:380px;margin:60px auto}
   .login .bd{display:flex;flex-direction:column;gap:10px}
   .namebox{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent)}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-inline-start:6px;vertical-align:middle}
+  .badge.new{background:var(--warn);color:#fff}
+  .badge.ok{background:var(--chip);color:var(--good)}
+  .badge.wait{background:var(--chip);color:var(--warn)}
+  .applist{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--panel-2);margin-top:8px}
+  .applist label{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer}
+  .applist label:hover{background:var(--chip)}
+  .applist input{width:auto}
+  .applist .p{font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all}
+  .warnbox{font-size:12.5px;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:8px 10px;margin-top:8px}
+  .statusline{font-size:12.5px;color:var(--muted);margin-bottom:14px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -106,16 +117,17 @@
     </form>
   </section>
 
+
   <!-- אפליקציה -->
   <div class="grid" id="appArea" hidden>
     <section class="card">
       <div class="hd"><h2>מכשירים</h2><span class="spacer"></span><span class="sub" id="devCount">0</span></div>
       <div class="bd">
+        <div class="info" style="margin-bottom:10px">מכשיר שהוקלד בו שם יופיע כאן לבד תוך כמה דקות. אפשר גם להוסיף שם ידנית:</div>
         <div class="addrow">
-          <input id="newName" placeholder="שם המכשיר, כמו שהוקלד בהתקנה" aria-label="שם מכשיר">
+          <input id="newName" placeholder="שם המכשיר, כמו שהוקלד בו" aria-label="שם מכשיר">
           <button class="btn primary" id="addBtn">הוסף</button>
         </div>
-        <div class="info" style="margin-bottom:10px">השם חייב להיות זהה לשם שהוקלד במכשיר בזמן ההתקנה.</div>
         <ul class="devs" id="devList"></ul>
         <div class="empty" id="devEmpty">אין עדיין מכשירים.</div>
         <div class="err" id="listErr"></div>
@@ -123,7 +135,7 @@
     </section>
     <section class="card">
       <div class="hd"><h2 id="edTitle">בחר מכשיר</h2><span class="spacer"></span><button class="btn danger" id="delBtn" hidden>מחק</button></div>
-      <div class="bd" id="editor"><div class="empty">בחר מכשיר מהרשימה או הוסף מכשיר חדש.</div></div>
+      <div class="bd" id="editor"><div class="empty">בחר מכשיר מהרשימה.</div></div>
     </section>
   </div>
 </div>
@@ -140,9 +152,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const fs = firebase.firestore();
-const COL = "devices";
 
-// המסלולים וההגדרות כפי שהם קיימים באפליקציה (MyApp prefs / filter_mode)
+// המסלולים וההגדרות כפי שהם קיימים באפליקציה
 const NAV_APPS = ["וויז","פנגו","מוביט","רכבת ישראל","Gett","מוזיקה יהודית","הקראת טקסט של Google"];
 const MODES = [
   {v:"KosherMode",         t:"מסלול כשר",         d:"אין חיבור לאינטרנט בכלל."},
@@ -162,37 +173,51 @@ const SETTINGS = [
   {k:"external_storage_block",  b:"חסום גישה לאחסון חיצוני"}
 ];
 const MODE_KEYS = MODES.map(m=>m.v);
+const SENS_WARN = "אפשרות זו מסתירה ומשביתה אפליקציות שנראות לא כשרות. היזהר: השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.";
 
-let devices = {}, sel = null, dirty = false, unsub = null;
+let configs = {};   // devices/{name}: מה שאתה הגדרת
+let reports = {};   // deviceApps/{name}: מה שהמכשיר דיווח
+let drafts = {};    // עריכה שלא נשמרה
+let sel = null, unsubs = [];
 const $ = id => document.getElementById(id);
 const norm = s => (s||"").replace(/\s+/g," ").trim();
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt = ms => ms ? new Date(ms).toLocaleString("he-IL",{dateStyle:"short",timeStyle:"short"}) : "";
+const fmt = ms => ms ? new Date(Number(ms)).toLocaleString("he-IL",{dateStyle:"short",timeStyle:"short"}) : "";
+const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null; } };
 
-function defaults(name){
-  const s={}; SETTINGS.forEach(d=>s[d.k]=false);
-  return {name, filter_mode:"NavigationMode", settings:s, configVersion:0, updatedAt:0};
-}
-function clean(name,v){ // מאחד מסמך קיים עם ברירות המחדל, ומתעלם משדות ישנים
-  const c=defaults(name);
-  if(v){
-    if(MODE_KEYS.includes(v.filter_mode)) c.filter_mode=v.filter_mode;
-    if(v.settings) SETTINGS.forEach(d=>{ if(typeof v.settings[d.k]==="boolean") c.settings[d.k]=v.settings[d.k]; });
-    c.configVersion=v.configVersion||0; c.updatedAt=v.updatedAt||0;
-  }
+function blank(){ const s={}; SETTINGS.forEach(d=>s[d.k]=false); return {filter_mode:"NavigationMode", settings:s, hiddenApps:null, rev:0, updatedAt:0}; }
+function fromState(st){ // מתחילים ממה שבאמת יש במכשיר, כדי לא לשנות בטעות
+  const c=blank(); if(!st) return c;
+  if(MODE_KEYS.includes(st.filter_mode)) c.filter_mode=st.filter_mode;
+  if(st.settings) SETTINGS.forEach(d=>{ if(typeof st.settings[d.k]==="boolean") c.settings[d.k]=st.settings[d.k]; });
+  if(Array.isArray(st.hiddenApps)) c.hiddenApps=st.hiddenApps.slice();
   return c;
 }
-function payload(c){
-  return {deviceName:c.name, configVersion:c.configVersion, updatedAt:new Date(c.updatedAt||Date.now()).toISOString(),
-    filter_mode:c.filter_mode, settings:c.settings};
+function fromConfig(v){
+  const c=blank(); const j=parse(v.json)||{};
+  if(MODE_KEYS.includes(j.filter_mode)) c.filter_mode=j.filter_mode;
+  if(j.settings) SETTINGS.forEach(d=>{ if(typeof j.settings[d.k]==="boolean") c.settings[d.k]=j.settings[d.k]; });
+  if(Array.isArray(j.hiddenApps)) c.hiddenApps=j.hiddenApps.slice();
+  c.rev=j.rev||0; c.updatedAt=v.updatedAt||0; return c;
+}
+function stateOf(name){ const r=reports[name]; return r ? parse(r.state) : null; }
+function appsOf(name){ const r=reports[name]; return r ? (parse(r.apps)||[]) : null; }
+function working(name){ // מה שמוצג בעורך
+  if(drafts[name]) return drafts[name];
+  if(configs[name]){ const c=configs[name], st=stateOf(name);
+    if(c.hiddenApps==null && st && Array.isArray(st.hiddenApps)) return Object.assign({},c,{hiddenApps:st.hiddenApps.slice()});
+    return c; }
+  return fromState(stateOf(name));
 }
 
 // ---------- auth ----------
 auth.onAuthStateChanged(u=>{
-  if(!u){ $("loginCard").hidden=false; $("appArea").hidden=true; $("logoutBtn").hidden=true; $("who").textContent="";
-    if(unsub){unsub();unsub=null;} return; }
+  unsubs.forEach(f=>f()); unsubs=[];
+  if(!u){ $("loginCard").hidden=false; $("appArea").hidden=true; $("logoutBtn").hidden=true; $("who").textContent=""; return; }
   $("loginCard").hidden=true; $("appArea").hidden=false; $("logoutBtn").hidden=false; $("who").textContent=u.email;
-  subscribe();
+  const onErr = ()=>{ $("listErr").textContent="אין הרשאה לקרוא. ודא שכללי האבטחה העדכניים הודבקו ב-Firebase."; };
+  unsubs.push(fs.collection("devices").onSnapshot(s=>{ configs={}; s.forEach(d=>configs[d.id]=fromConfig(d.data())); $("listErr").textContent=""; refresh(); }, onErr));
+  unsubs.push(fs.collection("deviceApps").onSnapshot(s=>{ reports={}; s.forEach(d=>reports[d.id]=d.data()); refresh(); }, onErr));
 });
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
@@ -201,79 +226,105 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 $("logoutBtn").onclick=()=>auth.signOut();
 
-// ---------- data ----------
-function subscribe(){
-  if(unsub) unsub();
-  unsub = fs.collection(COL).onSnapshot(snap=>{
-    $("listErr").textContent="";
-    const next={};
-    snap.forEach(d=>{ next[d.id]=clean(d.id,d.data()); });
-    devices = Object.assign(next, dirty && sel && devices[sel] ? {[sel]:devices[sel]} : {});
-    renderList(); if(!dirty) renderEditor();
-  }, err=>{ $("listErr").textContent="אין הרשאה לקרוא את הרשימה. ודא שכללי האבטחה הודבקו."; });
-}
+function refresh(){ renderList(); if(!(sel && drafts[sel])) renderEditor(); }
+
+// ---------- save ----------
 async function save(){
-  const c = devices[sel]; if(!c) return;
+  const c=working(sel); if(!c) return;
   const btn=$("saveBtn"); btn.disabled=true; $("saveMsg").textContent="שומר…";
-  const next = Object.assign({},c,{configVersion:(c.configVersion||0)+1, updatedAt:Date.now()});
-  const doc = {filter_mode:next.filter_mode, settings:next.settings,
-    configVersion:next.configVersion, updatedAt:next.updatedAt, json:JSON.stringify(payload(next))};
-  try{ await fs.collection(COL).doc(sel).set(doc); devices[sel]=next; dirty=false;
-       $("saveMsg").textContent="נשמר ✓ גרסה "+next.configVersion+". המכשיר יקבל את זה בדקות הקרובות."; }
-  catch(e){ $("saveMsg").textContent="השמירה נכשלה: אין הרשאת כתיבה."; }
-  btn.disabled=false; renderList();
+  const st=stateOf(sel)||{};
+  const rev=Math.max(Date.now(), (c.rev||0)+1, (st.appliedRev||0)+1);
+  const payload={deviceName:sel, rev, filter_mode:c.filter_mode, settings:c.settings};
+  if(Array.isArray(c.hiddenApps)) payload.hiddenApps=c.hiddenApps;
+  try{
+    await fs.collection("devices").doc(sel).set({json:JSON.stringify(payload), updatedAt:Date.now()});
+    delete drafts[sel];
+    $("saveMsg").textContent="נשמר ✓ המכשיר יקבל את זה תוך עד 15 דקות.";
+  }catch(e){ $("saveMsg").textContent="השמירה נכשלה: אין הרשאת כתיבה."; }
+  btn.disabled=false;
 }
 
 // ---------- render ----------
+function badge(name){
+  const cfg=configs[name], st=stateOf(name);
+  if(!cfg) return '<span class="badge new">חדש · ממתין להגדרה</span>';
+  if(st && (st.appliedRev||0) >= (cfg.rev||0)) return '<span class="badge ok">הוחל במכשיר ✓</span>';
+  return '<span class="badge wait">ממתין למכשיר</span>';
+}
 function renderList(){
-  const ids=Object.keys(devices).sort((a,b)=>a.localeCompare(b,"he"));
+  const ids=[...new Set([...Object.keys(configs),...Object.keys(reports),...Object.keys(drafts)])].sort((a,b)=>a.localeCompare(b,"he"));
   $("devCount").textContent=ids.length; $("devEmpty").hidden=ids.length>0;
   const ul=$("devList"); ul.innerHTML="";
   ids.forEach(id=>{
-    const c=devices[id], li=document.createElement("li");
-    li.className=id===sel?"sel":"";
+    const li=document.createElement("li"); li.className=id===sel?"sel":"";
+    const r=reports[id];
     li.innerHTML='<div class="nm"></div><div class="meta"></div>';
-    li.querySelector(".nm").textContent=id;
-    li.querySelector(".meta").textContent=c.configVersion?("גרסה "+c.configVersion+" · "+fmt(c.updatedAt)):"לא נשמר עדיין";
-    li.onclick=()=>{ if(dirty && sel!==id && !confirmLeave()) return; sel=id; dirty=false; renderList(); renderEditor(); };
+    li.querySelector(".nm").innerHTML=esc(id)+badge(id);
+    li.querySelector(".meta").textContent = r ? ("נראה לאחרונה: "+fmt(r.updatedAt)) : "המכשיר עוד לא התחבר";
+    li.onclick=()=>{ if(sel && drafts[sel] && sel!==id && !confirm("יש שינויים שלא נשמרו. לעבור בכל זאת?")) return;
+      if(sel!==id && sel) delete drafts[sel]; sel=id; renderList(); renderEditor(); };
     ul.appendChild(li);
   });
 }
-function confirmLeave(){ return window.confirm("יש שינויים שלא נשמרו. לעבור בכל זאת?"); }
-function touch(){ dirty=true; const m=$("saveMsg"); if(m) m.textContent="יש שינויים שלא נשמרו"; }
+function draft(){ if(!drafts[sel]) drafts[sel]=JSON.parse(JSON.stringify(working(sel))); const m=$("saveMsg"); if(m) m.textContent="יש שינויים שלא נשמרו"; return drafts[sel]; }
 
 function renderEditor(){
   const box=$("editor");
-  if(!sel||!devices[sel]){ box.innerHTML='<div class="empty">בחר מכשיר מהרשימה או הוסף מכשיר חדש.</div>'; $("edTitle").textContent="בחר מכשיר"; $("delBtn").hidden=true; return; }
-  const c=devices[sel]; $("edTitle").textContent=sel; $("delBtn").hidden=false;
+  if(!sel){ box.innerHTML='<div class="empty">בחר מכשיר מהרשימה.</div>'; $("edTitle").textContent="בחר מכשיר"; $("delBtn").hidden=true; return; }
+  const c=working(sel), st=stateOf(sel), apps=appsOf(sel), r=reports[sel];
+  $("edTitle").innerHTML=esc(sel)+badge(sel); $("delBtn").hidden=false;
+
+  let status = r ? ("נראה לאחרונה: "+fmt(r.updatedAt)+(st&&st.appVersion?" · גרסה "+esc(st.appVersion):"")) : "המכשיר עוד לא התחבר. ודא שהשם הוקלד במכשיר בדיוק כך.";
+  if(st && st.owner===false) status+=" · ⚠ האפליקציה אינה מנהלת המכשיר, שינויים לא יוחלו";
+  if(st && st.protected===false) status+=" · ⚠ ההגנה עוד לא הופעלה במכשיר, שינויים לא יוחלו";
+
   const modes=MODES.map(m=>`<label class="tl" style="cursor:pointer"><input type="radio" name="fMode" value="${m.v}" ${c.filter_mode===m.v?"checked":""} style="width:auto">
       <div class="tt"><b>${m.t}</b><small>${esc(m.d)}</small></div></label>`).join("");
-  const sets=SETTINGS.map(d=>`<div class="tl"><div class="tt"><b>${d.b}</b></div>
-      <label class="sw"><input type="checkbox" data-set="${d.k}" ${c.settings[d.k]?"checked":""} aria-label="${d.b}"><span></span></label></div>`).join("");
+  const sets=SETTINGS.map(d=>{
+    let row=`<div class="tl"><div class="tt"><b>${d.b}</b></div>
+      <label class="sw"><input type="checkbox" data-set="${d.k}" ${c.settings[d.k]?"checked":""} aria-label="${d.b}"><span></span></label></div>`;
+    if(d.k==="disable_sensible_apps" && c.settings[d.k]) row+=sensBlock(c,apps);
+    return row; }).join("");
+
   box.innerHTML=`
+    <div class="statusline">${status}</div>
     <div class="field"><label>מסלול</label>${modes}</div>
     <div class="field"><label>הגדרות</label>${sets}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn primary" id="saveBtn">שמור ושלח למכשיר</button>
-      <span class="info" id="saveMsg">${c.configVersion?("גרסה "+c.configVersion+" · "+fmt(c.updatedAt)):"עדיין לא נשמר"}</span></div>`;
-  box.querySelectorAll('input[name="fMode"]').forEach(el=>el.onchange=e=>{c.filter_mode=e.target.value;touch();});
-  box.querySelectorAll("[data-set]").forEach(el=>el.onchange=e=>{c.settings[e.target.dataset.set]=e.target.checked;touch();});
+      <span class="info" id="saveMsg">${drafts[sel]?"יש שינויים שלא נשמרו":(configs[sel]?("נשמר "+fmt(configs[sel].updatedAt)):"עדיין לא נשמר. מוצג המצב הנוכחי במכשיר.")}</span></div>`;
+
+  box.querySelectorAll('input[name="fMode"]').forEach(el=>el.onchange=e=>{draft().filter_mode=e.target.value;});
+  box.querySelectorAll("[data-set]").forEach(el=>el.onchange=e=>{draft().settings[e.target.dataset.set]=e.target.checked; if(e.target.dataset.set==="disable_sensible_apps") renderEditor();});
+  box.querySelectorAll("[data-hid]").forEach(el=>el.onchange=e=>{
+    const d=draft(); const set=new Set(d.hiddenApps||[]);
+    e.target.checked ? set.add(e.target.dataset.hid) : set.delete(e.target.dataset.hid);
+    d.hiddenApps=[...set]; });
   $("saveBtn").onclick=save;
+}
+function sensBlock(c,apps){
+  if(!apps) return '<div class="warnbox">המכשיר עוד לא שלח את רשימת האפליקציות שלו.</div>';
+  const chosen=new Set(c.hiddenApps||[]);
+  const rows=apps.map(a=>`<label><input type="checkbox" data-hid="${esc(a.p)}" ${chosen.has(a.p)?"checked":""}>
+      <div><div>${esc(a.l)}</div><div class="p">${esc(a.p)}</div></div></label>`).join("");
+  return `<div class="warnbox">${SENS_WARN}</div><div class="applist">${rows||'<div class="info">אין אפליקציות</div>'}</div>`;
 }
 
 $("addBtn").onclick=()=>{
   const name=norm($("newName").value); if(!name) return;
   if(name.includes("/")){ alert("השם לא יכול להכיל את התו /"); return; }
-  if(!devices[name]) devices[name]=defaults(name);
-  $("newName").value=""; sel=name; dirty=true; renderList(); renderEditor(); touch();
+  $("newName").value=""; if(sel && sel!==name) delete drafts[sel];
+  sel=name; if(!configs[name]) drafts[name]=JSON.parse(JSON.stringify(working(name)));
+  renderList(); renderEditor();
 };
 $("newName").addEventListener("keydown",e=>{if(e.key==="Enter")$("addBtn").click();});
 $("delBtn").onclick=async()=>{
-  if(!sel||!window.confirm("למחוק את \""+sel+"\"? המכשיר יפסיק לקבל הגדרות מרחוק.")) return;
-  try{ await fs.collection(COL).doc(sel).delete(); }catch(e){}
-  delete devices[sel]; sel=null; dirty=false; renderList(); renderEditor();
+  if(!sel||!confirm("למחוק את \""+sel+"\" מהפאנל? ההגדרות שכבר הוחלו במכשיר נשארות, אבל הוא יפסיק לקבל שינויים מרחוק.")) return;
+  try{ await fs.collection("devices").doc(sel).delete(); }catch(e){}
+  try{ await fs.collection("deviceApps").doc(sel).delete(); }catch(e){}
+  delete drafts[sel]; sel=null; renderList(); renderEditor();
 };
-window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; }});
+window.addEventListener("beforeunload",e=>{ if(Object.keys(drafts).length){ e.preventDefault(); e.returnValue=""; }});
 </script>
 </body>
 </html>
