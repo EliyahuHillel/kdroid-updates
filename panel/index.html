@@ -506,6 +506,7 @@ function vDevice(id){
         <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
         <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
       </dl>
+      ${me.role==="owner"?`<div class="sw" style="margin-top:10px"><span>חסום פניות למערכת מהמכשיר הזה</span><label class="toggle"><input type="checkbox" id="msgBlk" ${d.msgBlocked?"checked":""} aria-label="חסום פניות"><i></i></label></div>`:""}
       ${me.role==="owner"?`<div class="field" style="margin:16px 0 0"><label class="f" for="reassign">העבר למתקין</label>
         <div class="row"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
         ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}" ${d.installerId===i._id?"selected":""}>${esc(i.name)}</option>`).join("")}</select>
@@ -537,6 +538,7 @@ function vDevice(id){
     $("emCode").textContent=code.slice(0,3)+" "+code.slice(3); $("emOut").hidden=false;
     commit([audit(id,"emergency_code",EMERG.find(x=>x[0]===act)[1])]).catch(()=>{});
   };
+  if($("msgBlk")) $("msgBlk").onchange=()=>setMsgBlock(id,()=>vDevice(id));
   if($("reassignBtn")) $("reassignBtn").onclick=async()=>{
     const to=$("reassign").value; if(to===d.installerId) return;
     const inst=D.installers.find(i=>i._id===to);
@@ -554,7 +556,7 @@ function sensBlock(pol,apps){
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
   <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}><span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
-const AUDIT={policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה"};
+const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
 const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
 
@@ -603,23 +605,37 @@ function vRequests(v){
 let msgFilter="open";
 function vMessages(v){
   const list=D.messages.filter(m=>msgFilter==="all"||m.status===msgFilter);
-  v.innerHTML=`<section class="card"><div class="hd"><h2>פניות למערכת</h2><span class="spacer"></span>
+  const off=D.config.messagesOff===true;
+  v.innerHTML=`<div class="grid">
+    <div class="note ${off?"warn":"info"} row"><span class="spacer" style="flex:1">${off?"<b>קבלת פניות סגורה לכולם.</b> המשתמשים לא יכולים לשלוח פניות חדשות.":"קבלת פניות פתוחה לכל המשתמשים."}</span>
+      <button class="btn ${off?"fill":"out"} sm" id="msgSwitch">${off?"פתח קבלת פניות":"סגור קבלת פניות לכולם"}</button></div>
+    <section class="card"><div class="hd"><h2>פניות למערכת</h2><span class="spacer"></span>
     <div class="chips">${[["open","פתוחות"],["all","הכל"]].map(([k,t])=>`<button class="chip ${msgFilter===k?"on":""}" data-mf="${k}">${t}</button>`).join("")}</div></div>
     <div class="list">${list.map(m=>{const d=devById(m.deviceId)||{name:"מכשיר לא ידוע",phone:""};
       return `<div class="item"><div class="badgeicon" style="background:var(--tertiary-c);color:var(--on-tertiary-c)">${icon("chat")}</div>
-      <div class="main"><div class="t">${esc(TOPIC[m.topic]||m.topic)} · ${esc(d.name)} <span class="muted num" dir="ltr">${esc(d.phone)}</span></div>
+      <div class="main"><div class="t">${esc(TOPIC[m.topic]||m.topic)} · ${esc(d.name)} <span class="muted num" dir="ltr">${esc(d.phone)}</span>${d.msgBlocked?' <span class="pill released">חסום לפניות</span>':""}</div>
         <div class="muted">${when(m.createdAt)}${d.installerId?" · מתקין: "+esc(installerLabel(d.installerId)):""}</div>
         <div class="x">${esc(m.text)}</div>
         ${m.reply?`<div class="note ok" style="margin-top:8px"><b>התשובה שלך:</b> ${esc(m.reply)}</div>`:m.status==="closed"?`<div class="muted" style="margin-top:6px">סומנה כטופלה</div>`:
           `<div class="field" style="margin:10px 0 0"><textarea data-reply="${esc(m._id)}" placeholder="תשובה שתופיע למשתמש באפליקציה" aria-label="תשובה"></textarea></div>
            <div class="row" style="margin-top:8px"><button class="btn fill sm" data-send="${esc(m._id)}">שלח תשובה</button><button class="btn text sm" data-close="${esc(m._id)}">סמן כטופלה בלי תשובה</button></div>`}
-      </div></div>`;}).join("")||'<div class="empty">אין פניות</div>'}</div></section>`;
+      </div>
+      ${d._id?`<button class="btn ${d.msgBlocked?"out":"danger"} sm" data-block="${esc(d._id)}">${d.msgBlocked?"בטל חסימה":"חסום שולח"}</button>`:""}</div>`;}).join("")||'<div class="empty">אין פניות</div>'}</div></section></div>`;
+  $("msgSwitch").onclick=async()=>{ try{ await commit([{set:"config/public",data:{messagesOff:!off},mask:["messagesOff"]}]);
+    D.config.messagesOff=!off; toast(off?"קבלת הפניות נפתחה":"קבלת הפניות נסגרה לכולם"); vMessages(v); }catch(e){ toast("הפעולה נכשלה"); } };
+  v.querySelectorAll("[data-block]").forEach(b=>b.onclick=()=>setMsgBlock(b.dataset.block,()=>vMessages(v)));
   v.querySelectorAll("[data-mf]").forEach(b=>b.onclick=()=>{msgFilter=b.dataset.mf; vMessages(v);});
   v.querySelectorAll("[data-send]").forEach(b=>b.onclick=async()=>{
     const t=v.querySelector(`[data-reply="${b.dataset.send}"]`).value.trim(); if(!t){ toast("כתבו תשובה"); return; }
     b.disabled=true; try{ await commit([{set:"messages/"+b.dataset.send,data:{reply:t,status:"answered",repliedAt:Date.now()},mask:["reply","status","repliedAt"]}]); toast("התשובה נשלחה"); load(); }catch(e){ toast("השליחה נכשלה"); b.disabled=false; }});
   v.querySelectorAll("[data-close]").forEach(b=>b.onclick=async()=>{
     try{ await commit([{set:"messages/"+b.dataset.close,data:{status:"closed"},mask:["status"]}]); load(); }catch(e){ toast("הפעולה נכשלה"); }});
+}
+
+async function setMsgBlock(id,after){
+  const d=devById(id); if(!d) return; const on=!d.msgBlocked;
+  try{ await commit([{set:"devices/"+id,data:{msgBlocked:on},mask:["msgBlocked"]},audit(id,on?"msg_blocked":"msg_unblocked",d.name)]);
+       d.msgBlocked=on; toast(on?"המכשיר נחסם לשליחת פניות":"החסימה בוטלה"); after&&after(); }catch(e){ toast("הפעולה נכשלה"); }
 }
 
 // ---------------------------------------------------------------- installers (owner)
@@ -691,7 +707,7 @@ function vSettings(v){
   };
   v.querySelectorAll('input[name=dmode]').forEach(r=>r.onchange=()=>v.querySelectorAll(".opt").forEach(o=>o.classList.toggle("on",o.contains(v.querySelector('input[name=dmode]:checked')))));
   if($("pubForm")) $("pubForm").onsubmit=async e=>{ e.preventDefault();
-    try{ await commit([{set:"config/public",data:{ownerName:$("oName").value.trim(),ownerPhone:$("oPhone").value.trim()}}]); toast("נשמר"); load(); }catch(err){ toast("השמירה נכשלה"); } };
+    try{ await commit([{set:"config/public",data:{ownerName:$("oName").value.trim(),ownerPhone:$("oPhone").value.trim()},mask:["ownerName","ownerPhone"]}]); toast("נשמר"); load(); }catch(err){ toast("השמירה נכשלה"); } };
   $("pwForm").onsubmit=async e=>{ e.preventDefault(); $("pwErr").textContent="";
     try{ await auth.currentUser.updatePassword($("np").value); toast("הסיסמה הוחלפה"); e.target.reset(); }
     catch(err){ $("pwErr").textContent=err.code==="auth/requires-recent-login"?"מטעמי אבטחה, צאו והיכנסו שוב ואז נסו שוב.":"ההחלפה נכשלה."; } };
