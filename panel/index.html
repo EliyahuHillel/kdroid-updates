@@ -261,6 +261,7 @@ async function commit(writes){
     if(w.mask) o.updateMask={fieldPaths:w.mask};
     if(w.create) o.currentDocument={exists:false};
     return o; })});
+  typing=false; // a saved form is done; let the page refresh again
 }
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b%62]).join("");
 const audit = (deviceId,action,detail) => ({set:"audit/"+newId(),create:true,data:{by:me.uid,byName:me.name,deviceId:deviceId||"",action,detail:detail||"",at:Date.now()}});
@@ -268,7 +269,9 @@ const audit = (deviceId,action,detail) => ({set:"audit/"+newId(),create:true,dat
 // ---------------------------------------------------------------- state
 let me=null;
 let D={devices:[],reports:{},requests:[],messages:[],installers:[],config:{},ownerProfile:null};
-let loaded=false, loading=false, draft=null, pollT=null;
+let loaded=false, loading=false, draft=null, pollT=null, typing=false;
+// typing in any form on the page pauses the automatic redraw, so nothing typed is lost
+document.addEventListener("input",e=>{ if(e.target.closest("#view")) typing=true; });
 
 auth.onAuthStateChanged(async u=>{
   clearInterval(pollT); me=null; loaded=false; draft=null;
@@ -318,7 +321,7 @@ async function load(){
     }
     loaded=true;
   }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
-  loading=false; if(!draft) render();
+  loading=false; if(!draft&&!typing) render(); else renderTabs();
 }
 
 // ---------------------------------------------------------------- derived
@@ -356,17 +359,23 @@ function currentPolicy(d){
 // ---------------------------------------------------------------- router
 function render(){
   if(!me) return;
+  typing=false;
   const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"), route=i<0?h:h.slice(0,i), arg=i<0?"":decodeURIComponent(h.slice(i+1));
-  const tabs=[["overview","סקירה"],["devices","מכשירים"],["requests","בקשות",openRequests().length]];
-  if(me.role==="owner") tabs.push(["messages","פניות",openMessages().length],["installers","מתקינים"]);
-  tabs.push(["settings","הגדרות"]);
-  const cur = route==="device"?"devices":route;
-  $("tabs").innerHTML=tabs.map(([k,t,n])=>'<a href="#'+k+'" class="'+(k===cur?"on":"")+'">'+t+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("");
+  renderTabs(route);
   const v=$("view");
   if(!loaded){ v.innerHTML='<div class="empty">טוען…</div>'; return; }
   const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,settings:vSettings};
   if((route==="messages"||route==="installers")&&me.role!=="owner") return vOverview(v);
   (views[route]||vOverview)(v);
+}
+function renderTabs(route){
+  if(!me) return;
+  if(route===undefined){ const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"); route=i<0?h:h.slice(0,i); }
+  const tabs=[["overview","סקירה"],["devices","מכשירים"],["requests","בקשות",openRequests().length]];
+  if(me.role==="owner") tabs.push(["messages","פניות",openMessages().length],["installers","מתקינים"]);
+  tabs.push(["settings","הגדרות"]);
+  const cur = route==="device"?"devices":route;
+  $("tabs").innerHTML=tabs.map(([k,t,n])=>'<a href="#'+k+'" class="'+(k===cur?"on":"")+'">'+t+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("");
 }
 
 // ---------------------------------------------------------------- overview
