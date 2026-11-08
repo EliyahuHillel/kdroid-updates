@@ -341,6 +341,9 @@ function statusOf(d){
 const pill = s => '<span class="pill '+s.k+'"><span class="dot"></span>'+s.t+'</span>';
 const openRequests = () => D.requests.filter(r=>r.status==="open");
 const openMessages = () => D.messages.filter(m=>m.status==="open");
+const issuesOf = id => { const st=stateOf(id); return st&&Array.isArray(st.issues)?st.issues:[]; };
+const issueText = i => (i.l||i.p)+": "+(i.kind==="outdated"?"הגרסה במכשיר ישנה מדי ("+(i.have||"?")+", נדרשת לפחות "+i.need+"). יש לעדכן את האפליקציה."
+  :"האפליקציה עברה שינויים ואינה גרסה רשמית. יש להסיר אותה ולהתקין גרסה רשמית.");
 const isStale = d => d.status==="active" && lastSeen(d._id) && Date.now()-lastSeen(d._id)>STALE_MS;
 function defaultProfile(){
   const p = me.role==="owner" ? D.ownerProfile : me.defaultProfile;
@@ -405,6 +408,7 @@ function attention(){
     if(d.status==="pending") x("נרשם "+ago(d.createdAt)+", ממתין להפעלה");
     else if(d.status==="released") return;
     else if(isStale(d)) x("לא התחבר "+ago(lastSeen(d._id)));
+    else if(issuesOf(d._id).length) x("בעיה ב"+issuesOf(d._id).map(i=>i.l||i.p).join(", ")+": האפליקציה לא תתחבר לרשת");
     else if(st&&st.lastErr) x("שגיאה במכשיר: "+st.lastErr);
     else if(st&&st.owner===false) x("האפליקציה אינה מנהלת את המכשיר");
   });
@@ -447,7 +451,7 @@ function vDevices(v){
     $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{};
       return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td><b>${esc(d.name)}</b></td>
       <td class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</td>${me.role==="owner"?`<td>${esc(installerLabel(d.installerId))}</td>`:""}
-      <td>${pill(statusOf(d))}</td><td>${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
+      <td>${pill(statusOf(d))}${issuesOf(d._id).length?' <span class="pill pending" title="'+esc(issuesOf(d._id).map(issueText).join("\n"))+'">⚠ '+(issuesOf(d._id).length===1?'בעיה אחת':issuesOf(d._id).length+' בעיות')+'</span>':""}</td><td>${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
       <td>${ago(lastSeen(d._id))}</td><td class="num">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
     $("devEmpty").hidden=rows.length>0;
   };
@@ -468,6 +472,7 @@ function vDevice(id){
   const mark=()=>{ if(!draft) draft={id,p:JSON.parse(JSON.stringify(pol))}; return draft.p; };
   const warn=[];
   if(st.owner===false) warn.push("האפליקציה אינה מנהלת את המכשיר, ולכן שינויים לא יוחלו בו.");
+  issuesOf(id).forEach(i=>warn.push(issueText(i)));
   if(st.lastErr) warn.push("שגיאה אחרונה במכשיר: "+st.lastErr);
   if(isStale(d)) warn.push("המכשיר לא התחבר "+ago(lastSeen(id))+". השינויים יוחלו כשיתחבר.");
   const primaryLabel = d.status==="active" ? "שמור והחל במכשיר" : "אשר והפעל את הסינון";
