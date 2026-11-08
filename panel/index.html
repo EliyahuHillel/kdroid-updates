@@ -4,360 +4,701 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>מרכז שליטה קידרואיד</title>
+<title>קיידרואיד · ניהול</title>
+<link rel="icon" href="icon.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap">
 <style>
-  :root{
-    --bg:#f4f6f8; --panel:#ffffff; --panel-2:#eef1f5; --line:#d9dee6;
-    --fg:#1a2230; --muted:#64708a; --accent:#1f7a5a; --accent-fg:#ffffff;
-    --good:#1f7a5a; --warn:#b4701a; --danger:#b4342f; --chip:#e4ebe8;
-    --shadow:0 1px 3px rgba(20,30,48,.08),0 6px 18px rgba(20,30,48,.06);
-    --font:system-ui,'Segoe UI',Arial,sans-serif;
-    --mono:ui-monospace,'SFMono-Regular',Consolas,monospace;
-    color-scheme:light;
-  }
-  @media (prefers-color-scheme:dark){:root{
-    --bg:#10151d; --panel:#192330; --panel-2:#141c27; --line:#2a3645;
-    --fg:#e7edf5; --muted:#92a0b6; --accent:#35c08a; --accent-fg:#06110c;
-    --good:#35c08a; --warn:#e0a94a; --danger:#f0756e; --chip:#213041;
-    --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35); color-scheme:dark;
-  }}
-  *{box-sizing:border-box}
-  [hidden]{display:none!important}
-  body{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;line-height:1.5;font-size:15px;
-    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-  h1,h2{margin:0;text-wrap:balance}
-  .wrap{max-width:1040px;margin:0 auto;padding-block:18px 40px}
-  header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:800;font-size:18px}
-  header.top h1{font-size:19px;font-weight:800}
-  .sub{color:var(--muted);font-size:12.5px}
-  .spacer{flex:1}
-  .grid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
-  @media (max-width:760px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
-  .card .hd{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
-  .card .hd h2{font-size:14px;font-weight:700}
-  .card .bd{padding:14px 15px}
-  .addrow{display:flex;gap:8px;margin-bottom:12px}
-  input,select,textarea{font-family:inherit;font-size:14px;color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;width:100%;min-width:0}
-  textarea{resize:vertical;min-height:62px}
-  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
-  .btn{font-family:inherit;font-size:14px;font-weight:600;border-radius:9px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);white-space:nowrap}
-  .btn:hover{border-color:var(--accent)}
-  .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-  .btn.danger{color:var(--danger);border-color:var(--danger);background:transparent}
-  .btn:disabled{opacity:.55;cursor:default}
-  ul.devs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:480px;overflow:auto}
-  ul.devs li{padding:10px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--panel-2)}
-  ul.devs li:hover{border-color:var(--accent)}
-  ul.devs li.sel{border-color:var(--accent);background:var(--chip)}
-  ul.devs .nm{font-weight:700;font-size:14px}
-  ul.devs .meta{font-size:11.5px;color:var(--muted);margin-top:2px}
-  .empty{color:var(--muted);font-size:13px;text-align:center;padding:22px 8px}
-  .field{margin-bottom:15px}
-  .field>label{display:block;font-size:12px;font-weight:700;letter-spacing:.3px;color:var(--muted);margin-bottom:6px}
-  .apps{display:flex;flex-direction:column;gap:7px}
-  .app{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
-  .app .m{flex:1;min-width:0}
-  .app .t{font-weight:600;font-size:14px}
-  .app .p{font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all}
-  .app .del{color:var(--muted);background:transparent;border:none;cursor:pointer;font-size:16px;padding:4px}
-  .app .del:hover{color:var(--danger)}
-  .sw{position:relative;width:42px;height:24px;flex:none}
-  .sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
-  .sw span{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.15s}
-  .sw span::before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;right:3px;transition:.15s}
-  .sw input:checked+span{background:var(--accent)}
-  .sw input:checked+span::before{transform:translateX(-18px)}
-  .tl{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-  .tl:last-child{border-bottom:none}
-  .tl .tt{flex:1}.tl .tt b{font-weight:600;font-size:14px;display:block}.tl .tt small{color:var(--muted);font-size:12px}
-  .pick{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .pick button{font-size:12.5px;padding:6px 10px;border-radius:999px;border:1px dashed var(--line);background:transparent;color:var(--fg);cursor:pointer}
-  .pick button:hover{border-color:var(--accent);border-style:solid}
-  .info{font-size:12.5px;color:var(--muted)}
-  .err{color:var(--danger);font-size:13px;margin-top:8px}
-  .login{max-width:380px;margin:60px auto}
-  .login .bd{display:flex;flex-direction:column;gap:10px}
-  .namebox{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent)}
-  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-inline-start:6px;vertical-align:middle}
-  .badge.new{background:var(--warn);color:#fff}
-  .badge.ok{background:var(--chip);color:var(--good)}
-  .badge.wait{background:var(--chip);color:var(--warn)}
-  .applist{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--panel-2);margin-top:8px}
-  .applist label{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer}
-  .applist label:hover{background:var(--chip)}
-  .applist input{width:auto}
-  .applist .p{font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all}
-  .warnbox{font-size:12.5px;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:8px 10px;margin-top:8px}
-  .statusline{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+/* App palette: Material 3 scheme from seed #006C51 (same as the Android app) */
+:root{
+  --primary:#006C51; --on-primary:#fff; --primary-c:#83F8CD; --on-primary-c:#002116; --primary-d:#00513C;
+  --secondary:#4C6359; --secondary-c:#CEE9DB; --on-secondary-c:#082017;
+  --tertiary:#3F6375; --tertiary-c:#C2E8FD; --on-tertiary-c:#001F2B;
+  --error:#BA1A1A; --error-c:#FFDAD6; --on-error-c:#410002;
+  --bg:#F4F6F2; --surface:#FBFDF9; --surface-hi:#EFF1EE; --on:#191C1A; --variant:#DBE5DE; --on-variant:#404944;
+  --outline:#707974; --outline-v:#BFC9C2; --warn:#8A5100; --warn-c:#FFDDB8;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05);
+  --font:'Noto Sans Hebrew',system-ui,'Segoe UI',Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --primary:#66DBB2; --on-primary:#003829; --primary-c:#00513C; --on-primary-c:#83F8CD; --primary-d:#83F8CD;
+  --secondary:#B3CCBF; --secondary-c:#354C42; --on-secondary-c:#CEE9DB;
+  --tertiary:#A7CCE0; --tertiary-c:#264B5C; --on-tertiary-c:#C2E8FD;
+  --error:#FFB4AB; --error-c:#93000A; --on-error-c:#FFDAD6;
+  --bg:#111412; --surface:#191C1A; --surface-hi:#232624; --on:#E1E3E0; --variant:#404944; --on-variant:#BFC9C2;
+  --outline:#89938D; --outline-v:#404944; --warn:#FFB86E; --warn-c:#4A2800;
+  --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark;
+}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--on);font-family:var(--font);font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--primary)}
+h1,h2,h3{margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--outline-v)}
+.topbar .in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;min-height:64px;
+  padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:34px;height:34px;border-radius:9px}
+.brand b{font-size:19px;font-weight:700}
+.brand small{display:block;font-size:12px;color:var(--on-variant);margin-top:-3px}
+.spacer{flex:1}
+.who{font-size:13px;color:var(--on-variant);text-align:left}
+.role{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:6px;background:var(--secondary-c);color:var(--on-secondary-c);margin-inline-start:6px}
+nav.tabs{max-width:1200px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));scrollbar-width:none}
+nav.tabs a{display:flex;align-items:center;gap:6px;padding:10px 14px 12px;color:var(--on-variant);text-decoration:none;font-weight:500;white-space:nowrap;border-bottom:3px solid transparent}
+nav.tabs a.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.count{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--error);color:#fff;font-size:11.5px;font-weight:700;display:inline-grid;place-items:center}
+@media (prefers-color-scheme:dark){.count{color:#690005}}
+main{max-width:1200px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+.card{background:var(--surface);border:1px solid var(--outline-v);border-radius:16px;box-shadow:var(--shadow)}
+.card>.hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--outline-v);flex-wrap:wrap}
+.card>.hd h2{font-size:16px;font-weight:600}
+.card>.bd{padding:16px 18px}
+.grid{display:grid;gap:16px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--outline-v);text-decoration:none;color:inherit;display:block}
+.tile:hover{border-color:var(--primary)}
+.tile .v{font-size:30px;font-weight:700;line-height:1.1}
+.tile .l{font-size:13px;color:var(--on-variant);margin-top:4px}
+.tile.alert .v{color:var(--error)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:20px;border:1px solid transparent;cursor:pointer;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
+.btn.fill{background:var(--primary);color:var(--on-primary)}
+.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.out{background:transparent;border-color:var(--outline);color:var(--primary)}
+.btn.text{background:transparent;color:var(--primary);padding:0 10px}
+.btn.danger{background:transparent;border-color:var(--error);color:var(--error)}
+.btn.danger.fill{background:var(--error);color:var(--on-primary)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn.sm{min-height:32px;padding:0 12px;font-size:13px}
+input[type=text],input[type=email],input[type=tel],input[type=password],input[type=search],select,textarea{
+  width:100%;min-width:0;background:transparent;border:1px solid var(--outline);border-radius:6px;padding:10px 12px;font-size:15px}
+textarea{resize:vertical;min-height:84px}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:1px solid var(--primary)}
+label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);margin-bottom:5px}
+.field{margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--on-variant);font-size:13px}
+.err{color:var(--error);font-size:13.5px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.pill.active{background:var(--primary-c);color:var(--on-primary-c)}
+.pill.pending{background:var(--warn-c);color:var(--warn)}
+.pill.released{background:var(--variant);color:var(--on-variant)}
+.pill.wait{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.empty{text-align:center;color:var(--on-variant);padding:36px 16px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{max-width:320px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--outline);background:transparent;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13.5px;color:var(--on-variant)}
+.chip.on{background:var(--secondary-c);border-color:transparent;color:var(--on-secondary-c);font-weight:600}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;font-weight:600;color:var(--on-variant);text-align:right;padding:10px 14px;border-bottom:1px solid var(--outline-v);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--outline-v);vertical-align:middle}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface-hi)}
+td .sub{font-size:12.5px;color:var(--on-variant)}
+.list>.item{padding:14px 18px;border-bottom:1px solid var(--outline-v);display:flex;gap:14px;align-items:flex-start}
+.list>.item:last-child{border-bottom:none}
+.item .main{flex:1;min-width:0}
+.item .t{font-weight:600}
+.item .x{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.badgeicon{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;flex:none}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:960px){.split{grid-template-columns:1fr}}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--outline-v);border-radius:12px;cursor:pointer;margin-bottom:8px}
+.opt.on{border:2px solid var(--primary);background:var(--secondary-c);padding:11px 13px}
+.opt input{margin-top:4px;accent-color:var(--primary)}
+.opt b{display:block;font-weight:600}
+.sw{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--outline-v)}
+.sw span{flex:1}
+.toggle{position:relative;width:46px;height:28px;flex:none}
+.toggle input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.toggle i{position:absolute;inset:0;border-radius:14px;background:var(--variant);border:2px solid var(--outline);transition:.15s}
+.toggle i::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--outline);top:5px;right:5px;transition:.15s}
+.toggle input:checked+i{background:var(--primary);border-color:var(--primary)}
+.toggle input:checked+i::after{width:20px;height:20px;top:2px;right:20px;background:var(--on-primary)}
+.toggle input:focus-visible+i{outline:2px solid var(--primary);outline-offset:2px}
+.applist{max-height:340px;overflow:auto;border:1px solid var(--outline-v);border-radius:10px;margin:8px 0 10px}
+.applist label{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--outline-v);cursor:pointer}
+.applist label:last-child{border-bottom:none}
+.applist input{accent-color:var(--primary)}
+.applist small{display:block;color:var(--on-variant);font-size:11.5px;direction:ltr;text-align:right}
+.note{border-radius:12px;padding:12px 14px;font-size:13.5px}
+.note.warn{background:var(--warn-c);color:var(--warn)}
+.note.err{background:var(--error-c);color:var(--on-error-c)}
+.note.ok{background:var(--primary-c);color:var(--on-primary-c)}
+.note.info{background:var(--surface-hi);color:var(--on-variant)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:0}
+.kv dt{color:var(--on-variant)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.bigcode{font-size:34px;font-weight:700;letter-spacing:6px;direction:ltr;text-align:center;color:var(--primary)}
+.back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;margin-bottom:12px}
+.login{max-width:400px;margin:8vh auto 0;padding:0 16px}
+.login .brandbig{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;text-align:center}
+.login .brandbig img{width:72px;height:72px;border-radius:18px}
+.login .brandbig b{font-size:24px}
+.toast{position:fixed;bottom:max(20px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--on);color:var(--surface);padding:12px 18px;border-radius:10px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+dialog{border:none;border-radius:20px;padding:0;background:var(--surface);color:var(--on);max-width:min(480px,calc(100vw - 32px));width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog .in{padding:22px}
+dialog h3{font-size:19px;margin-bottom:8px}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="logo">ק</div>
-    <div><h1>מרכז שליטה קידרואיד</h1><div class="sub">ניהול מכשירים מרחוק</div></div>
-    <div class="spacer"></div>
-    <span class="info" id="who"></span>
-    <button class="btn" id="logoutBtn" hidden>יציאה</button>
+
+<section id="loginView" class="login" hidden>
+  <div class="brandbig"><img src="icon.webp" alt=""><b>קיידרואיד</b><span class="muted">מערכת הניהול למתקינים</span></div>
+  <form class="card" id="loginForm"><div class="bd">
+    <div class="field"><label class="f" for="lEmail">מייל</label><input id="lEmail" type="email" autocomplete="username" dir="ltr" required></div>
+    <div class="field"><label class="f" for="lPass">סיסמה</label><input id="lPass" type="password" autocomplete="current-password" dir="ltr" required></div>
+    <button class="btn fill" style="width:100%" type="submit">כניסה</button>
+    <p class="err" id="loginErr" style="margin:12px 0 0"></p>
+    <p style="margin:10px 0 0;text-align:center"><button class="btn text sm" type="button" id="forgotBtn">שכחתי סיסמה</button></p>
+  </div></form>
+</section>
+
+<div id="appView" hidden>
+  <header class="topbar">
+    <div class="in">
+      <div class="brand"><img src="icon.webp" alt=""><div><b>קיידרואיד</b><small>מערכת ניהול</small></div></div>
+      <div class="spacer"></div>
+      <div class="who"><span id="whoName" dir="auto"></span><span class="role" id="whoRole"></span></div>
+      <button class="btn text sm" id="logoutBtn">יציאה</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
   </header>
-
-  <!-- כניסה -->
-  <section class="card login" id="loginCard" hidden>
-    <div class="hd"><h2>כניסת מנהל</h2></div>
-    <form class="bd" id="loginForm">
-      <input id="email" type="email" placeholder="מייל" autocomplete="username" required>
-      <input id="pass" type="password" placeholder="סיסמה" autocomplete="current-password" required>
-      <button class="btn primary" type="submit">כניסה</button>
-      <div class="err" id="loginErr"></div>
-    </form>
-  </section>
-
-
-  <!-- אפליקציה -->
-  <div class="grid" id="appArea" hidden>
-    <section class="card">
-      <div class="hd"><h2>מכשירים</h2><span class="spacer"></span><span class="sub" id="devCount">0</span></div>
-      <div class="bd">
-        <div class="info" style="margin-bottom:10px">מכשיר שהוקלד בו שם יופיע כאן לבד תוך כמה דקות. אפשר גם להוסיף שם ידנית:</div>
-        <div class="addrow">
-          <input id="newName" placeholder="שם המכשיר, כמו שהוקלד בו" aria-label="שם מכשיר">
-          <button class="btn primary" id="addBtn">הוסף</button>
-        </div>
-        <ul class="devs" id="devList"></ul>
-        <div class="empty" id="devEmpty">אין עדיין מכשירים.</div>
-        <div class="err" id="listErr"></div>
-        <div class="info" id="diag" style="margin-top:8px"></div>
-      </div>
-    </section>
-    <section class="card">
-      <div class="hd"><h2 id="edTitle">בחר מכשיר</h2><span class="spacer"></span><button class="btn danger" id="delBtn" hidden>מחק</button></div>
-      <div class="bd" id="editor"><div class="empty">בחר מכשיר מהרשימה.</div></div>
-    </section>
-  </div>
+  <main id="view"></main>
 </div>
 
+<dialog id="dlg"><div class="in" id="dlgIn"></div></dialog>
+<div class="toast" id="toast" hidden></div>
+
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI",
-  authDomain: "kiydroid.firebaseapp.com",
-  projectId: "kiydroid",
-  storageBucket: "kiydroid.firebasestorage.app",
-  messagingSenderId: "303401885325",
-  appId: "1:303401885325:web:5be1b385c598384d5a4cc4"
-};
+"use strict";
+const OWNER_EMAIL = "7152207@gmail.com";
+const firebaseConfig = {apiKey:"AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI",authDomain:"kiydroid.firebaseapp.com",projectId:"kiydroid",
+  storageBucket:"kiydroid.firebasestorage.app",messagingSenderId:"303401885325",appId:"1:303401885325:web:5be1b385c598384d5a4cc4"};
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-// גישה לנתונים בבקשות רגילות (REST), בלי חיבור חי, כדי לעבור דרך סינון רשת
+const KEY = firebaseConfig.apiKey;
 const DOCS = "projects/kiydroid/databases/(default)/documents";
-const API = "https://firestore.googleapis.com/v1/";
-async function token(){ return auth.currentUser.getIdToken(); }
+const FS = "https://firestore.googleapis.com/v1/" + DOCS;
+
+const NAV_APPS = "וויז, פנגו, מוביט, רכבת ישראל, Gett, מוזיקה יהודית והקראת טקסט";
+const MODES = [
+  {v:"KosherMode", t:"מסלול כשר", d:"אין חיבור לאינטרנט בכלל."},
+  {v:"NavigationMode", t:"מסלול ניווט", d:"אינטרנט רק ל: "+NAV_APPS+"."},
+  {v:"NavigationMailMode", t:"מסלול ניווט ומייל", d:"כמו מסלול ניווט, ועוד ג'ימייל."}];
+const MODE_NAME = Object.fromEntries(MODES.map(m=>[m.v,m.t]));
+const SETTINGS = [
+  ["app_installation_block","חסום התקנת אפליקציות"],["app_uninstall_block","מניעת הסרת אפליקציות"],
+  ["hide_store_icon","הסתר את חנות האפליקציות"],["disable_sensible_apps","השבת אפליקציות רגישות"],
+  ["call_block","חסום שיחות יוצאות"],["message_block","חסום הודעות"],["wifi_block","חסום וויפי לחלוטין"],
+  ["bluetooth_sharing_block","חסום העברת קבצים דרך בלוטות"],["usb_sharing_block","חסום העברת קבצים דרך USB"],
+  ["external_storage_block","חסום גישה לאחסון חיצוני"]];
+const REQ_TYPE = {activate:"בקשת הפעלה", route:"שינוי מסלול", setting:"שינוי הגדרה", remove:"הסרת הסינון"};
+const TOPIC = {help:"בקשת עזרה", tech:"תקלה טכנית", question:"שאלה", other:"אחר"};
+const EMERG = [["NavigationMode","מעבר למסלול ניווט"],["NavigationMailMode","מעבר למסלול ניווט ומייל"],["KosherMode","מעבר למסלול כשר"],["release","שחרור המכשיר"]];
+const STALE_MS = 3*24*3600*1000;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null; } };
+const ICON = {
+  shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  chat:'<path d="M4 5h16v11H8l-4 4z"/>', back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M15 8l2 2"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>'};
+const icon = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';
+function ago(ms){
+  if(!ms) return "עוד לא התחבר";
+  const m=Math.round((Date.now()-ms)/60000);
+  if(m<2) return "עכשיו"; if(m<60) return "לפני "+m+" דקות";
+  const h=Math.round(m/60); if(h<24) return h===1?"לפני שעה":"לפני "+h+" שעות";
+  const d=Math.round(h/24); return d===1?"אתמול":"לפני "+d+" ימים";
+}
+const when = ms => ms ? new Date(Number(ms)).toLocaleString("he-IL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
+function toast(s){ const t=$("toast"); t.textContent=s; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,3500); }
+
+// ---------------------------------------------------------------- firestore REST (plain requests: works behind filtering)
+async function tok(){ return auth.currentUser.getIdToken(); }
 function val(v){ if(!v) return null; if("stringValue" in v) return v.stringValue; if("integerValue" in v) return Number(v.integerValue);
   if("doubleValue" in v) return v.doubleValue; if("booleanValue" in v) return v.booleanValue; return null; }
-async function listCol(col){
-  const out={}; let pt="";
-  do{
-    const r=await fetch(API+DOCS+"/"+col+"?pageSize=300"+(pt?"&pageToken="+encodeURIComponent(pt):""),{headers:{Authorization:"Bearer "+await token()}});
-    if(!r.ok) throw {code:"http "+r.status};
-    const j=await r.json();
-    (j.documents||[]).forEach(d=>{ const id=decodeURIComponent(d.name.split("/").pop()); const o={};
-      Object.keys(d.fields||{}).forEach(k=>o[k]=val(d.fields[k])); out[id]=o; });
-    pt=j.nextPageToken||"";
-  }while(pt);
+function decode(doc){ const o={_id:decodeURIComponent(doc.name.split("/").pop())}; for(const k in (doc.fields||{})) o[k]=val(doc.fields[k]); return o; }
+function encode(o){ const f={}; for(const k in o){ const v=o[k]; if(v===undefined) continue;
+  if(typeof v==="boolean") f[k]={booleanValue:v}; else if(typeof v==="number"&&Number.isInteger(v)) f[k]={integerValue:String(v)};
+  else if(typeof v==="number") f[k]={doubleValue:v}; else f[k]={stringValue:String(v==null?"":v)}; } return f; }
+async function req(method,url,body){
+  const r=await fetch(url,{method,headers:{Authorization:"Bearer "+await tok(),"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){ const e=new Error((j.error&&j.error.message)||("http "+r.status)); e.code=r.status; throw e; }
+  return j;
+}
+async function getDoc(path){ try{ return decode(await req("GET",FS+"/"+path.split("/").map(encodeURIComponent).join("/"))); }catch(e){ if(e.code===404) return null; throw e; } }
+async function listAll(col){
+  const out=[]; let pt="";
+  do{ const j=await req("GET",FS+"/"+col+"?pageSize=300"+(pt?"&pageToken="+encodeURIComponent(pt):""));
+      (j.documents||[]).forEach(d=>out.push(decode(d))); pt=j.nextPageToken||""; }while(pt);
   return out;
 }
+async function query(col,field,value){
+  const j=await req("POST",FS+":runQuery",{structuredQuery:{from:[{collectionId:col}],
+    where:{fieldFilter:{field:{fieldPath:field},op:"EQUAL",value:{stringValue:value}}},limit:500}});
+  return j.filter(x=>x.document).map(x=>decode(x.document));
+}
 async function commit(writes){
-  const r=await fetch(API+DOCS+":commit",{method:"POST",headers:{Authorization:"Bearer "+await token(),"Content-Type":"application/json"},body:JSON.stringify({writes})});
-  if(!r.ok) throw {code:"http "+r.status};
+  await req("POST",FS+":commit",{writes:writes.map(w=>{
+    if(w.del) return {delete:DOCS+"/"+w.del};
+    const o={update:{name:DOCS+"/"+w.set,fields:encode(w.data)}};
+    if(w.mask) o.updateMask={fieldPaths:w.mask};
+    if(w.create) o.currentDocument={exists:false};
+    return o; })});
 }
-const docName = (col,id) => DOCS+"/"+col+"/"+id;
+const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b%62]).join("");
+const audit = (deviceId,action,detail) => ({set:"audit/"+newId(),create:true,data:{by:me.uid,byName:me.name,deviceId:deviceId||"",action,detail:detail||"",at:Date.now()}});
 
-// המסלולים וההגדרות כפי שהם קיימים באפליקציה
-const NAV_APPS = ["וויז","פנגו","מוביט","רכבת ישראל","Gett","מוזיקה יהודית","הקראת טקסט של Google"];
-const MODES = [
-  {v:"KosherMode",         t:"מסלול כשר",         d:"אין חיבור לאינטרנט בכלל."},
-  {v:"NavigationMode",     t:"מסלול ניווט",       d:"אינטרנט רק ל: "+NAV_APPS.join(", ")+"."},
-  {v:"NavigationMailMode", t:"מסלול ניווט ומייל", d:"אינטרנט רק ל: "+NAV_APPS.join(", ")+", וג'ימייל."}
-];
-const SETTINGS = [
-  {k:"app_installation_block",  b:"חסום התקנת אפליקציות"},
-  {k:"app_uninstall_block",     b:"מניעת הסרת אפליקציות"},
-  {k:"hide_store_icon",         b:"הסתר את חנות האפליקציות"},
-  {k:"disable_sensible_apps",   b:"השבת אפליקציות רגישות"},
-  {k:"call_block",              b:"חסום שיחות יוצאות"},
-  {k:"message_block",           b:"חסום הודעות"},
-  {k:"wifi_block",              b:"חסום וויפי לחלוטין"},
-  {k:"bluetooth_sharing_block", b:"חסום העברת קבצים דרך בלוטות"},
-  {k:"usb_sharing_block",       b:"חסום העברת קבצים דרך USB"},
-  {k:"external_storage_block",  b:"חסום גישה לאחסון חיצוני"}
-];
-const MODE_KEYS = MODES.map(m=>m.v);
-const SENS_WARN = "אפשרות זו מסתירה ומשביתה אפליקציות שנראות לא כשרות. היזהר: השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.";
+// ---------------------------------------------------------------- state
+let me=null;
+let D={devices:[],reports:{},requests:[],messages:[],installers:[],config:{},ownerProfile:null};
+let loaded=false, loading=false, draft=null, pollT=null;
 
-let configs = {};   // devices/{name}: מה שאתה הגדרת
-let reports = {};   // deviceApps/{name}: מה שהמכשיר דיווח
-let drafts = {};    // עריכה שלא נשמרה
-let sel = null, pollTimer = null;
-const $ = id => document.getElementById(id);
-const norm = s => (s||"").replace(/\s+/g," ").trim();
-const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt = ms => ms ? new Date(Number(ms)).toLocaleString("he-IL",{dateStyle:"short",timeStyle:"short"}) : "";
-const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null; } };
-
-function blank(){ const s={}; SETTINGS.forEach(d=>s[d.k]=false); return {filter_mode:"NavigationMode", settings:s, hiddenApps:null, rev:0, updatedAt:0}; }
-function fromState(st){ // מתחילים ממה שבאמת יש במכשיר, כדי לא לשנות בטעות
-  const c=blank(); if(!st) return c;
-  if(MODE_KEYS.includes(st.filter_mode)) c.filter_mode=st.filter_mode;
-  if(st.settings) SETTINGS.forEach(d=>{ if(typeof st.settings[d.k]==="boolean") c.settings[d.k]=st.settings[d.k]; });
-  if(Array.isArray(st.hiddenApps)) c.hiddenApps=st.hiddenApps.slice();
-  return c;
-}
-function fromConfig(v){
-  const c=blank(); const j=parse(v.json)||{};
-  if(MODE_KEYS.includes(j.filter_mode)) c.filter_mode=j.filter_mode;
-  if(j.settings) SETTINGS.forEach(d=>{ if(typeof j.settings[d.k]==="boolean") c.settings[d.k]=j.settings[d.k]; });
-  if(Array.isArray(j.hiddenApps)) c.hiddenApps=j.hiddenApps.slice();
-  c.rev=j.rev||0; c.updatedAt=v.updatedAt||0; return c;
-}
-function stateOf(name){ const r=reports[name]; return r ? parse(r.state) : null; }
-function appsOf(name){ const r=reports[name]; return r ? (parse(r.apps)||[]) : null; }
-function working(name){ // מה שמוצג בעורך
-  if(drafts[name]) return drafts[name];
-  if(configs[name]){ const c=configs[name], st=stateOf(name);
-    if(c.hiddenApps==null && st && Array.isArray(st.hiddenApps)) return Object.assign({},c,{hiddenApps:st.hiddenApps.slice()});
-    return c; }
-  return fromState(stateOf(name));
-}
-
-// ---------- auth ----------
-auth.onAuthStateChanged(u=>{
-  clearInterval(pollTimer); pollTimer=null;
-  if(!u){ $("loginCard").hidden=false; $("appArea").hidden=true; $("logoutBtn").hidden=true; $("who").textContent=""; return; }
-  $("loginCard").hidden=true; $("appArea").hidden=false; $("logoutBtn").hidden=false; $("who").textContent=u.email;
-  load(); pollTimer=setInterval(load, 10000);
+auth.onAuthStateChanged(async u=>{
+  clearInterval(pollT); me=null; loaded=false; draft=null;
+  if(!u){ $("loginView").hidden=false; $("appView").hidden=true; return; }
+  try{
+    if(u.email===OWNER_EMAIL) me={uid:u.uid,email:u.email,role:"owner",name:"מנהל המערכת"};
+    else{
+      const inst=await getDoc("installers/"+u.uid);
+      if(!inst||inst.active!==true){ $("loginErr").textContent="החשבון אינו פעיל. פנו למנהל המערכת."; await auth.signOut(); return; }
+      me={uid:u.uid,email:u.email,role:"installer",name:inst.name,phone:inst.phone,code:inst.code,defaultProfile:parse(inst.defaultProfile)};
+    }
+  }catch(e){ $("loginErr").textContent="לא הצלחתי להתחבר לשרת. נסו שוב."; return; }
+  $("loginView").hidden=true; $("appView").hidden=false;
+  $("whoName").textContent=me.role==="owner"?u.email:me.name; $("whoRole").textContent=me.role==="owner"?"בעלים":"מתקין";
+  if(!location.hash) history.replaceState(null,"","#overview");
+  render(); await load(); pollT=setInterval(()=>{ if(!draft) load(); },15000);
 });
-let loading=false;
-async function load(){
-  if(loading) return; loading=true;
-  const diag=[];
-  try{ const d=await listCol("devices"); configs={}; Object.keys(d).forEach(id=>configs[id]=fromConfig(d[id])); diag.push("הגדרות "+Object.keys(d).length); }
-  catch(e){ diag.push("הגדרות: שגיאה ("+(e.code||e.message||"?")+")"); }
-  try{ reports=await listCol("deviceApps"); diag.push("דיווחים "+Object.keys(reports).length); }
-  catch(e){ diag.push("דיווחים: שגיאה ("+(e.code||e.message||"?")+")"); }
-  const bad=diag.some(x=>x.includes("שגיאה"));
-  $("listErr").textContent = bad ? "לא הצלחתי לקרוא מהשרת: "+diag.join(" · ") : "";
-  $("diag").textContent = "אבחון: "+diag.join(" · ")+" · עודכן "+new Date().toLocaleTimeString("he-IL");
-  loading=false; refresh();
-}
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
-  try{ await auth.signInWithEmailAndPassword($("email").value.trim(), $("pass").value); }
-  catch(err){ $("loginErr").textContent="הכניסה נכשלה. בדוק מייל וסיסמה."; }
+  try{ await auth.signInWithEmailAndPassword($("lEmail").value.trim(),$("lPass").value); }
+  catch(err){ $("loginErr").textContent="הכניסה נכשלה. בדקו מייל וסיסמה."; }
 });
-$("logoutBtn").onclick=()=>auth.signOut();
+$("forgotBtn").onclick=async()=>{
+  const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
+  try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
+};
+$("logoutBtn").onclick=()=>{ if(draft&&!confirm("יש שינויים שלא נשמרו. לצאת בכל זאת?")) return; draft=null; auth.signOut(); };
+let lastHash=location.hash;
+window.addEventListener("hashchange",()=>{
+  if(draft&&!confirm("יש שינויים שלא נשמרו. לעבור בכל זאת?")){ history.replaceState(null,"",lastHash); return; }
+  draft=null; lastHash=location.hash; render();
+});
+window.addEventListener("beforeunload",e=>{ if(draft){ e.preventDefault(); e.returnValue=""; } });
 
-function refresh(){ renderList(); if(!(sel && drafts[sel])) renderEditor(); }
-
-// ---------- save ----------
-async function save(){
-  const c=working(sel); if(!c) return;
-  const btn=$("saveBtn"); btn.disabled=true; $("saveMsg").textContent="שומר…";
-  const st=stateOf(sel)||{};
-  const rev=Math.max(Date.now(), (c.rev||0)+1, (st.appliedRev||0)+1);
-  const payload={deviceName:sel, rev, filter_mode:c.filter_mode, settings:c.settings};
-  if(Array.isArray(c.hiddenApps)) payload.hiddenApps=c.hiddenApps;
+async function load(){
+  if(loading||!me) return; loading=true;
   try{
-    await commit([{update:{name:docName("devices",sel), fields:{json:{stringValue:JSON.stringify(payload)}, updatedAt:{integerValue:String(Date.now())}}}}]);
-    load();
-    delete drafts[sel];
-    $("saveMsg").textContent="נשמר ✓ המכשיר יקבל את זה תוך עד 15 דקות.";
-  }catch(e){ $("saveMsg").textContent="השמירה נכשלה: אין הרשאת כתיבה."; }
-  btn.disabled=false;
+    const own=me.role==="owner";
+    const [devs,reps,reqs]=await Promise.all([
+      own?listAll("devices"):query("devices","installerId",me.uid),
+      own?listAll("reports"):query("reports","installerId",me.uid),
+      own?listAll("requests"):query("requests","installerId",me.uid)]);
+    D.devices=devs.filter(d=>d.status); D.reports=Object.fromEntries(reps.map(r=>[r._id,r])); D.requests=reqs.sort((a,b)=>b.createdAt-a.createdAt);
+    if(own){
+      const [msgs,insts,pub,prof]=await Promise.all([listAll("messages"),listAll("installers"),getDoc("config/public"),getDoc("config/ownerProfile")]);
+      D.messages=msgs.sort((a,b)=>b.createdAt-a.createdAt); D.installers=insts; D.config=pub||{}; D.ownerProfile=prof?parse(prof.json):null;
+    }
+    loaded=true;
+  }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
+  loading=false; if(!draft) render();
 }
 
-// ---------- render ----------
-function badge(name){
-  const cfg=configs[name], st=stateOf(name);
-  if(!cfg) return '<span class="badge new">חדש · ממתין להגדרה</span>';
-  if(st && (st.appliedRev||0) >= (cfg.rev||0)) return '<span class="badge ok">הוחל במכשיר ✓</span>';
-  return '<span class="badge wait">ממתין למכשיר</span>';
+// ---------------------------------------------------------------- derived
+const devById = id => D.devices.find(d=>d._id===id);
+const stateOf = id => { const r=D.reports[id]; return r?parse(r.state)||{}:null; };
+const appsOf = id => { const r=D.reports[id]; return r?parse(r.apps)||[]:null; };
+const lastSeen = id => { const r=D.reports[id]; return r?r.updatedAt:0; };
+function installerLabel(id){
+  if(id==="owner") return D.config.ownerName||"מוקד קיידרואיד";
+  const i=D.installers.find(x=>x._id===id); return i?i.name:(me.role==="installer"&&id===me.uid?me.name:"—");
 }
-function renderList(){
-  const ids=[...new Set([...Object.keys(configs),...Object.keys(reports),...Object.keys(drafts)])].sort((a,b)=>a.localeCompare(b,"he"));
-  $("devCount").textContent=ids.length; $("devEmpty").hidden=ids.length>0;
-  const ul=$("devList"); ul.innerHTML="";
-  ids.forEach(id=>{
-    const li=document.createElement("li"); li.className=id===sel?"sel":"";
-    const r=reports[id];
-    li.innerHTML='<div class="nm"></div><div class="meta"></div>';
-    li.querySelector(".nm").innerHTML=esc(id)+badge(id);
-    li.querySelector(".meta").textContent = r ? ("נראה לאחרונה: "+fmt(r.updatedAt)) : "המכשיר עוד לא התחבר";
-    li.onclick=()=>{ if(sel && drafts[sel] && sel!==id && !confirm("יש שינויים שלא נשמרו. לעבור בכל זאת?")) return;
-      if(sel!==id && sel) delete drafts[sel]; sel=id; renderList(); renderEditor(); };
-    ul.appendChild(li);
+function statusOf(d){
+  if(d.status==="released") return {k:"released",t:"שוחרר"};
+  if(d.status==="active"){ const st=stateOf(d._id); if(!st||(st.appliedRev||0)<(d.rev||0)) return {k:"wait",t:"ממתין למכשיר"}; return {k:"active",t:"מוגן"}; }
+  return {k:"pending",t:"ממתין להפעלה"};
+}
+const pill = s => '<span class="pill '+s.k+'"><span class="dot"></span>'+s.t+'</span>';
+const openRequests = () => D.requests.filter(r=>r.status==="open");
+const openMessages = () => D.messages.filter(m=>m.status==="open");
+const isStale = d => d.status==="active" && lastSeen(d._id) && Date.now()-lastSeen(d._id)>STALE_MS;
+function defaultProfile(){
+  const p = me.role==="owner" ? D.ownerProfile : me.defaultProfile;
+  const s={}; SETTINGS.forEach(([k])=>s[k]=true);
+  return p ? {filter_mode:p.filter_mode||"NavigationMode", settings:Object.assign(s,p.settings||{}), hiddenApps:null}
+           : {filter_mode:"NavigationMode", settings:s, hiddenApps:null};
+}
+function currentPolicy(d){
+  const st=stateOf(d._id);
+  const p=parse(d.policy);
+  if(p) return {filter_mode:p.filter_mode, settings:Object.assign({},p.settings||{}), hiddenApps:p.hiddenApps||(st&&st.hiddenApps)||null};
+  if(st&&st.protected) return {filter_mode:st.filter_mode||"NavigationMode", settings:Object.assign({},st.settings||{}), hiddenApps:st.hiddenApps||null};
+  const dp=defaultProfile(); if(st&&Array.isArray(st.hiddenApps)) dp.hiddenApps=st.hiddenApps; return dp;
+}
+
+// ---------------------------------------------------------------- router
+function render(){
+  if(!me) return;
+  const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"), route=i<0?h:h.slice(0,i), arg=i<0?"":decodeURIComponent(h.slice(i+1));
+  const tabs=[["overview","סקירה"],["devices","מכשירים"],["requests","בקשות",openRequests().length]];
+  if(me.role==="owner") tabs.push(["messages","פניות",openMessages().length],["installers","מתקינים"]);
+  tabs.push(["settings","הגדרות"]);
+  const cur = route==="device"?"devices":route;
+  $("tabs").innerHTML=tabs.map(([k,t,n])=>'<a href="#'+k+'" class="'+(k===cur?"on":"")+'">'+t+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("");
+  const v=$("view");
+  if(!loaded){ v.innerHTML='<div class="empty">טוען…</div>'; return; }
+  const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,settings:vSettings};
+  if((route==="messages"||route==="installers")&&me.role!=="owner") return vOverview(v);
+  (views[route]||vOverview)(v);
+}
+
+// ---------------------------------------------------------------- overview
+function vOverview(v){
+  const act=D.devices.filter(d=>d.status==="active").length, pend=D.devices.filter(d=>d.status==="pending").length;
+  const stale=D.devices.filter(isStale), reqs=openRequests(), att=attention();
+  v.innerHTML=`<div class="grid">
+    ${me.role==="installer"?`<div class="note ok">קוד המתקין שלך: <b class="num" style="font-size:18px;letter-spacing:2px">${esc(me.code)}</b> · מסרו אותו למי שמתקין לבד, כדי שהמכשיר יגיע אליכם.</div>`:""}
+    <div class="tiles">
+      <a class="tile" href="#devices"><div class="v num">${act}</div><div class="l">מכשירים מוגנים</div></a>
+      <a class="tile ${pend?"alert":""}" href="#devices"><div class="v num">${pend}</div><div class="l">ממתינים להפעלה</div></a>
+      <a class="tile ${reqs.length?"alert":""}" href="#requests"><div class="v num">${reqs.length}</div><div class="l">בקשות פתוחות</div></a>
+      <a class="tile ${stale.length?"alert":""}" href="#devices"><div class="v num">${stale.length}</div><div class="l">לא התחברו 3 ימים ומעלה</div></a>
+    </div>
+    <div class="split">
+      <section class="card"><div class="hd"><h2>בקשות פתוחות</h2><span class="spacer"></span><a class="btn text sm" href="#requests">לכל הבקשות</a></div>
+        <div class="list">${reqs.slice(0,6).map(reqItem).join("")||'<div class="empty">אין בקשות פתוחות</div>'}</div></section>
+      <section class="card"><div class="hd"><h2>דורשים תשומת לב</h2></div>
+        <div class="list">${att.map(d=>`<a class="item" style="text-decoration:none;color:inherit" href="#device/${encodeURIComponent(d._id)}">
+          <div class="main"><div class="t">${esc(d.name)}</div><div class="muted">${esc(d.why)}</div></div>${pill(statusOf(d))}</a>`).join("")||'<div class="empty">הכל תקין</div>'}</div></section>
+    </div></div>`;
+}
+function attention(){
+  const out=[];
+  D.devices.forEach(d=>{
+    const st=stateOf(d._id), x=w=>out.push(Object.assign({why:w},d));
+    if(d.status==="pending") x("נרשם "+ago(d.createdAt)+", ממתין להפעלה");
+    else if(d.status==="released") return;
+    else if(isStale(d)) x("לא התחבר "+ago(lastSeen(d._id)));
+    else if(st&&st.lastErr) x("שגיאה במכשיר: "+st.lastErr);
+    else if(st&&st.owner===false) x("האפליקציה אינה מנהלת את המכשיר");
   });
+  return out.slice(0,8);
 }
-function draft(){ if(!drafts[sel]) drafts[sel]=JSON.parse(JSON.stringify(working(sel))); const m=$("saveMsg"); if(m) m.textContent="יש שינויים שלא נשמרו"; return drafts[sel]; }
-
-function renderEditor(){
-  const box=$("editor");
-  if(!sel){ box.innerHTML='<div class="empty">בחר מכשיר מהרשימה.</div>'; $("edTitle").textContent="בחר מכשיר"; $("delBtn").hidden=true; return; }
-  const c=working(sel), st=stateOf(sel), apps=appsOf(sel), r=reports[sel];
-  $("edTitle").innerHTML=esc(sel)+badge(sel); $("delBtn").hidden=false;
-
-  let status = r ? ("נראה לאחרונה: "+fmt(r.updatedAt)+(st&&st.appVersion?" · גרסה "+esc(st.appVersion):"")) : "המכשיר עוד לא התחבר. ודא שהשם הוקלד במכשיר בדיוק כך.";
-  if(st && st.owner===false) status+=" · ⚠ האפליקציה אינה מנהלת המכשיר, שינויים לא יוחלו";
-  if(st && st.protected===false) status+=" · ⚠ ההגנה עוד לא הופעלה במכשיר, שינויים לא יוחלו";
-
-  const modes=MODES.map(m=>`<label class="tl" style="cursor:pointer"><input type="radio" name="fMode" value="${m.v}" ${c.filter_mode===m.v?"checked":""} style="width:auto">
-      <div class="tt"><b>${m.t}</b><small>${esc(m.d)}</small></div></label>`).join("");
-  const sets=SETTINGS.map(d=>{
-    let row=`<div class="tl"><div class="tt"><b>${d.b}</b></div>
-      <label class="sw"><input type="checkbox" data-set="${d.k}" ${c.settings[d.k]?"checked":""} aria-label="${d.b}"><span></span></label></div>`;
-    if(d.k==="disable_sensible_apps" && c.settings[d.k]) row+=sensBlock(c,apps);
-    return row; }).join("");
-
-  box.innerHTML=`
-    <div class="statusline">${status}</div>
-    <div class="field"><label>מסלול</label>${modes}</div>
-    <div class="field"><label>הגדרות</label>${sets}</div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button class="btn primary" id="saveBtn">שמור ושלח למכשיר</button>
-      <span class="info" id="saveMsg">${drafts[sel]?"יש שינויים שלא נשמרו":(configs[sel]?("נשמר "+fmt(configs[sel].updatedAt)):"עדיין לא נשמר. מוצג המצב הנוכחי במכשיר.")}</span></div>`;
-
-  box.querySelectorAll('input[name="fMode"]').forEach(el=>el.onchange=e=>{draft().filter_mode=e.target.value;});
-  box.querySelectorAll("[data-set]").forEach(el=>el.onchange=e=>{draft().settings[e.target.dataset.set]=e.target.checked; if(e.target.dataset.set==="disable_sensible_apps") renderEditor();});
-  box.querySelectorAll("[data-hid]").forEach(el=>el.onchange=e=>{
-    const d=draft(); const set=new Set(d.hiddenApps||[]);
-    e.target.checked ? set.add(e.target.dataset.hid) : set.delete(e.target.dataset.hid);
-    d.hiddenApps=[...set]; });
-  $("saveBtn").onclick=save;
+function reqItem(r){
+  const d=devById(r.deviceId)||{name:"מכשיר לא ידוע"};
+  return `<div class="item"><div class="badgeicon" style="background:var(--warn-c);color:var(--warn)">${icon(r.type==="activate"?"shield":"edit")}</div>
+    <div class="main"><div class="t">${esc(REQ_TYPE[r.type]||r.type)} · ${esc(d.name)}</div>
+      <div class="muted">${when(r.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(r.installerId)):""}</div>
+      ${r.text?`<div class="x">${esc(r.text)}</div>`:""}</div>
+    <div class="row">${r.status==="open"?`<a class="btn fill sm" href="#device/${encodeURIComponent(r.deviceId)}">טיפול</a>
+      <button class="btn out sm" data-reject="${esc(r._id)}">דחה</button>`:`<span class="pill ${r.status==="approved"?"active":"released"}">${r.status==="approved"?"אושרה":"נדחתה"}</span>`}</div></div>`;
 }
-function sensBlock(c,apps){
-  if(!apps) return '<div class="warnbox">המכשיר עוד לא שלח את רשימת האפליקציות שלו.</div>';
-  const chosen=new Set(c.hiddenApps||[]);
-  const rows=apps.map(a=>`<label><input type="checkbox" data-hid="${esc(a.p)}" ${chosen.has(a.p)?"checked":""}>
-      <div><div>${esc(a.l)}</div><div class="p">${esc(a.p)}</div></div></label>`).join("");
-  return `<div class="warnbox">${SENS_WARN}</div><div class="applist">${rows||'<div class="info">אין אפליקציות</div>'}</div>`;
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-reject]"); if(!b) return;
+  const r=D.requests.find(x=>x._id===b.dataset.reject); if(!r) return;
+  b.disabled=true;
+  try{ await commit([{set:"requests/"+r._id,data:{status:"rejected",handledBy:me.uid,handledAt:Date.now()},mask:["status","handledBy","handledAt"]},
+                     audit(r.deviceId,"request_rejected",REQ_TYPE[r.type])]);
+       toast("הבקשה נדחתה"); load(); }catch(err){ toast("הפעולה נכשלה"); b.disabled=false; }
+});
+
+// ---------------------------------------------------------------- devices
+let devFilter="all", devSearch="";
+function vDevices(v){
+  const f={all:"הכל",pending:"ממתינים להפעלה",active:"מוגנים",stale:"לא מתחברים",released:"שוחררו"};
+  v.innerHTML=`<section class="card"><div class="bd">
+    <div class="toolbar"><input type="search" id="q" placeholder="חיפוש לפי שם או טלפון" value="${esc(devSearch)}" aria-label="חיפוש">
+      <div class="chips">${Object.entries(f).map(([k,t])=>`<button class="chip ${devFilter===k?"on":""}" data-f="${k}">${t}</button>`).join("")}</div></div>
+    <div class="tablewrap"><table><thead><tr><th>שם</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
+    <tbody id="devRows"></tbody></table></div><div id="devEmpty" class="empty" hidden>לא נמצאו מכשירים</div></div></section>`;
+  const draw=()=>{
+    const q=devSearch.trim();
+    const rows=D.devices.filter(d=>{
+      if(q && !(String(d.name).includes(q)||String(d.phone).includes(q))) return false;
+      if(devFilter==="stale") return isStale(d);
+      return devFilter==="all"||d.status===devFilter;
+    }).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(b.createdAt||0)-(a.createdAt||0));
+    $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{};
+      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td><b>${esc(d.name)}</b></td>
+      <td class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</td>${me.role==="owner"?`<td>${esc(installerLabel(d.installerId))}</td>`:""}
+      <td>${pill(statusOf(d))}</td><td>${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
+      <td>${ago(lastSeen(d._id))}</td><td class="num">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
+    $("devEmpty").hidden=rows.length>0;
+  };
+  draw();
+  $("q").oninput=e=>{devSearch=e.target.value; draw();};
+  v.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{devFilter=b.dataset.f; vDevices(v);});
+  $("devRows").onclick=e=>{const tr=e.target.closest("tr[data-go]"); if(tr) location.hash="#device/"+tr.dataset.go;};
 }
 
-$("addBtn").onclick=()=>{
-  const name=norm($("newName").value); if(!name) return;
-  if(name.includes("/")){ alert("השם לא יכול להכיל את התו /"); return; }
-  $("newName").value=""; if(sel && sel!==name) delete drafts[sel];
-  sel=name; if(!configs[name]) drafts[name]=JSON.parse(JSON.stringify(working(name)));
-  renderList(); renderEditor();
-};
-$("newName").addEventListener("keydown",e=>{if(e.key==="Enter")$("addBtn").click();});
-$("delBtn").onclick=async()=>{
-  if(!sel||!confirm("למחוק את \""+sel+"\" מהפאנל? ההגדרות שכבר הוחלו במכשיר נשארות, אבל הוא יפסיק לקבל שינויים מרחוק.")) return;
-  try{ await commit([{delete:docName("devices",sel)},{delete:docName("deviceApps",sel)}]); }catch(e){ alert("המחיקה נכשלה"); }
-  delete drafts[sel]; sel=null; renderList(); renderEditor(); load();
-};
-window.addEventListener("beforeunload",e=>{ if(Object.keys(drafts).length){ e.preventDefault(); e.returnValue=""; }});
+// ---------------------------------------------------------------- device page
+function vDevice(id){
+  const v=$("view"), d=devById(id);
+  if(!d){ v.innerHTML='<a class="back" href="#devices">'+icon("back")+' חזרה למכשירים</a><div class="empty">המכשיר לא נמצא</div>'; return; }
+  const st=stateOf(id)||{}, apps=appsOf(id), s=statusOf(d), myReqs=D.requests.filter(r=>r.deviceId===id);
+  const openReq=myReqs.find(r=>r.status==="open");
+  if(draft&&draft.id!==id) draft=null;
+  const pol = draft ? draft.p : currentPolicy(d);
+  const mark=()=>{ if(!draft) draft={id,p:JSON.parse(JSON.stringify(pol))}; return draft.p; };
+  const warn=[];
+  if(st.owner===false) warn.push("האפליקציה אינה מנהלת את המכשיר, ולכן שינויים לא יוחלו בו.");
+  if(st.lastErr) warn.push("שגיאה אחרונה במכשיר: "+st.lastErr);
+  if(isStale(d)) warn.push("המכשיר לא התחבר "+ago(lastSeen(id))+". השינויים יוחלו כשיתחבר.");
+  const primaryLabel = d.status==="active" ? "שמור והחל במכשיר" : "אשר והפעל את הסינון";
+
+  v.innerHTML=`<a class="back" href="#devices">${icon("back")} חזרה למכשירים</a>
+  <div class="split">
+    <div class="grid">
+      <section class="card"><div class="hd"><h2>${esc(d.name)}</h2>${pill(s)}<span class="spacer"></span>${draft?'<span class="muted">יש שינויים שלא נשמרו</span>':""}</div>
+        <div class="bd">
+          ${openReq?`<div class="note warn" style="margin-bottom:14px"><b>${esc(REQ_TYPE[openReq.type])}</b> · ${when(openReq.createdAt)}${openReq.text?"<br>"+esc(openReq.text):""}</div>`:""}
+          ${warn.map(w=>`<div class="note err" style="margin-bottom:10px">${esc(w)}</div>`).join("")}
+          ${d.status==="released"?`<div class="note info">המכשיר שוחרר ואינו מנוהל יותר.</div>`:`
+          ${d.status==="pending"?`<div class="note info" style="margin-bottom:14px">כך יוגדר המכשיר כשתאשרו. ${d.legacy?"ההגנה כבר פעילה במכשיר מהתקנה קודמת, והאישור יעביר אותו לניהול שלכם.":"עד האישור, הסינון אינו פעיל במכשיר."}</div>`:""}
+          <h3 style="font-size:15px;margin-bottom:10px">מסלול</h3>
+          ${MODES.map(m=>`<label class="opt ${pol.filter_mode===m.v?"on":""}"><input type="radio" name="mode" value="${m.v}" ${pol.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
+          <h3 style="font-size:15px;margin:18px 0 4px">הגדרות</h3>
+          ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-k="${k}" ${pol.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>
+            ${k==="disable_sensible_apps"&&pol.settings[k]?sensBlock(pol,apps):""}`).join("")}
+          <div class="row" style="margin-top:18px">
+            <button class="btn fill" id="saveBtn">${primaryLabel}</button>
+            ${draft?'<button class="btn text" id="undoBtn">בטל שינויים</button>':""}
+            <span class="spacer"></span>
+            ${d.status==="active"||openReq&&openReq.type==="remove"?'<button class="btn danger" id="releaseBtn">שחרר מכשיר</button>':""}
+          </div>`}
+        </div></section>
+      <section class="card"><div class="hd"><h2>היסטוריית בקשות</h2></div>
+        <div class="list">${myReqs.map(reqItem).join("")||'<div class="empty">אין בקשות מהמכשיר</div>'}</div></section>
+    </div>
+    <div class="grid">
+      <section class="card"><div class="hd"><h2>פרטים</h2></div><div class="bd"><dl class="kv">
+        <dt>טלפון</dt><dd class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</dd>
+        ${d.email?`<dt>מייל</dt><dd dir="ltr" style="text-align:right">${esc(d.email)}</dd>`:""}
+        <dt>מתקין</dt><dd>${esc(installerLabel(d.installerId))}</dd>
+        <dt>נרשם</dt><dd>${when(d.createdAt)}</dd>
+        <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
+        <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
+        <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
+      </dl>
+      ${me.role==="owner"?`<div class="field" style="margin:16px 0 0"><label class="f" for="reassign">העבר למתקין</label>
+        <div class="row"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
+        ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}" ${d.installerId===i._id?"selected":""}>${esc(i.name)}</option>`).join("")}</select>
+        <button class="btn out sm" id="reassignBtn">העבר</button></div></div>`:""}
+      </div></section>
+      ${d.status!=="released"?`<section class="card"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
+        <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: בקשו מהמשתמש את המספר שמופיע אצלו במסך "קוד חירום".</p>
+        <div class="field"><label class="f" for="chal">המספר מהמכשיר</label><input type="text" id="chal" inputmode="numeric" dir="ltr" placeholder="8 ספרות" class="num"></div>
+        <div class="field"><label class="f" for="emAct">מה לאשר</label><select id="emAct">${EMERG.map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select></div>
+        <button class="btn tonal" id="emBtn" style="width:100%">צור קוד</button>
+        <div id="emOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode num" id="emCode"></div></div>
+      </div></section>`:""}
+      ${me.role==="owner"?`<section class="card"><div class="hd"><h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>
+        <div><button class="btn danger sm" id="deleteBtn">מחק את המכשיר מהמערכת</button></div>`:""}
+    </div>
+  </div>`;
+
+  v.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{ mark().filter_mode=r.value; vDevice(id); });
+  v.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{ mark().settings[c.dataset.k]=c.checked; vDevice(id); });
+  v.querySelectorAll('[data-app]').forEach(c=>c.onchange=()=>{ const p=mark(); const set=new Set(p.hiddenApps||[]);
+    c.checked?set.add(c.dataset.app):set.delete(c.dataset.app); p.hiddenApps=[...set]; });
+  if($("undoBtn")) $("undoBtn").onclick=()=>{ draft=null; vDevice(id); };
+  if($("saveBtn")) $("saveBtn").onclick=()=>savePolicy(d,pol,openReq);
+  if($("releaseBtn")) $("releaseBtn").onclick=()=>releaseDevice(d,openReq);
+  if($("emBtn")) $("emBtn").onclick=async()=>{
+    const ch=$("chal").value.replace(/\D/g,""); if(ch.length!==8){ toast("המספר מהמכשיר צריך להיות 8 ספרות"); return; }
+    if(!d.secret){ toast("אין למכשיר מפתח חירום"); return; }
+    const act=$("emAct").value, code=await hmacCode(d.secret,ch,act);
+    $("emCode").textContent=code.slice(0,3)+" "+code.slice(3); $("emOut").hidden=false;
+    commit([audit(id,"emergency_code",EMERG.find(x=>x[0]===act)[1])]).catch(()=>{});
+  };
+  if($("reassignBtn")) $("reassignBtn").onclick=async()=>{
+    const to=$("reassign").value; if(to===d.installerId) return;
+    const inst=D.installers.find(i=>i._id===to);
+    try{ await commit([{set:"devices/"+id,data:{installerId:to,installerName:inst?inst.name:(D.config.ownerName||""),installerPhone:inst?inst.phone:(D.config.ownerPhone||"")},mask:["installerId","installerName","installerPhone"]},
+        audit(id,"reassigned","אל "+installerLabel(to))]); toast("המכשיר הועבר"); load(); }catch(e){ toast("ההעברה נכשלה"); }
+  };
+  if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
+    await commit([{del:"devices/"+id},{del:"reports/"+id},audit(id,"deleted",d.name)]); draft=null; location.hash="#devices"; load(); });
+  if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
+    list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
+}
+function sensBlock(pol,apps){
+  if(!apps) return '<div class="note info" style="margin:6px 0 10px">המכשיר עוד לא שלח את רשימת האפליקציות שלו.</div>';
+  const on=new Set(pol.hiddenApps||[]);
+  return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
+  <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}><span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
+}
+const AUDIT={policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה"};
+const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
+const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
+
+async function savePolicy(d,pol,openReq){
+  const b=$("saveBtn"); b.disabled=true; b.textContent="שומר…";
+  const st=stateOf(d._id)||{};
+  const rev=Math.max(Date.now(),(d.rev||0)+1,(st.appliedRev||0)+1);
+  const payload={filter_mode:pol.filter_mode,settings:pol.settings}; if(Array.isArray(pol.hiddenApps)) payload.hiddenApps=pol.hiddenApps;
+  const inst = d.installerId==="owner" ? {name:D.config.ownerName||"",phone:D.config.ownerPhone||""}
+             : (me.role==="installer" ? {name:me.name,phone:me.phone} : (D.installers.find(i=>i._id===d.installerId)||{}));
+  const activating = d.status!=="active";
+  const w=[{set:"devices/"+d._id,data:{status:"active",policy:JSON.stringify(payload),rev,installerName:inst.name||"",installerPhone:inst.phone||"",updatedAt:Date.now(),updatedBy:me.uid},
+            mask:["status","policy","rev","installerName","installerPhone","updatedAt","updatedBy"]},
+           audit(d._id,activating?"activated":"policy_saved",policySummary(pol))];
+  if(openReq&&openReq.type!=="remove") w.push({set:"requests/"+openReq._id,data:{status:"approved",handledBy:me.uid,handledAt:Date.now()},mask:["status","handledBy","handledAt"]});
+  try{ await commit(w); draft=null; toast(activating?"הסינון אושר. הוא יופעל במכשיר בדקות הקרובות.":"נשמר. המכשיר יקבל את השינוי בדקות הקרובות."); await load(); }
+  catch(e){ toast("השמירה נכשלה: "+e.message); b.disabled=false; b.textContent="נסו שוב"; }
+}
+function releaseDevice(d,openReq){
+  confirmDlg("שחרור המכשיר","הסינון יוסר מהמכשיר של "+d.name+", והמשתמש יוכל להסיר את קיידרואיד. אי אפשר לבטל את הפעולה מרחוק.","שחרר",async()=>{
+    const w=[{set:"devices/"+d._id,data:{status:"released",rev:Math.max(Date.now(),(d.rev||0)+1),updatedAt:Date.now(),updatedBy:me.uid},mask:["status","rev","updatedAt","updatedBy"]},
+             audit(d._id,"released",d.name)];
+    if(openReq) w.push({set:"requests/"+openReq._id,data:{status:"approved",handledBy:me.uid,handledAt:Date.now()},mask:["status","handledBy","handledAt"]});
+    await commit(w); draft=null; toast("המכשיר ישוחרר כשיתחבר"); load();
+  },d.name);
+}
+async function hmacCode(secret,ch,act){
+  const enc=new TextEncoder();
+  const k=await crypto.subtle.importKey("raw",enc.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const b=new Uint8Array(await crypto.subtle.sign("HMAC",k,enc.encode(ch+"|"+act)));
+  const n=((b[0]&0x7f)<<24)|(b[1]<<16)|(b[2]<<8)|b[3];
+  return String(n%1000000).padStart(6,"0");
+}
+
+// ---------------------------------------------------------------- requests
+let reqFilter="open";
+function vRequests(v){
+  const list=D.requests.filter(r=>reqFilter==="all"||r.status===reqFilter);
+  v.innerHTML=`<section class="card"><div class="hd"><h2>בקשות ממכשירים</h2><span class="spacer"></span>
+    <div class="chips">${[["open","פתוחות"],["all","הכל"]].map(([k,t])=>`<button class="chip ${reqFilter===k?"on":""}" data-rf="${k}">${t}</button>`).join("")}</div></div>
+    <div class="list">${list.map(reqItem).join("")||'<div class="empty">אין בקשות</div>'}</div></section>`;
+  v.querySelectorAll("[data-rf]").forEach(b=>b.onclick=()=>{reqFilter=b.dataset.rf; vRequests(v);});
+}
+
+// ---------------------------------------------------------------- messages (owner)
+let msgFilter="open";
+function vMessages(v){
+  const list=D.messages.filter(m=>msgFilter==="all"||m.status===msgFilter);
+  v.innerHTML=`<section class="card"><div class="hd"><h2>פניות למערכת</h2><span class="spacer"></span>
+    <div class="chips">${[["open","פתוחות"],["all","הכל"]].map(([k,t])=>`<button class="chip ${msgFilter===k?"on":""}" data-mf="${k}">${t}</button>`).join("")}</div></div>
+    <div class="list">${list.map(m=>{const d=devById(m.deviceId)||{name:"מכשיר לא ידוע",phone:""};
+      return `<div class="item"><div class="badgeicon" style="background:var(--tertiary-c);color:var(--on-tertiary-c)">${icon("chat")}</div>
+      <div class="main"><div class="t">${esc(TOPIC[m.topic]||m.topic)} · ${esc(d.name)} <span class="muted num" dir="ltr">${esc(d.phone)}</span></div>
+        <div class="muted">${when(m.createdAt)}${d.installerId?" · מתקין: "+esc(installerLabel(d.installerId)):""}</div>
+        <div class="x">${esc(m.text)}</div>
+        ${m.reply?`<div class="note ok" style="margin-top:8px"><b>התשובה שלך:</b> ${esc(m.reply)}</div>`:m.status==="closed"?`<div class="muted" style="margin-top:6px">סומנה כטופלה</div>`:
+          `<div class="field" style="margin:10px 0 0"><textarea data-reply="${esc(m._id)}" placeholder="תשובה שתופיע למשתמש באפליקציה" aria-label="תשובה"></textarea></div>
+           <div class="row" style="margin-top:8px"><button class="btn fill sm" data-send="${esc(m._id)}">שלח תשובה</button><button class="btn text sm" data-close="${esc(m._id)}">סמן כטופלה בלי תשובה</button></div>`}
+      </div></div>`;}).join("")||'<div class="empty">אין פניות</div>'}</div></section>`;
+  v.querySelectorAll("[data-mf]").forEach(b=>b.onclick=()=>{msgFilter=b.dataset.mf; vMessages(v);});
+  v.querySelectorAll("[data-send]").forEach(b=>b.onclick=async()=>{
+    const t=v.querySelector(`[data-reply="${b.dataset.send}"]`).value.trim(); if(!t){ toast("כתבו תשובה"); return; }
+    b.disabled=true; try{ await commit([{set:"messages/"+b.dataset.send,data:{reply:t,status:"answered",repliedAt:Date.now()},mask:["reply","status","repliedAt"]}]); toast("התשובה נשלחה"); load(); }catch(e){ toast("השליחה נכשלה"); b.disabled=false; }});
+  v.querySelectorAll("[data-close]").forEach(b=>b.onclick=async()=>{
+    try{ await commit([{set:"messages/"+b.dataset.close,data:{status:"closed"},mask:["status"]}]); load(); }catch(e){ toast("הפעולה נכשלה"); }});
+}
+
+// ---------------------------------------------------------------- installers (owner)
+function vInstallers(v){
+  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>מתקינים</h2></div>
+    <div class="tablewrap"><table><thead><tr><th>שם</th><th>טלפון</th><th>מייל</th><th>קוד מתקין</th><th>מכשירים</th><th>מצב</th><th></th></tr></thead><tbody>
+    ${D.installers.map(i=>`<tr><td><b>${esc(i.name)}</b></td><td class="num" dir="ltr" style="text-align:right">${esc(i.phone)}</td><td dir="ltr" style="text-align:right">${esc(i.email)}</td>
+      <td class="num"><b style="letter-spacing:2px">${esc(i.code)}</b></td><td class="num">${D.devices.filter(d=>d.installerId===i._id).length}</td>
+      <td>${i.active?'<span class="pill active">פעיל</span>':'<span class="pill released">מושבת</span>'}</td>
+      <td><div class="row"><button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
+        <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת":"הפעל"}</button></div></td></tr>`).join("")}
+    </tbody></table>${D.installers.length?"":'<div class="empty">עוד אין מתקינים</div>'}</div></section>
+    <section class="card"><div class="hd"><h2>מתקין חדש</h2></div><form class="bd" id="newInst">
+      <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
+      <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
+      <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
+      <div class="field"><label class="f" for="niPass">סיסמה ראשונית *</label><input id="niPass" type="text" dir="ltr" minlength="8" required>
+        <div class="muted" style="margin-top:4px">לפחות 8 תווים. המתקין יוכל להחליף אותה בהגדרות.</div></div>
+      <button class="btn fill" type="submit" style="width:100%">צור מתקין</button><p class="err" id="niErr"></p></form></section></div>`;
+  $("newInst").onsubmit=async e=>{
+    e.preventDefault(); $("niErr").textContent="";
+    const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase(), pw=$("niPass").value;
+    const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
+    try{
+      const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
+      const j=await r.json(); if(!r.ok) throw new Error(j.error&&j.error.message||"signup");
+      const uid=j.localId; let code="";
+      for(let t=0;t<10;t++){ const c=String(100000+Math.floor(Math.random()*900000)); if(!(await getDoc("installerCodes/"+c))){ code=c; break; } }
+      if(!code) throw new Error("code");
+      await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,createdAt:Date.now()},create:true},
+                    {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
+      toast("המתקין נוצר. קוד המתקין: "+code); load();
+    }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
+  };
+  v.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async()=>{
+    const i=D.installers.find(x=>x._id===b.dataset.toggle), on=!i.active;
+    const w=[{set:"installers/"+i._id,data:{active:on},mask:["active"]},
+      on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:i.phone}}:{del:"installerCodes/"+i.code}];
+    try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
+  });
+  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין קישור לאיפוס סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+}
+
+// ---------------------------------------------------------------- settings
+function vSettings(v){
+  const own=me.role==="owner", p=defaultProfile();
+  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>פרופיל ברירת מחדל</h2></div><div class="bd">
+    <p class="muted" style="margin-top:0">כך יוגדר כל מכשיר חדש ${own?"שמשויך אליך":"שלך"} כשתאשרו לו הפעלה. אפשר לשנות לפני האישור.</p>
+    ${MODES.map(m=>`<label class="opt ${p.filter_mode===m.v?"on":""}"><input type="radio" name="dmode" value="${m.v}" ${p.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
+    ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-dk="${k}" ${p.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}
+    <button class="btn fill" id="saveProf" style="margin-top:16px">שמור פרופיל</button></div></section>
+    <div class="grid">
+    ${own?`<section class="card"><div class="hd"><h2>פרטי המוקד</h2></div><form class="bd" id="pubForm">
+      <p class="muted" style="margin-top:0">מוצגים במכשירים שנרשמו בלי קוד מתקין.</p>
+      <div class="field"><label class="f" for="oName">שם</label><input id="oName" type="text" value="${esc(D.config.ownerName||"מוקד קיידרואיד")}"></div>
+      <div class="field"><label class="f" for="oPhone">טלפון</label><input id="oPhone" type="tel" dir="ltr" value="${esc(D.config.ownerPhone||"")}"></div>
+      <button class="btn tonal" type="submit">שמור</button></form></section>`:
+     `<section class="card"><div class="hd"><h2>הפרטים שלי</h2></div><div class="bd"><dl class="kv"><dt>שם</dt><dd>${esc(me.name)}</dd><dt>טלפון</dt><dd dir="ltr" style="text-align:right">${esc(me.phone)}</dd><dt>קוד מתקין</dt><dd><b class="num" style="letter-spacing:2px">${esc(me.code)}</b></dd></dl></div></section>`}
+    <section class="card"><div class="hd"><h2>החלפת סיסמה</h2></div><form class="bd" id="pwForm">
+      <div class="field"><label class="f" for="np">סיסמה חדשה</label><input id="np" type="password" dir="ltr" minlength="8" autocomplete="new-password" required></div>
+      <button class="btn tonal" type="submit">החלף סיסמה</button><p class="err" id="pwErr"></p></form></section></div></div>`;
+  $("saveProf").onclick=async()=>{
+    const fm=(v.querySelector('input[name=dmode]:checked')||{}).value||"NavigationMode", s={};
+    v.querySelectorAll("[data-dk]").forEach(c=>s[c.dataset.dk]=c.checked);
+    const json=JSON.stringify({filter_mode:fm,settings:s});
+    try{ if(own){ await commit([{set:"config/ownerProfile",data:{json}}]); D.ownerProfile=parse(json); }
+         else{ await commit([{set:"installers/"+me.uid,data:{defaultProfile:json},mask:["defaultProfile"]}]); me.defaultProfile=parse(json); }
+         toast("הפרופיל נשמר"); }catch(e){ toast("השמירה נכשלה"); }
+  };
+  v.querySelectorAll('input[name=dmode]').forEach(r=>r.onchange=()=>v.querySelectorAll(".opt").forEach(o=>o.classList.toggle("on",o.contains(v.querySelector('input[name=dmode]:checked')))));
+  if($("pubForm")) $("pubForm").onsubmit=async e=>{ e.preventDefault();
+    try{ await commit([{set:"config/public",data:{ownerName:$("oName").value.trim(),ownerPhone:$("oPhone").value.trim()}}]); toast("נשמר"); load(); }catch(err){ toast("השמירה נכשלה"); } };
+  $("pwForm").onsubmit=async e=>{ e.preventDefault(); $("pwErr").textContent="";
+    try{ await auth.currentUser.updatePassword($("np").value); toast("הסיסמה הוחלפה"); e.target.reset(); }
+    catch(err){ $("pwErr").textContent=err.code==="auth/requires-recent-login"?"מטעמי אבטחה, צאו והיכנסו שוב ואז נסו שוב.":"ההחלפה נכשלה."; } };
+}
+
+// ---------------------------------------------------------------- dialog
+function confirmDlg(title,body,okLabel,fn,typeToConfirm){
+  const dlg=$("dlg");
+  $("dlgIn").innerHTML=`<h3>${esc(title)}</h3><p class="muted">${esc(body)}</p>
+    ${typeToConfirm?`<div class="field"><label class="f" for="dlgType">לאישור, הקלידו את השם: <b>${esc(typeToConfirm)}</b></label><input id="dlgType" type="text"></div>`:""}
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn danger fill" id="dlgOk" ${typeToConfirm?"disabled":""}>${esc(okLabel)}</button></div>`;
+  if(typeToConfirm) $("dlgType").oninput=e=>{$("dlgOk").disabled=e.target.value.trim()!==String(typeToConfirm).trim();};
+  $("dlgNo").onclick=()=>dlg.close();
+  $("dlgOk").onclick=async()=>{ $("dlgOk").disabled=true; try{ await fn(); dlg.close(); }catch(e){ toast("הפעולה נכשלה"); $("dlgOk").disabled=false; } };
+  dlg.showModal();
+}
 </script>
 </body>
 </html>
