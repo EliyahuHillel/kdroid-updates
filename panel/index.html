@@ -88,6 +88,19 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);m
 .pill.active{background:var(--primary-c);color:var(--on-primary-c)}
 .pill.pending{background:var(--warn-c);color:var(--warn)}
 .pill.released{background:var(--variant);color:var(--on-variant)}
+.instblock{border:1px solid var(--outline-v);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.insthead{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap}
+.insthead .main{flex:1;min-width:200px}
+.instperm{display:flex;flex-wrap:wrap;gap:4px 24px;align-items:center;padding:0 16px 10px}
+.instperm .sw{flex:1;min-width:220px;border:0;padding:4px 0}
+.instdevs{border-top:1px solid var(--outline-v);background:var(--surface-hi)}
+.instdevs .item{flex-wrap:wrap;padding:12px 16px;gap:10px;align-items:center;border-bottom:1px solid var(--outline-v)}
+.instdevs .item:last-child{border-bottom:0}
+.instdevs .item .main{min-width:200px}
+.instdevs .row{flex-wrap:nowrap;gap:8px;align-items:center}
+.instdevs select{width:auto;min-width:140px;max-width:240px;height:36px;padding:0 10px}
+.instdevs .addrow .row select{flex:1;max-width:none}
+.instdevs .empty{padding:16px}
 .pill.wait{background:var(--tertiary-c);color:var(--on-tertiary-c)}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
 .empty{text-align:center;color:var(--on-variant);padding:36px 16px}
@@ -260,6 +273,7 @@ async function commit(writes){
     const o={update:{name:DOCS+"/"+w.set,fields:encode(w.data)}};
     if(w.mask) o.updateMask={fieldPaths:w.mask};
     if(w.create) o.currentDocument={exists:false};
+    if(w.exists) o.currentDocument={exists:true};
     return o; })});
   typing=false; // a saved form is done; let the page refresh again
 }
@@ -277,11 +291,12 @@ auth.onAuthStateChanged(async u=>{
   clearInterval(pollT); me=null; loaded=false; draft=null;
   if(!u){ $("loginView").hidden=false; $("appView").hidden=true; return; }
   try{
-    if(u.email===OWNER_EMAIL) me={uid:u.uid,email:u.email,role:"owner",name:"מנהל המערכת"};
+    if(u.email===OWNER_EMAIL) me={uid:u.uid,email:u.email,role:"owner",name:"מנהל המערכת",canRelease:true,canDelete:true};
     else{
       const inst=await getDoc("installers/"+u.uid);
       if(!inst||inst.active!==true){ $("loginErr").textContent="החשבון אינו פעיל. פנו למנהל המערכת."; await auth.signOut(); return; }
-      me={uid:u.uid,email:u.email,role:"installer",name:inst.name,phone:inst.phone,code:inst.code,defaultProfile:parse(inst.defaultProfile)};
+      me={uid:u.uid,email:u.email,role:"installer",name:inst.name,phone:inst.phone,code:inst.code,defaultProfile:parse(inst.defaultProfile),
+          canRelease:inst.canRelease!==false,canDelete:inst.canDelete===true};
     }
   }catch(e){ $("loginErr").textContent="לא הצלחתי להתחבר לשרת. נסו שוב."; return; }
   $("loginView").hidden=true; $("appView").hidden=false;
@@ -319,6 +334,10 @@ async function load(){
       const [msgs,insts,pub,prof]=await Promise.all([listAll("messages"),listAll("installers"),getDoc("config/public"),getDoc("config/ownerProfile")]);
       D.messages=msgs.sort((a,b)=>b.createdAt-a.createdAt); D.installers=insts; D.config=pub||{}; D.ownerProfile=prof?parse(prof.json):null;
     }
+    else{
+      const inst=await getDoc("installers/"+me.uid).catch(()=>null);
+      if(inst){ me.canRelease=inst.canRelease!==false; me.canDelete=inst.canDelete===true; }
+    }
     loaded=true;
   }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
   loading=false; if(!draft&&!typing) render(); else renderTabs();
@@ -344,6 +363,12 @@ const openMessages = () => D.messages.filter(m=>m.status==="open");
 const issuesOf = id => { const st=stateOf(id); return st&&Array.isArray(st.issues)?st.issues:[]; };
 const issueText = i => (i.l||i.p)+": "+(i.kind==="outdated"?"הגרסה במכשיר ישנה מדי ("+(i.have||"?")+", נדרשת לפחות "+i.need+"). יש לעדכן את האפליקציה."
   :"האפליקציה עברה שינויים ואינה גרסה רשמית. יש להסיר אותה ולהתקין גרסה רשמית.");
+const hwidOf = d => d.hwid || (stateOf(d._id)||{}).hwid || "";
+const modelOf = d => d.model || (stateOf(d._id)||{}).model || "";
+/** other registrations of the same phone (same hardware id), oldest first */
+const earlierOf = d => { const h=hwidOf(d); if(!h) return [];
+  return D.devices.filter(x=>x._id!==d._id && hwidOf(x)===h).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); };
+const isReturning = d => earlierOf(d).some(x=>(x.createdAt||0)<(d.createdAt||0));
 const isStale = d => d.status==="active" && lastSeen(d._id) && Date.now()-lastSeen(d._id)>STALE_MS;
 function defaultProfile(){
   const p = me.role==="owner" ? D.ownerProfile : me.defaultProfile;
@@ -405,7 +430,7 @@ function attention(){
   const out=[];
   D.devices.forEach(d=>{
     const st=stateOf(d._id), x=w=>out.push(Object.assign({why:w},d));
-    if(d.status==="pending") x("נרשם "+ago(d.createdAt)+", ממתין להפעלה");
+    if(d.status==="pending") x((isReturning(d)?"מכשיר שהיה רשום בעבר · ":"")+"נרשם "+ago(d.createdAt)+", ממתין להפעלה");
     else if(d.status==="released") return;
     else if(isStale(d)) x("לא התחבר "+ago(lastSeen(d._id)));
     else if(issuesOf(d._id).length) x("בעיה ב"+issuesOf(d._id).map(i=>i.l||i.p).join(", ")+": האפליקציה לא תתחבר לרשת");
@@ -449,7 +474,7 @@ function vDevices(v){
       return devFilter==="all"||d.status===devFilter;
     }).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(b.createdAt||0)-(a.createdAt||0));
     $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{};
-      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td><b>${esc(d.name)}</b></td>
+      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}</td>
       <td class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</td>${me.role==="owner"?`<td>${esc(installerLabel(d.installerId))}</td>`:""}
       <td>${pill(statusOf(d))}${issuesOf(d._id).length?' <span class="pill pending" title="'+esc(issuesOf(d._id).map(issueText).join("\n"))+'">⚠ '+(issuesOf(d._id).length===1?'בעיה אחת':issuesOf(d._id).length+' בעיות')+'</span>':""}</td><td>${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
       <td>${ago(lastSeen(d._id))}</td><td class="num">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
@@ -475,6 +500,10 @@ function vDevice(id){
   issuesOf(id).forEach(i=>warn.push(issueText(i)));
   if(st.lastErr) warn.push("שגיאה אחרונה במכשיר: "+st.lastErr);
   if(isStale(d)) warn.push("המכשיר לא התחבר "+ago(lastSeen(id))+". השינויים יוחלו כשיתחבר.");
+  const earlier=earlierOf(d);
+  const returningNote = earlier.length ? `<div class="note warn" style="margin-bottom:14px"><b>${isReturning(d)?"המכשיר הזה כבר היה רשום במערכת בעבר":"המכשיר הזה נרשם שוב מאוחר יותר"}</b>
+    ${earlier.map(x=>`<div style="margin-top:6px">${isReturning(d)&&(x.createdAt||0)<(d.createdAt||0)?"הרשמה קודמת":"הרשמה נוספת"}: <a href="#device/${encodeURIComponent(x._id)}">${esc(x.name)}</a>
+      · ${esc(x.phone||"")} · ${esc(statusOf(x).t)}${me.role==="owner"?" · "+esc(installerLabel(x.installerId)):""} · נרשם ${when(x.createdAt)}</div>`).join("")}</div>` : "";
   const primaryLabel = d.status==="active" ? "שמור והחל במכשיר" : "אשר והפעל את הסינון";
 
   v.innerHTML=`<a class="back" href="#devices">${icon("back")} חזרה למכשירים</a>
@@ -482,6 +511,7 @@ function vDevice(id){
     <div class="grid">
       <section class="card"><div class="hd"><h2>${esc(d.name)}</h2>${pill(s)}<span class="spacer"></span>${draft?'<span class="muted">יש שינויים שלא נשמרו</span>':""}</div>
         <div class="bd">
+          ${returningNote}
           ${openReq?`<div class="note warn" style="margin-bottom:14px"><b>${esc(REQ_TYPE[openReq.type])}</b> · ${when(openReq.createdAt)}${openReq.text?"<br>"+esc(openReq.text):""}</div>`:""}
           ${warn.map(w=>`<div class="note err" style="margin-bottom:10px">${esc(w)}</div>`).join("")}
           ${d.status==="released"?`<div class="note info">המכשיר שוחרר ואינו מנוהל יותר.</div>`:`
@@ -495,7 +525,8 @@ function vDevice(id){
             <button class="btn fill" id="saveBtn">${primaryLabel}</button>
             ${draft?'<button class="btn text" id="undoBtn">בטל שינויים</button>':""}
             <span class="spacer"></span>
-            ${d.status==="active"||openReq&&openReq.type==="remove"?'<button class="btn danger" id="releaseBtn">שחרר מכשיר</button>':""}
+            ${(d.status==="active"||openReq&&openReq.type==="remove")?(me.canRelease?'<button class="btn danger" id="releaseBtn">שחרר מכשיר</button>'
+              :'<span class="muted">שחרור מכשירים מתבצע על ידי מנהל המערכת</span>'):""}
           </div>`}
         </div></section>
       <section class="card"><div class="hd"><h2>היסטוריית בקשות</h2></div>
@@ -509,6 +540,7 @@ function vDevice(id){
         <dt>נרשם</dt><dd>${when(d.createdAt)}</dd>
         <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
         <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
+        ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
         <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
       </dl>
       ${me.role==="owner"?`<div class="sw" style="margin-top:10px"><span>חסום פניות למערכת מהמכשיר הזה</span><label class="toggle"><input type="checkbox" id="msgBlk" ${d.msgBlocked?"checked":""} aria-label="חסום פניות"><i></i></label></div>`:""}
@@ -520,12 +552,12 @@ function vDevice(id){
       ${d.status!=="released"?`<section class="card"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
         <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: בקשו מהמשתמש את המספר שמופיע אצלו במסך "קוד חירום".</p>
         <div class="field"><label class="f" for="chal">המספר מהמכשיר</label><input type="text" id="chal" inputmode="numeric" dir="ltr" placeholder="8 ספרות" class="num"></div>
-        <div class="field"><label class="f" for="emAct">מה לאשר</label><select id="emAct">${EMERG.map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select></div>
+        <div class="field"><label class="f" for="emAct">מה לאשר</label><select id="emAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select></div>
         <button class="btn tonal" id="emBtn" style="width:100%">צור קוד</button>
         <div id="emOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode num" id="emCode"></div></div>
       </div></section>`:""}
-      ${me.role==="owner"?`<section class="card"><div class="hd"><h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>
-        <div><button class="btn danger sm" id="deleteBtn">מחק את המכשיר מהמערכת</button></div>`:""}
+      ${me.role==="owner"?`<section class="card"><div class="hd"><h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>`:""}
+      ${me.canDelete?`<div><button class="btn danger sm" id="deleteBtn">מחק את המכשיר מהמערכת</button></div>`:""}
     </div>
   </div>`;
 
@@ -539,19 +571,24 @@ function vDevice(id){
   if($("emBtn")) $("emBtn").onclick=async()=>{
     const ch=$("chal").value.replace(/\D/g,""); if(ch.length!==8){ toast("המספר מהמכשיר צריך להיות 8 ספרות"); return; }
     if(!d.secret){ toast("אין למכשיר מפתח חירום"); return; }
-    const act=$("emAct").value, code=await hmacCode(d.secret,ch,act);
+    const act=$("emAct").value;
+    let key=d.secret;
+    if(act==="release"){
+      if(!me.canRelease){ toast("אין לך הרשאה לשחרר מכשירים"); return; }
+      const sec=await getDoc("deviceSecrets/"+id).catch(()=>null);
+      if(sec&&sec.release) key=sec.release; // devices from version 0.9.9.65 on keep a separate release key
+    }
+    const code=await hmacCode(key,ch,act);
     $("emCode").textContent=code.slice(0,3)+" "+code.slice(3); $("emOut").hidden=false;
     commit([audit(id,"emergency_code",EMERG.find(x=>x[0]===act)[1])]).catch(()=>{});
   };
   if($("msgBlk")) $("msgBlk").onchange=()=>setMsgBlock(id,()=>vDevice(id));
   if($("reassignBtn")) $("reassignBtn").onclick=async()=>{
     const to=$("reassign").value; if(to===d.installerId) return;
-    const inst=D.installers.find(i=>i._id===to);
-    try{ await commit([{set:"devices/"+id,data:{installerId:to,installerName:inst?inst.name:(D.config.ownerName||""),installerPhone:inst?inst.phone:(D.config.ownerPhone||"")},mask:["installerId","installerName","installerPhone"]},
-        audit(id,"reassigned","אל "+installerLabel(to))]); toast("המכשיר הועבר"); load(); }catch(e){ toast("ההעברה נכשלה"); }
+    try{ await reassign(d,to); toast("המכשיר הועבר"); load(); }catch(e){ toast("ההעברה נכשלה"); }
   };
   if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
-    await commit([{del:"devices/"+id},{del:"reports/"+id},audit(id,"deleted",d.name)]); draft=null; location.hash="#devices"; load(); });
+    await commit([{del:"devices/"+id},{del:"reports/"+id},audit(id,"deleted",d.name)].concat(me.role==="owner"?[{del:"deviceSecrets/"+id}]:[])); draft=null; location.hash="#devices"; load(); });
   if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
     list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
 }
@@ -561,7 +598,7 @@ function sensBlock(pol,apps){
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
   <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}><span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
-const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה"};
+const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
 const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
 
@@ -594,6 +631,16 @@ async function hmacCode(secret,ch,act){
   const b=new Uint8Array(await crypto.subtle.sign("HMAC",k,enc.encode(ch+"|"+act)));
   const n=((b[0]&0x7f)<<24)|(b[1]<<16)|(b[2]<<8)|b[3];
   return String(n%1000000).padStart(6,"0");
+}
+
+/** Moves a device to another installer (owner only). The device's report and open requests move with it. */
+async function reassign(d,to){
+  const inst=D.installers.find(i=>i._id===to);
+  const w=[{set:"devices/"+d._id,data:{installerId:to,installerName:inst?inst.name:(D.config.ownerName||""),installerPhone:inst?inst.phone:(D.config.ownerPhone||"")},mask:["installerId","installerName","installerPhone"]}];
+  if(D.reports[d._id]) w.push({set:"reports/"+d._id,data:{installerId:to},mask:["installerId"],exists:true});
+  D.requests.filter(r=>r.deviceId===d._id&&r.status==="open").forEach(r=>w.push({set:"requests/"+r._id,data:{installerId:to},mask:["installerId"]}));
+  w.push(audit(d._id,"reassigned","אל "+installerLabel(to)));
+  await commit(w);
 }
 
 // ---------------------------------------------------------------- requests
@@ -644,15 +691,40 @@ async function setMsgBlock(id,after){
 }
 
 // ---------------------------------------------------------------- installers (owner)
+const instOpen=new Set();
 function vInstallers(v){
-  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>מתקינים</h2></div>
-    <div class="tablewrap"><table><thead><tr><th>שם</th><th>טלפון</th><th>מייל</th><th>קוד מתקין</th><th>מכשירים</th><th>מצב</th><th></th></tr></thead><tbody>
-    ${D.installers.map(i=>`<tr><td><b>${esc(i.name)}</b></td><td class="num" dir="ltr" style="text-align:right">${esc(i.phone)}</td><td dir="ltr" style="text-align:right">${esc(i.email)}</td>
-      <td class="num"><b style="letter-spacing:2px">${esc(i.code)}</b></td><td class="num">${D.devices.filter(d=>d.installerId===i._id).length}</td>
-      <td>${i.active?'<span class="pill active">פעיל</span>':'<span class="pill released">מושבת</span>'}</td>
-      <td><div class="row"><button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
-        <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת":"הפעל"}</button></div></td></tr>`).join("")}
-    </tbody></table>${D.installers.length?"":'<div class="empty">עוד אין מתקינים</div>'}</div></section>
+  const groups=[{_id:"owner",name:(D.config.ownerName||"מוקד קיידרואיד")+" (אני)",self:true}].concat(D.installers);
+  const devsOf = id => D.devices.filter(d=>d.installerId===id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const opts = sel => `<option value="owner" ${sel==="owner"?"selected":""}>${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>`
+    + D.installers.filter(i=>i.active||i._id===sel).map(i=>`<option value="${esc(i._id)}" ${sel===i._id?"selected":""}>${esc(i.name)}</option>`).join("");
+  const block = i => { const list=devsOf(i._id), open=instOpen.has(i._id);
+    const others=D.devices.filter(d=>d.installerId!==i._id).sort((a,b)=>String(a.name).localeCompare(String(b.name),"he"));
+    return `<div class="instblock">
+      <div class="insthead">
+        <div class="main"><div class="t"><b>${esc(i.name)}</b> ${i.self?"":i.active?'<span class="pill active">פעיל</span>':'<span class="pill released">מושבת</span>'}</div>
+          ${i.self?`<div class="muted">מכשירים שנרשמו בלי קוד מתקין</div>`:`<div class="muted"><span class="num" dir="ltr">${esc(i.phone)}</span> · <span dir="ltr">${esc(i.email)}</span> · קוד <b class="num" style="letter-spacing:2px">${esc(i.code)}</b></div>`}</div>
+        <button class="btn tonal sm" data-open="${esc(i._id)}" aria-expanded="${open}">מכשירים · <span class="num">${list.length}</span> ${open?"▴":"▾"}</button>
+      </div>
+      ${i.self?"":`<div class="instperm">
+        <div class="sw"><span>יכול לשחרר מכשירים</span><label class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""} aria-label="יכול לשחרר מכשירים"><i></i></label></div>
+        <div class="sw"><span>יכול למחוק מכשירים מהמערכת</span><label class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""} aria-label="יכול למחוק מכשירים"><i></i></label></div>
+        <div class="row"><button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
+          <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת מתקין":"הפעל מתקין"}</button></div>
+      </div>`}
+      ${open?`<div class="instdevs">
+        ${list.map(d=>`<div class="item"><div class="main"><div class="t"><a href="#device/${encodeURIComponent(d._id)}">${esc(d.name)}</a>${isReturning(d)?' <span class="pill wait">חוזר</span>':""}</div>
+            <div class="muted"><span class="num" dir="ltr">${esc(d.phone)}</span> · ${esc(statusOf(d).t)} · נרשם ${when(d.createdAt)}</div></div>
+          <div class="row"><select data-move="${esc(d._id)}" aria-label="העבר למתקין">${opts(d.installerId)}</select>
+            <button class="btn out sm" data-moveb="${esc(d._id)}">העבר</button></div></div>`).join("")||'<div class="empty">אין מכשירים</div>'}
+        ${others.length?`<div class="item addrow"><div class="main"><div class="t">הוספת מכשיר ל${esc(i.self?"ניהול שלי":i.name)}</div>
+            <div class="row" style="margin-top:6px"><select data-addsel="${esc(i._id)}" aria-label="בחירת מכשיר"><option value="">בחרו מכשיר…</option>
+            ${others.map(d=>`<option value="${esc(d._id)}">${esc(d.name)} · ${esc(d.phone)} · ${esc(installerLabel(d.installerId))}</option>`).join("")}</select>
+          <button class="btn fill sm" data-add="${esc(i._id)}">הוסף</button></div></div></div>`:""}
+      </div>`:""}
+    </div>`; };
+  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>מתקינים ומכשירים</h2></div>
+    <div class="bd"><p class="muted" style="margin-top:0">ברירת המחדל: כל מתקין יכול לשחרר מכשירים, ורק את/ה יכול/ה למחוק מכשיר מהמערכת. אפשר לשנות לכל מתקין בנפרד.</p>
+    ${groups.map(block).join("")}${D.installers.length?"":'<div class="empty">עוד אין מתקינים</div>'}</div></section>
     <section class="card"><div class="hd"><h2>מתקין חדש</h2></div><form class="bd" id="newInst">
       <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
       <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
@@ -670,11 +742,25 @@ function vInstallers(v){
       const uid=j.localId; let code="";
       for(let t=0;t<10;t++){ const c=String(100000+Math.floor(Math.random()*900000)); if(!(await getDoc("installerCodes/"+c))){ code=c; break; } }
       if(!code) throw new Error("code");
-      await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,createdAt:Date.now()},create:true},
+      await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
       toast("המתקין נוצר. קוד המתקין: "+code); load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
+  v.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ const id=b.dataset.open; instOpen.has(id)?instOpen.delete(id):instOpen.add(id); vInstallers(v); });
+  v.querySelectorAll("[data-perm]").forEach(c=>c.onchange=async()=>{
+    const i=D.installers.find(x=>x._id===c.dataset.id), k=c.dataset.perm;
+    try{ await commit([{set:"installers/"+i._id,data:{[k]:c.checked},mask:[k]},audit("","permission",i.name+": "+(k==="canRelease"?"שחרור":"מחיקה")+" "+(c.checked?"מותר":"חסום"))]);
+         i[k]=c.checked; toast("ההרשאה עודכנה"); }catch(e){ c.checked=!c.checked; toast("העדכון נכשל"); }
+  });
+  v.querySelectorAll("[data-moveb]").forEach(b=>b.onclick=async()=>{
+    const d=devById(b.dataset.moveb), to=v.querySelector(`[data-move="${b.dataset.moveb}"]`).value; if(!d||to===d.installerId) return;
+    b.disabled=true; try{ await reassign(d,to); toast("המכשיר הועבר ל"+installerLabel(to)); await load(); }catch(e){ toast("ההעברה נכשלה"); b.disabled=false; }
+  });
+  v.querySelectorAll("[data-add]").forEach(b=>b.onclick=async()=>{
+    const to=b.dataset.add, id=v.querySelector(`[data-addsel="${to}"]`).value, d=devById(id); if(!d){ toast("בחרו מכשיר"); return; }
+    b.disabled=true; try{ await reassign(d,to); toast(d.name+" נוסף ל"+installerLabel(to)); await load(); }catch(e){ toast("ההוספה נכשלה"); b.disabled=false; }
+  });
   v.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async()=>{
     const i=D.installers.find(x=>x._id===b.dataset.toggle), on=!i.active;
     const w=[{set:"installers/"+i._id,data:{active:on},mask:["active"]},
