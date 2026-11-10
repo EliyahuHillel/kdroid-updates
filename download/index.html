@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>קיידרואיד · חסימה כשרה בהתקנה עצמית</title>
+<meta name="description" content="מתקינים לבד, בוחרים מסלול ונועלים. את החסימה אי אפשר להסיר מהמכשיר, רק דרך המוקד.">
+<link rel="icon" href="../panel/icon.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --primary:#006C51; --on-primary:#fff; --primary-c:#83F8CD; --on-primary-c:#002116; --primary-d:#00513C;
+  --secondary-c:#CEE9DB; --on-secondary-c:#082017; --tertiary:#3F6375; --tertiary-c:#C2E8FD; --on-tertiary-c:#001F2B;
+  --error:#BA1A1A; --error-c:#FFDAD6; --on-error-c:#410002; --warn:#8A5100; --warn-c:#FFDDB8;
+  --bg:#F4F6F2; --surface:#FBFDF9; --surface-hi:#EFF1EE; --on:#191C1A; --variant:#DBE5DE; --on-variant:#404944;
+  --outline:#707974; --outline-v:#BFC9C2;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 24px rgba(0,40,30,.07);
+  --font:'Noto Sans Hebrew',system-ui,'Segoe UI',Arial,sans-serif; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#66DBB2; --on-primary:#003829; --primary-c:#00513C; --on-primary-c:#83F8CD; --primary-d:#83F8CD;
+  --secondary-c:#354C42; --on-secondary-c:#CEE9DB; --tertiary:#A7CCE0; --tertiary-c:#264B5C; --on-tertiary-c:#C2E8FD;
+  --error:#FFB4AB; --error-c:#93000A; --on-error-c:#FFDAD6; --warn:#FFB86E; --warn-c:#4A2800;
+  --bg:#0F1311; --surface:#181C1A; --surface-hi:#222624; --on:#E1E3E0; --variant:#3A433E; --on-variant:#BFC9C2;
+  --outline:#89938D; --outline-v:#3A433E; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark;
+}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--on);font-family:var(--font);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--primary)}
+h1,h2,h3{margin:0;line-height:1.25;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+.num{font-variant-numeric:tabular-nums}
+
+/* top */
+.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--outline-v)}
+.top .wrap{display:flex;align-items:center;gap:12px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--on);text-decoration:none}
+.brand img{width:32px;height:32px;border-radius:8px}
+.top nav{margin-inline-start:auto;display:flex;gap:4px}
+.top nav a{color:var(--on-variant);text-decoration:none;font-size:14px;font-weight:500;padding:8px 10px;border-radius:8px}
+.top nav a:hover{background:var(--surface-hi);color:var(--on)}
+@media (max-width:640px){.top nav{display:none}}
+
+/* hero */
+.hero{padding:48px 0 36px;background:radial-gradient(1200px 400px at 85% -10%,color-mix(in srgb,var(--primary-c) 55%,transparent),transparent 70%)}
+.hero .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+@media (max-width:820px){.hero .wrap{grid-template-columns:1fr}.phone{display:none!important}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--secondary-c);color:var(--on-secondary-c);font-weight:600;font-size:13px;padding:5px 12px;border-radius:999px}
+.hero h1{font-size:clamp(30px,5.4vw,46px);font-weight:800;margin-top:16px;letter-spacing:-.5px}
+.hero h1 em{font-style:normal;color:var(--primary)}
+.hero .lead{font-size:clamp(16px,2.2vw,19px);color:var(--on-variant);margin-top:14px;max-width:560px}
+.ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:999px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;border:0;text-decoration:none;transition:transform .08s,box-shadow .15s,background .15s}
+.btn:active{transform:scale(.98)}
+.btn svg{width:22px;height:22px;flex:none}
+.btn.fill{background:var(--primary);color:var(--on-primary);box-shadow:0 4px 14px color-mix(in srgb,var(--primary) 35%,transparent)}
+.btn.fill:hover{background:var(--primary-d);color:var(--on-primary)}
+.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.out{background:transparent;color:var(--primary);border:1.5px solid var(--outline)}
+.btn:disabled{opacity:.55;cursor:default}
+.facts{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;color:var(--on-variant);font-size:14px}
+.facts span{display:inline-flex;align-items:center;gap:6px}
+.facts svg{width:18px;height:18px;color:var(--primary)}
+.small{font-size:13px;color:var(--on-variant)}
+
+/* phone mock */
+.phone{justify-self:center;width:260px;border-radius:34px;background:var(--on);padding:10px;box-shadow:0 30px 60px rgba(0,40,30,.25)}
+.phone .scr{background:var(--surface);border-radius:26px;overflow:hidden;padding:18px 14px 20px}
+.phone .st{display:flex;justify-content:space-between;font-size:11px;color:var(--on-variant);margin-bottom:12px}
+.mock-card{background:var(--primary-c);color:var(--on-primary-c);border-radius:18px;padding:18px 12px;text-align:center}
+.mock-card .b{width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;margin:0 auto 8px}
+.mock-card .b svg{width:28px;height:28px}
+.mock-card b{display:block;font-size:17px}
+.mock-chip{display:inline-block;background:var(--surface);color:var(--primary-d);font-weight:700;font-size:12px;border-radius:8px;padding:3px 10px;margin-top:8px}
+.mock-row{display:flex;gap:10px;align-items:center;border:1px solid var(--outline-v);border-radius:12px;padding:10px;margin-top:10px;font-size:12px}
+.mock-row i{width:28px;height:28px;border-radius:50%;background:var(--secondary-c);flex:none}
+.mock-row div b{display:block;font-size:12.5px}
+
+/* sections */
+section.s{padding:56px 0}
+section.s.alt{background:var(--surface)}
+.s h2{font-size:clamp(24px,3.6vw,32px);font-weight:800}
+.s .sub{color:var(--on-variant);margin-top:8px;max-width:680px;font-size:17px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+@media (max-width:820px){.grid3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--outline-v);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.alt .card{background:var(--bg)}
+.card h3{font-size:18px;margin-top:12px}
+.card p{color:var(--on-variant);margin-top:6px;font-size:15px}
+.ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--primary-c);color:var(--on-primary-c)}
+.ico svg{width:24px;height:24px}
+.stepno{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--primary);color:var(--on-primary);font-weight:700;font-size:14px}
+
+/* routes */
+.routes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+@media (max-width:820px){.routes{grid-template-columns:1fr}}
+.route{border-radius:18px;padding:18px;border:1px solid var(--outline-v);background:var(--surface)}
+.route b{font-size:17px}
+.route p{color:var(--on-variant);font-size:14.5px;margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tags span{font-size:12.5px;font-weight:600;background:var(--surface-hi);border:1px solid var(--outline-v);border-radius:8px;padding:2px 9px}
+.restr{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 20px;margin-top:18px}
+@media (max-width:640px){.restr{grid-template-columns:1fr}}
+.restr div{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.restr svg{width:20px;height:20px;color:var(--primary);flex:none;margin-top:3px}
+
+/* guides */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:24px;border-bottom:1px solid var(--outline-v)}
+.tabs button{font:inherit;font-weight:600;font-size:15px;background:none;border:0;padding:12px 14px;color:var(--on-variant);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--primary);border-bottom-color:var(--primary)}
+.guide{margin-top:22px}
+.need{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.need span{font-size:13.5px;font-weight:600;background:var(--tertiary-c);color:var(--on-tertiary-c);border-radius:999px;padding:4px 12px}
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.steps>li{position:relative;padding:0 52px 26px 0;counter-increment:s}
+ol.steps>li::before{content:counter(s);position:absolute;right:0;top:0;width:34px;height:34px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;font-weight:700}
+ol.steps>li::after{content:"";position:absolute;right:16px;top:38px;bottom:4px;width:2px;background:var(--outline-v)}
+ol.steps>li:last-child::after{display:none}
+ol.steps h3{font-size:17px;padding-top:4px}
+ol.steps p{color:var(--on-variant);margin-top:4px}
+.what{margin-top:10px;background:var(--surface-hi);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--on-variant)}
+.what b{color:var(--on)}
+.settings{margin-top:10px;max-width:360px;border:1px solid var(--outline-v);border-radius:14px;overflow:hidden;background:var(--surface);font-size:14px}
+.settings div{padding:10px 14px;border-bottom:1px solid var(--outline-v);display:flex;justify-content:space-between;gap:10px}
+.settings div:last-child{border-bottom:0}
+.settings .hl{background:color-mix(in srgb,var(--primary-c) 50%,transparent);font-weight:600}
+.settings .tap{font-size:12px;font-weight:700;color:var(--primary)}
+kbd{font-family:inherit;font-weight:700;background:var(--surface-hi);border:1px solid var(--outline-v);border-bottom-width:2px;border-radius:6px;padding:0 6px;font-size:.92em}
+
+/* notes, faq */
+.note{border-radius:16px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start}
+.note svg{width:22px;height:22px;flex:none;margin-top:2px}
+.note.warn{background:var(--warn-c);color:var(--on)}
+.note.warn svg{color:var(--warn)}
+.note.info{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+details{border:1px solid var(--outline-v);border-radius:16px;background:var(--surface);margin-top:10px}
+details summary{list-style:none;cursor:pointer;padding:16px 18px;font-weight:600;display:flex;justify-content:space-between;gap:12px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-size:22px;line-height:1;color:var(--primary);flex:none}
+details[open] summary::after{content:"−"}
+details .a{padding:0 18px 16px;color:var(--on-variant)}
+
+/* download panel */
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+@media (max-width:720px){.dl{grid-template-columns:1fr}}
+.dl .card{display:flex;flex-direction:column;gap:10px}
+.dl .card .btn{margin-top:auto;width:100%}
+.prog{margin-top:18px;border-radius:16px;padding:16px 18px;background:var(--surface);border:1px solid var(--outline-v)}
+.prog .bar{height:8px;border-radius:4px;background:var(--variant);overflow:hidden;margin-top:10px}
+.prog .bar i{display:block;height:100%;width:0;background:var(--primary);transition:width .2s}
+.prog.ok{border-color:var(--primary);background:color-mix(in srgb,var(--primary-c) 25%,var(--surface))}
+.prog.err{border-color:var(--error);background:var(--error-c);color:var(--on-error-c)}
+footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px solid var(--outline-v)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 60%,transparent);outline-offset:2px;border-radius:8px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-pc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 11h14v10H5z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17v.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16a5 5 0 0 1 6 0"/><path d="M12 19.5v.01"/></symbol>
+</svg>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="#"><img src="../panel/icon.webp" alt="">קיידרואיד</a>
+  <nav><a href="#how">איך זה עובד</a><a href="#routes">מסלולים</a><a href="#guide">מדריך הפעלה</a><a href="#faq">שאלות</a><a href="#download">הורדה</a></nav>
+</div></header>
+
+<main>
+<section class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow"><svg width="16" height="16"><use href="#i-shield"/></svg> חסימה כשרה לאנדרואיד</span>
+    <h1>חוסמים את הטלפון <em>לבד</em>,<br>ואף אחד לא יכול לפתוח אותו לבד.</h1>
+    <p class="lead">מתקינים, בוחרים מסלול ונועלים. מרגע הנעילה אי אפשר להסיר את החסימה או לשנות אותה מהמכשיר עצמו. כל שינוי נעשה רק דרך מוקד קיידרואיד.</p>
+    <div class="ctas">
+      <a class="btn fill" href="#download"><svg><use href="#i-dl"/></svg>להורדה</a>
+      <a class="btn out" href="#guide">איך מתקינים?</a>
+    </div>
+    <div class="facts">
+      <span><svg><use href="#i-check"/></svg>בלי מתקין</span>
+      <span><svg><use href="#i-check"/></svg>עובד גם בלי אינטרנט</span>
+      <span><svg><use href="#i-check"/></svg>ההתקנה בחינם</span>
+    </div>
+  </div>
+  <div class="phone" aria-hidden="true"><div class="scr">
+    <div class="st"><span>12:30</span><span>קיידרואיד</span></div>
+    <div class="mock-card"><div class="b"><svg><use href="#i-shield"/></svg></div><b>המכשיר מוגן</b><span style="font-size:12px">מוגן על ידי מערכת קיידרואיד</span><br><span class="mock-chip">מסלול ניווט</span></div>
+    <div class="mock-row"><i></i><div><b>אפליקציות עם אינטרנט</b>וויז · מוביט · רכבת ישראל</div></div>
+    <div class="mock-row"><i></i><div><b>שינויים בחסימה</b>רק באישור המוקד</div></div>
+  </div></div>
+</div></section>
+
+<section class="s alt" id="how"><div class="wrap">
+  <h2>איך זה עובד</h2>
+  <p class="sub">שלושה שלבים, בערך עשר דקות. אחרי השלב השלישי החסימה פעילה ונעולה.</p>
+  <div class="grid3">
+    <div class="card"><div class="ico"><svg><use href="#i-dl"/></svg></div><h3>1. מורידים ומתקינים</h3>
+      <p>מורידים מהעמוד הזה קובץ אישי, ומתקינים אותו כמו כל אפליקציה. כל הורדה מקבלת קודים משלה, שלא עובדים על אף מכשיר אחר.</p></div>
+    <div class="card"><div class="ico"><svg><use href="#i-gear"/></svg></div><h3>2. מפעילים</h3>
+      <p>נותנים לקיידרואיד הרשאת "מנהל מכשיר". זו ההרשאה שמונעת להסיר את האפליקציה או לעקוף אותה. המדריך למטה מסביר בדיוק איך.</p></div>
+    <div class="card"><div class="ico"><svg><use href="#i-lock"/></svg></div><h3>3. בוחרים ונועלים</h3>
+      <p>ממלאים שם וטלפון, בוחרים מסלול והגבלות, ולוחצים "נעל". מאותו רגע אי אפשר לשנות כלום מהמכשיר.</p></div>
+  </div>
+</div></section>
+
+<section class="s" id="routes"><div class="wrap">
+  <h2>המסלולים</h2>
+  <p class="sub">בוחרים מסלול אחד בזמן ההתקנה. אפשר לבקש להחליף אותו אחר כך, דרך המוקד.</p>
+  <div class="routes">
+    <div class="route"><b>מסלול כשר</b><p>אין חיבור לאינטרנט בכלל. שיחות והודעות עובדים כרגיל.</p></div>
+    <div class="route"><b>מסלול ניווט</b><p>אינטרנט רק לאפליקציות ניווט ותחבורה. כל השאר חסום.</p>
+      <div class="tags"><span>וויז</span><span>פנגו</span><span>מוביט</span><span>רכבת ישראל</span><span>Gett</span><span>מוזיקה יהודית</span></div></div>
+    <div class="route"><b>מסלול ניווט ומייל</b><p>כמו מסלול ניווט, ועוד ג'ימייל.</p>
+      <div class="tags"><span>כל אפליקציות הניווט</span><span>ג'ימייל</span></div></div>
+  </div>
+  <h3 style="margin-top:34px;font-size:19px">הגבלות שאפשר להוסיף</h3>
+  <p class="small" style="margin-top:4px">כל אחת היא בחירה שלכם בזמן ההתקנה. אחרי הנעילה גם אותן אי אפשר לשנות מהמכשיר.</p>
+  <div class="restr">
+    <div><svg><use href="#i-check"/></svg><span><b>חסימת התקנת אפליקציות</b>: אי אפשר להתקין אפליקציות חדשות.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>מניעת הסרת אפליקציות</b>: אי אפשר למחוק אפליקציות קיימות.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>הסתרת חנות האפליקציות</b>: חנות Play לא מופיעה.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>השבתת אפליקציות רגישות</b>: אפליקציות שבוחרים (למשל דפדפן או יוטיוב) מושבתות.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>חסימת וויפי</b>: הטלפון לא מתחבר לרשתות אלחוטיות.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>חסימת העברת קבצים</b> בבלוטות או בכבל USB.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>חסימת אחסון חיצוני</b>: כרטיס זיכרון ודיסק און קי.</span></div>
+    <div><svg><use href="#i-check"/></svg><span><b>חסימת שיחות יוצאות או הודעות</b>, למי שצריך.</span></div>
+  </div>
+</div></section>
+
+<section class="s alt" id="guide"><div class="wrap">
+  <h2>מדריך הפעלה</h2>
+  <p class="sub">בחרו לפי המכשיר. המדריך מסביר גם מה כל דבר אומר, כדי שלא תצטרכו לנחש.</p>
+  <div class="note warn" style="margin-top:22px"><svg><use href="#i-alert"/></svg><div><b>לפני שמתחילים:</b> אם בטלפון יש חשבונות (למשל חשבון גוגל), ההפעלה בדרך כלל מסתדרת לבד. אם היא נכשלת בגלל חשבונות, מסירים אותם זמנית בהגדרות ← חשבונות, מפעילים, ומחזירים אותם. שום מידע לא נמחק.</div></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-g="g1">טלפון רגיל</button>
+    <button role="tab" aria-selected="false" data-g="g2">מסך מולטימדיה ברכב</button>
+    <button role="tab" aria-selected="false" data-g="g3">דרך מחשב</button>
+  </div>
+
+  <div class="guide" id="g1" role="tabpanel">
+    <div class="need"><span>אנדרואיד 11 ומעלה</span><span>חיבור לוויפי (גם נקודה חמה מטלפון אחר)</span><span>בלי מחשב</span></div>
+    <ol class="steps">
+      <li><h3>מורידים ומתקינים את הקובץ</h3><p>לוחצים "הורדה לטלפון" למטה, פותחים את הקובץ שירד ומתקינים. אם הטלפון שואל אם לאפשר התקנה ממקור לא ידוע, מאשרים.</p>
+        <div class="what"><b>מה זה אומר?</b> אפליקציה שלא מחנות Play נקראת "ממקור לא ידוע". זה תקין, והקובץ חתום כך שאי אפשר לזייף אותו.</div></li>
+      <li><h3>פותחים את "אפשרויות מפתחים"</h3><p>בהגדרות ← אודות הטלפון, לוחצים 7 פעמים על "מספר גרסה" עד שמופיע "אתה מפתח". באפליקציה יש כפתור שפותח את המסך הזה ישר.</p>
+        <div class="settings" aria-hidden="true"><div>דגם<span>Galaxy A15</span></div><div>גרסת אנדרואיד<span>14</span></div><div class="hl">מספר גרסה<span class="tap">לחיצה ×7</span></div></div>
+        <div class="what"><b>מה זה אומר?</b> "אפשרויות מפתחים" הוא תפריט מוסתר בכל טלפון אנדרואיד. פותחים אותו פעם אחת, וזה לא משנה שום דבר אחר בטלפון.</div></li>
+      <li><h3>באפליקציה: "ניפוי באגים אלחוטי" ← "התחל"</h3><p>האפליקציה פותחת את אפשרויות המפתחים. מדליקים שם "ניפוי באגים אלחוטי", נכנסים אליו, ובוחרים "צימוד מכשיר עם קוד צימוד". מופיע חלון עם קוד של 6 ספרות.</p>
+        <div class="settings" aria-hidden="true"><div>ניפוי באגים אלחוטי<span class="tap">מופעל</span></div><div class="hl">צימוד מכשיר עם קוד צימוד<span class="tap">לחיצה</span></div></div>
+        <div class="what"><b>מה זה אומר?</b> "ניפוי באגים" מאפשר לאפליקציה לתת לעצמה את הרשאת מנהל המכשיר, בלי מחשב. היא משתמשת בזה פעם אחת, ואחרי הנעילה היא סוגרת את האפשרות.</div></li>
+      <li><h3>מקלידים את הקוד בהתראה</h3><p><b>לא סוגרים את החלון עם הקוד.</b> מלמעלה יורדת התראה מקיידרואיד: לוחצים בה "הקלדת קוד הצימוד", מקלידים את 6 הספרות ושולחים. מכאן הכל קורה לבד, ובסוף מופיעה ההודעה "קיידרואיד הופעל".</p>
+        <div class="what"><b>למה בהתראה?</b> אנדרואיד מבטל את הצימוד ברגע שיוצאים מהחלון. בהתראה מקלידים את הקוד בלי לצאת ממנו.</div></li>
+      <li><h3>בוחרים ונועלים</h3><p>פותחים את קיידרואיד, ממלאים שם וטלפון, בוחרים מסלול והגבלות, ולוחצים "נעל את המכשיר". לפני הנעילה מופיע חלון אישור, וקוראים אותו בעיון.</p></li>
+    </ol>
+  </div>
+
+  <div class="guide" id="g2" role="tabpanel" hidden>
+    <div class="need"><span>מסכי רכב ומולטימדיה</span><span>קופסאות אנדרואיד</span><span>לחיצה אחת להפעלה</span></div>
+    <ol class="steps">
+      <li><h3>מעבירים את הקובץ ומתקינים</h3><p>מורידים "הורדה לטלפון" (זה אותו קובץ), מעבירים אותו למסך בדיסק און קי או בהורדה ישירה, ומתקינים.</p></li>
+      <li><h3>באפליקציה: בוחרים "מולטימדיה"</h3><p>מופיעים ארבעה שלבים עם כפתור לכל אחד.</p></li>
+      <li><h3>מעתיקים את הקוד</h3><p>לוחצים "העתק". בחלק מהמסכים הפעלת ניפוי הבאגים מבקשת קוד, ואז מדביקים אותו שם.</p></li>
+      <li><h3>פותחים "אודות" ואז "אפשרויות מפתחים"</h3><p>ב"אודות" לוחצים 7 פעמים על "מספר גרסה". ב"אפשרויות מפתחים" מדליקים "ניפוי באגים USB".</p>
+        <div class="what"><b>מה זה אומר?</b> במסכי רכב, "ניפוי באגים" פותח לאפליקציה דרך לתת לעצמה את הרשאת מנהל המכשיר, בלי כבל ובלי מחשב.</div></li>
+      <li><h3>לוחצים "הפעל" ואחר כך נועלים</h3><p>אם קופץ חלון אישור, מאשרים. אחר כך ממלאים פרטים, בוחרים מסלול ונועלים.</p></li>
+    </ol>
+  </div>
+
+  <div class="guide" id="g3" role="tabpanel" hidden>
+    <div class="need"><span>מחשב Windows</span><span>כבל USB שמעביר נתונים</span><span>לא צריך אינטרנט במחשב</span></div>
+    <ol class="steps">
+      <li><h3>מורידים "תוכנה למחשב" ומחלצים</h3><p>לוחצים לחיצה ימנית על קובץ ה-ZIP שירד ← "חלץ הכל".</p></li>
+      <li><h3>בטלפון: מדליקים "ניפוי באגים ב-USB"</h3><p>הגדרות ← אודות הטלפון ← לוחצים 7 פעמים על "מספר גרסה". אחר כך: הגדרות ← אפשרויות מפתחים ← "ניפוי באגים ב-USB".</p></li>
+      <li><h3>מחברים בכבל ומאשרים</h3><p>בטלפון מופיעה הודעה "לאפשר ניפוי באגים?". מסמנים "אפשר תמיד מהמחשב הזה" ולוחצים "אישור".</p></li>
+      <li><h3>מפעילים את Install-Kiydroid ולוחצים "התקן"</h3><p>התוכנה מתקינה ומפעילה הכל לבד. כשסוגרים את החלון בסוף, היא נמחקת מהמחשב יחד עם קובץ ה-ZIP.</p></li>
+      <li><h3>בטלפון: בוחרים ונועלים</h3><p>ממלאים פרטים, בוחרים מסלול והגבלות, ולוחצים "נעל את המכשיר".</p></li>
+    </ol>
+  </div>
+</div></section>
+
+<section class="s" id="faq"><div class="wrap">
+  <h2>שאלות נפוצות</h2>
+  <details><summary>אפשר להסיר את החסימה אחרי שנעלתי?</summary><div class="a">לא מהמכשיר עצמו. מבקשים מהאפליקציה (תפריט ⋮ ← בקשת שינוי), והבקשה מגיעה למוקד. <b>אין התחייבות להסיר את החסימה</b>, וייתכן שייגבה על כך תשלום סמלי. את זה מאשרים במפורש לפני הנעילה.</div></details>
+  <details><summary>איך מחליפים מסלול?</summary><div class="a">שולחים בקשה מהאפליקציה. כשהמוקד מאשר, השינוי מגיע למכשיר לבד. גם על החלפת מסלול אין התחייבות, וייתכן שייגבה תשלום סמלי.</div></details>
+  <details><summary>מה אם בטלפון אין אינטרנט בכלל?</summary><div class="a">החסימה עובדת גם בלי אינטרנט. לשינויים יש "קוד חירום": במסך "קוד חירום" באפליקציה מופיעים מספרים, מקריאים אותם למוקד בטלפון, והמוקד מקריא קוד שמבצע את השינוי. כל קוד מתאים רק למכשיר שלכם ורק לפעם אחת.</div></details>
+  <details><summary>למה צריך "הרשאת מנהל מכשיר"?</summary><div class="a">זו ההרשאה שמונעת להסיר את האפליקציה, לעקוף אותה או לכבות אותה. בלעדיה כל אחד היה יכול פשוט למחוק את החסימה.</div></details>
+  <details><summary>האם ההתקנה מוחקת משהו מהטלפון?</summary><div class="a">לא. אנשי קשר, תמונות, הודעות ואפליקציות נשארים. מה שמשתנה הוא רק מה שבחרתם לחסום.</div></details>
+  <details><summary>מה המוקד רואה על הטלפון שלי?</summary><div class="a">את השם והטלפון שמילאתם, את המסלול וההגבלות, ואת רשימת האפליקציות המותקנות (כדי לטפל בבקשות). לא תמונות, לא הודעות ולא שיחות.</div></details>
+  <details><summary>ההפעלה נכשלה. מה עושים?</summary><div class="a">ברוב המקרים הסיבה היא חשבונות בטלפון. מסירים אותם זמנית (הגדרות ← חשבונות), מנסים שוב ומחזירים אותם. בניפוי באגים אלחוטי: בודקים שהטלפון בוויפי ושחלון הקוד עדיין פתוח כשמקלידים בהתראה. ההודעה באפליקציה מראה גם פרטים טכניים, ואפשר לצלם אותה ולשלוח למוקד.</div></details>
+  <details><summary>זה עובד באייפון?</summary><div class="a">לא. קיידרואיד עובד רק באנדרואיד.</div></details>
+</div></section>
+
+<section class="s alt" id="download"><div class="wrap">
+  <h2>הורדה</h2>
+  <p class="sub">כל לחיצה מכינה קובץ אישי משלכם, עם קודים שלא עובדים על אף מכשיר אחר. ההכנה לוקחת כמה שניות, והקובץ שוקל בערך 43MB.</p>
+  <div class="dl">
+    <div class="card"><div class="ico"><svg><use href="#i-phone"/></svg></div><h3>הורדה לטלפון</h3>
+      <p>לטלפון רגיל (ניפוי באגים אלחוטי) ולמסכי מולטימדיה. אחרי ההפעלה הקובץ נמחק מהמכשיר לבד.</p>
+      <button class="btn fill" data-kind="phone"><svg><use href="#i-dl"/></svg>הורדה לטלפון</button></div>
+    <div class="card"><div class="ico"><svg><use href="#i-pc"/></svg></div><h3>תוכנה למחשב</h3>
+      <p>ל-Windows, דרך כבל USB, בלי אינטרנט במחשב. בסוף ההתקנה היא נמחקת מהמחשב.</p>
+      <button class="btn tonal" data-kind="pc"><svg><use href="#i-dl"/></svg>הורדה למחשב</button></div>
+  </div>
+  <div class="prog" id="prog" hidden role="status" aria-live="polite"><b id="progT"></b><div class="small" id="progS"></div><div class="bar"><i id="progB"></i></div></div>
+  <div class="note info" style="margin-top:18px"><svg><use href="#i-info"/></svg><div>בהורדה אתם מאשרים שידוע לכם: אחרי הנעילה אין אפשרות להסיר את החסימה מהמכשיר, אין התחייבות של קיידרואיד להסיר אותה או להחליף מסלול, וייתכן שייגבה על כך תשלום סמלי.</div></div>
+</div></section>
+</main>
+
+<footer><div class="wrap">קיידרואיד · חסימה כשרה לאנדרואיד</div></footer>
+
+<script src="../panel/jszip.min.js" defer></script>
+<script>
+// ------------------------------------------------------------ guide tabs
+document.querySelectorAll('[role=tab]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[role=tab]').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.guide').forEach(g=>g.hidden=g.id!==b.dataset.g);
+});
+
+// ------------------------------------------------------------ download: a personal file per click
+// The site takes one free lock set from the stock (only the ends of the code chains; the starts stay with the
+// owner), writes it into the signed app in the browser, and saves it. Empty stock: a file that must reach the
+// server once at lock time, so it still gets codes of its own.
+const KEY="AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI";
+const FS="https://firestore.googleapis.com/v1/projects/kiydroid/databases/(default)/documents";
+const DOCS="projects/kiydroid/databases/(default)/documents";
+const RAW="https://raw.githubusercontent.com/EliyahuHillel/kdroid-updates/main/";
+const $=id=>document.getElementById(id);
+let idToken=null;
+async function signIn(){
+  if(idToken) return idToken;
+  const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})});
+  const j=await r.json(); if(!r.ok) throw new Error("auth"); return idToken=j.idToken;
+}
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:{Authorization:"Bearer "+await signIn(),"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error((j.error&&j.error.message)||r.status); e.code=r.status; throw e; } return j;
+}
+const val=v=>v==null?null:"stringValue" in v?v.stringValue:"integerValue" in v?Number(v.integerValue):"booleanValue" in v?v.booleanValue:null;
+const dec=d=>{ const o={_id:d.name.split("/").pop()}; for(const k in d.fields||{}) o[k]=val(d.fields[k]); return o; };
+async function getDoc(p){ try{ return dec(await api("GET",FS+"/"+p)); }catch(e){ return null; } }
+async function takeStock(){
+  const j=await api("POST",FS+":runQuery",{structuredQuery:{from:[{collectionId:"publicFiles"}],
+    where:{fieldFilter:{field:{fieldPath:"state"},op:"EQUAL",value:{stringValue:"free"}}},limit:12}});
+  const free=j.filter(x=>x.document).map(x=>dec(x.document)).sort(()=>Math.random()-.5);
+  for(const f of free){
+    try{ await api("POST",FS+":commit",{writes:[{update:{name:DOCS+"/publicFiles/"+f._id,fields:{state:{stringValue:"taken"},takenAt:{integerValue:String(Date.now())}}},
+      updateMask:{fieldPaths:["state","takenAt"]}}]}); return f; }catch(e){ /* someone took it a moment ago: next */ }
+  }
+  return null;
+}
+function logEvent(type){ api("POST",FS+":commit",{writes:[{update:{name:DOCS+"/publicLog/"+Math.random().toString(36).slice(2)+Date.now().toString(36),
+  fields:{type:{stringValue:type},at:{integerValue:String(Date.now())}}},currentDocument:{exists:false}}]}).catch(()=>{}); }
+
+const PAD_ID=0x42726577, KIY_ID=0x4b445931;
+function injectApk(u8,payload){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let eocd=-1; for(let i=u8.length-22;i>=Math.max(0,u8.length-65557);i--){ if(u8[i]===0x50&&u8[i+1]===0x4b&&u8[i+2]===5&&u8[i+3]===6){eocd=i;break;} }
+  if(eocd<0) throw new Error("apk");
+  const cd=dv.getUint32(eocd+16,true);
+  if(new TextDecoder().decode(u8.subarray(cd-16,cd))!=="APK Sig Block 42") throw new Error("apk");
+  const sz=Number(dv.getBigUint64(cd-24,true)), st=cd-sz-8, pairs=[]; let o=st+8;
+  while(o<cd-24){ const l=Number(dv.getBigUint64(o,true)), id=dv.getUint32(o+8,true); if(id!==PAD_ID&&id!==KIY_ID) pairs.push([id,u8.subarray(o+12,o+8+l)]); o+=8+l; }
+  pairs.push([KIY_ID,new TextEncoder().encode(payload)]);
+  let body=pairs.reduce((a,[,v])=>a+12+v.length,0); const pad=(4096-((8+body+8+16+12)%4096))%4096; body+=12+pad;
+  const nsz=body+24, blk=new Uint8Array(nsz+8), b=new DataView(blk.buffer); b.setBigUint64(0,BigInt(nsz),true); let p=8;
+  for(const [id,v] of pairs){ b.setBigUint64(p,BigInt(v.length+4),true); b.setUint32(p+8,id,true); blk.set(v,p+12); p+=12+v.length; }
+  b.setBigUint64(p,BigInt(pad+4),true); b.setUint32(p+8,PAD_ID,true); p+=12+pad; b.setBigUint64(p,BigInt(nsz),true); blk.set(new TextEncoder().encode("APK Sig Block 42"),p+8);
+  const tail=u8.slice(cd); new DataView(tail.buffer).setUint32(eocd-cd+16,st+blk.length,true);
+  return new Blob([u8.subarray(0,st),blk,tail],{type:"application/vnd.android.package-archive"});
+}
+async function fetchFile(path,onPct){
+  let last;
+  for(const u of ["../"+path+"?t="+Date.now(),RAW+path+"?t="+Date.now()]){
+    try{ const r=await fetch(u,{cache:"no-store"}); if(!r.ok){ last=new Error(r.status); continue; }
+      const total=+r.headers.get("content-length")||0, rd=r.body.getReader(), parts=[]; let got=0;
+      for(;;){ const {done,value}=await rd.read(); if(done) break; parts.push(value); got+=value.length; if(onPct&&total) onPct(Math.min(99,Math.round(got*100/total))); }
+      const out=new Uint8Array(got); let q=0; parts.forEach(x=>{out.set(x,q);q+=x.length;}); return out;
+    }catch(e){ last=e; }
+  }
+  throw last||new Error("download");
+}
+function save(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},5000); }
+function show(t,s,pct,cls){ const p=$("prog"); p.hidden=false; p.className="prog"+(cls?" "+cls:""); $("progT").textContent=t; $("progS").textContent=s||""; $("progB").style.width=(pct||0)+"%"; }
+
+async function makeFile(kind){
+  show("מכין קובץ אישי…","",3);
+  let f=null, pub={}, prof=null;
+  try{
+    [pub,prof]=await Promise.all([getDoc("config/public"),getDoc("config/ownerProfile")]);
+    f=await takeStock();
+  }catch(e){ f=null; }
+  let profile=null; try{ profile=prof&&prof.json?JSON.parse(prof.json):null; }catch(e){}
+  const base={v:1,kind:"public",installerId:"owner",code:"",iName:(pub&&pub.ownerName)||"מוקד קיידרואיד",iPhone:(pub&&pub.ownerPhone)||"",profile,n:20,keep:false,createdAt:Date.now()};
+  let payload, id;
+  if(f){ payload=Object.assign(base,{fid:f._id,rid:f.rid,tips:JSON.parse(f.tips)}); id=f._id; logEvent("download"); }
+  else { payload=Object.assign(base,{needOnline:true}); id="p"+Math.random().toString(36).slice(2,8); logEvent("empty"); }
+  const api_=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
+  show("מוריד את קיידרואיד"+(api_.version?" (גרסה "+api_.version+")":"")+"…","",5);
+  const apk=injectApk(await fetchFile("kdroid.bin",p=>show("מוריד את קיידרואיד…",p+"%",p)),JSON.stringify(payload));
+  if(kind==="phone"){ save(apk,"kiydroid-setup-"+id+".apk"); return {id,offline:!!f}; }
+  show("אורז את התוכנה למחשב…","",99);
+  const zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+id);
+  for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
+                          ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
+    dir.file(dst,await fetchFile("installer/base/"+src));
+  dir.file("kiydroid.apk",apk);
+  dir.file("installer.json",JSON.stringify({fid:id,version:api_.version||"",installer:payload.iName,keep:false}));
+  save(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+id+".zip");
+  return {id,offline:!!f};
+}
+document.querySelectorAll("[data-kind]").forEach(b=>b.onclick=async()=>{
+  document.querySelectorAll("[data-kind]").forEach(x=>x.disabled=true);
+  try{
+    const r=await makeFile(b.dataset.kind);
+    show("הקובץ מוכן ונשמר בהורדות ✓", b.dataset.kind==="phone"
+      ? "פתחו את הקובץ שירד והתקינו אותו, ואז המשיכו לפי המדריך למעלה."+(r.offline?"":" שימו לב: לנעילה הטלפון יצטרך חיבור לאינטרנט פעם אחת.")
+      : "חלצו את קובץ ה-ZIP והפעילו את Install-Kiydroid, לפי המדריך למעלה (לשונית 'דרך מחשב').", 100, "ok");
+  }catch(e){ console.error(e); show("ההורדה נכשלה","בדקו את החיבור לאינטרנט ונסו שוב.",0,"err"); }
+  document.querySelectorAll("[data-kind]").forEach(x=>x.disabled=false);
+});
+</script>
+</body>
+</html>

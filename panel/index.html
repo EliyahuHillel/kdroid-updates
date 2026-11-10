@@ -104,6 +104,7 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);m
 .dlopts{display:grid;gap:10px;margin-top:14px}
 .dlopt{display:flex;align-items:center;gap:14px;border:1px solid var(--outline-v);border-radius:12px;padding:14px 16px;flex-wrap:wrap}
 .dlopt .main{flex:1;min-width:200px}.dlopt .t{font-weight:600;margin-bottom:2px}
+.bar{height:8px;border-radius:4px;background:var(--variant);margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--primary)}
 .dlbtns{display:flex;gap:8px;flex-wrap:wrap}
 .dlopt .badgeicon{background:var(--primary-c);color:var(--on-primary-c)}
 .pill.wait{background:var(--tertiary-c);color:var(--on-tertiary-c)}
@@ -342,7 +343,7 @@ async function load(){
     if(own){
       const [msgs,insts,pub,prof]=await Promise.all([listAll("messages"),listAll("installers"),getDoc("config/public"),getDoc("config/ownerProfile")]);
       D.messages=msgs.sort((a,b)=>b.createdAt-a.createdAt); D.installers=insts; D.config=pub||{}; D.ownerProfile=prof?parse(prof.json):null;
-      backfillCodeProfiles(); ensureReleasePool();
+      backfillCodeProfiles(); ensureReleasePool(); ensurePublicStock(); loadPublicLog();
     }
     else{
       const inst=await getDoc("installers/"+me.uid).catch(()=>null);
@@ -432,7 +433,12 @@ function renderTabs(route){
 function vOverview(v){
   const act=D.devices.filter(d=>d.status==="active").length, pend=D.devices.filter(d=>d.status==="pending").length;
   const stale=D.devices.filter(isStale), reqs=openRequests(), att=attention();
+  const pf=D.publicFree;
+  const stockAlert = me.role==="owner"&&pf!=null&&pf<PUBLIC_LOW ? `<a class="note ${pf===0?"err":"warn"}" href="#install" style="display:block;text-decoration:none;color:inherit">
+    <b>${pf===0?"מלאי ההורדה הציבורית נגמר.":"מלאי ההורדה הציבורית עומד להיגמר ("+pf+" נשארו)."}</b>
+    ${pf===0?"מי שמוריד עכשיו מקבל קובץ שדורש אינטרנט פעם אחת בנעילה.":""} השאירו את הפאנל פתוח כדי שהמלאי יתמלא.</a>` : "";
   v.innerHTML=`<div class="grid">
+    ${stockAlert}
     ${me.role==="installer"?`<div class="note ok">קוד המתקין שלך: <b class="num" style="font-size:18px;letter-spacing:2px">${esc(me.code)}</b> · מסרו אותו למי שמתקין לבד, כדי שהמכשיר יגיע אליכם.</div>`:""}
     <div class="tiles">
       <a class="tile" href="#devices"><div class="v num">${act}</div><div class="l">מכשירים מוגנים</div></a>
@@ -938,6 +944,59 @@ async function offlineCode(fid,act,k){
   return fmt12(await chainCode(seed,sid,act,k));
 }
 
+// ---------------------------------------------------------------- public download stock (owner)
+// Every download from the public site takes one unique lock set from this stock, so a code that leaks from one
+// download opens nothing else. The owner's panel keeps it full in the background.
+const PUBLIC_TARGET = 1000, PUBLIC_LOW = 100;
+async function countWhere(col,field,value){
+  const j=await req("POST",FS+":runAggregationQuery",{structuredAggregationQuery:{aggregations:[{alias:"n",count:{}}],
+    structuredQuery:{from:[{collectionId:col}],where:{fieldFilter:{field:{fieldPath:field},op:"EQUAL",value:{stringValue:value}}}}}});
+  const r=(j[0]&&j[0].result&&j[0].result.aggregateFields&&j[0].result.aggregateFields.n)||{};
+  return Number(r.integerValue||0);
+}
+async function makePublicFile(){
+  for(let t=0;t<3;t++){
+    const fid=String(100000+Math.floor(Math.random()*900000)), rid=newId(), seeds={}, tips={};
+    const rs=randomSeed(); tips.release=fmt12(await chainTip(rs,rid,"release"));
+    for(const a of ROUTE_ACTS){ const sd=randomSeed(); seeds[a]=fmt12(sd); tips[a]=fmt12(await chainTip(sd,fid,a)); }
+    try{
+      await commit([
+        {set:"installFiles/"+fid,create:true,data:{installerId:"owner",kind:"public",createdAt:Date.now(),by:me.uid,seeds:JSON.stringify(seeds),releaseId:rid}},
+        {set:"releaseTips/"+rid,create:true,data:{tip:tips.release,fid,installerId:"owner",createdAt:Date.now()}},
+        {set:"releaseSeeds/"+rid,create:true,data:{seed:fmt12(rs)}},
+        {set:"publicFiles/"+fid,create:true,data:{tips:JSON.stringify(tips),rid,state:"free",createdAt:Date.now()}}]);
+      return true;
+    }catch(e){ console.warn("public file retry",e); }
+  }
+  return false;
+}
+let pubBusy=false, pubMade=0;
+async function ensurePublicStock(){
+  if(me.role!=="owner"||pubBusy) return; pubBusy=true;
+  try{
+    D.publicFree=await countWhere("publicFiles","state","free");
+    let need=PUBLIC_TARGET-D.publicFree;
+    const worker=async()=>{ while(need>0&&me&&me.role==="owner"){ need--; if(await makePublicFile()){ D.publicFree++; pubMade++; showStock(); } } };
+    if(need>0) await Promise.all([worker(),worker(),worker(),worker()]); // four at a time: the hashing runs off the page thread
+  }catch(e){ console.warn("public stock",e); }
+  pubBusy=false; showStock();
+}
+async function loadPublicLog(){
+  try{ const since=Date.now()-7*864e5; const l=await listAll("publicLog");
+       D.publicEmpty=l.filter(x=>x.type==="empty"&&x.at>since).length; D.publicDownloads=l.filter(x=>x.type==="download"&&x.at>since).length; }catch(e){}
+}
+/** the stock line in the install tab, refreshed in place while the stock fills */
+function showStock(){
+  const el=$("stockBox"); if(!el||D.publicFree==null) return;
+  const f=D.publicFree, pct=Math.min(100,Math.round(f*100/PUBLIC_TARGET));
+  el.className="note "+(f===0?"err":f<PUBLIC_LOW?"warn":"ok");
+  el.innerHTML=`<div class="row" style="justify-content:space-between"><b>מלאי ההורדה הציבורית: <span class="num">${f}</span> מתוך ${PUBLIC_TARGET}</b>
+    <span class="muted">${pubBusy?"מתמלא ברקע…":f>=PUBLIC_TARGET?"מלא":""}</span></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="muted" style="margin-top:6px">${D.publicDownloads||0} הורדות בשבוע האחרון${D.publicEmpty?` · <b>${D.publicEmpty} הורדות כשהמלאי היה ריק</b> (קיבלו קובץ שדורש אינטרנט פעם אחת)`:""}.
+      המלאי מתמלא כשהפאנל פתוח אצלך, בערך 4 קבצים בכמה שניות.</div>`;
+}
+
 let myFiles=null;
 function vInstall(v){
   const own=me.role==="owner";
@@ -954,7 +1013,7 @@ function vInstall(v){
             :`<div class="note warn">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
       <div class="dlopts">
         <div class="dlopt"><div class="badgeicon">${icon("phone")}</div><div class="main"><div class="t">קובץ לטלפון</div>
-          <div class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט. אפשר לשלוח בוואטסאפ או להעביר בדיסק און קי.</div></div>
+          <div class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט. אפשר לשלוח ללקוח או להעביר בדיסק און קי.</div></div>
           <div class="dlbtns"><button class="btn fill" data-mk="phone">נמחק בסוף</button><button class="btn out" data-mk="phone" data-keep="1">קבוע</button></div></div>
         <div class="dlopt"><div class="badgeicon">${icon("pc")}</div><div class="main"><div class="t">קובץ למחשב</div>
           <div class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט. מחלצים את הקובץ ופותחים את Install-Kiydroid.</div></div>
@@ -962,6 +1021,9 @@ function vInstall(v){
       </div>
       <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
     </div></section>
+    ${own?`<section class="card"><div class="hd"><h2>הורדה ציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
+      <p class="muted" style="margin-top:0">מי שמוריד מדף ההורדה הציבורי מקבל קובץ ייחודי משלו מהמלאי. המכשיר יופיע אצלך כמוקד, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>
+      <div id="stockBox" class="note info">בודק את המלאי…</div></div></section>`:""}
     <section class="card"><div class="hd"><h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>
   </div><div class="grid">
     <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
@@ -995,12 +1057,12 @@ function vInstall(v){
     catch(e){ toast(e.message==="noperm"?"אין לך הרשאה לשחרר מכשירים":e.message==="nofile"?"לא נמצא קובץ עם המספר הזה אצלך":"יצירת הקוד נכשלה"); }
     b.disabled=false; b.textContent="צור קוד";
   };
-  listFiles();
+  listFiles(); showStock();
 }
 async function listFiles(){
   const el=$("fileList"); if(!el) return;
   try{
-    if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).sort((a,b)=>b.createdAt-a.createdAt);
+    if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).filter(f=>f.kind!=="public").sort((a,b)=>b.createdAt-a.createdAt);
     el.innerHTML=myFiles.slice(0,40).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
       <div class="muted">${when(f.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(f.installerId)):""}</div></div></div>`).join("")||'<div class="empty">עוד לא הורדו קבצים</div>';
   }catch(e){ el.innerHTML='<div class="empty">לא הצלחתי לטעון</div>'; }
