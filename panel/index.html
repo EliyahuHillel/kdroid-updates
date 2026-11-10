@@ -101,6 +101,10 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);m
 .instdevs select{width:auto;min-width:140px;max-width:240px;height:36px;padding:0 10px}
 .instdevs .addrow .row select{flex:1;max-width:none}
 .instdevs .empty{padding:16px}
+.dlopts{display:grid;gap:10px;margin-top:14px}
+.dlopt{display:flex;align-items:center;gap:14px;border:1px solid var(--outline-v);border-radius:12px;padding:14px 16px;flex-wrap:wrap}
+.dlopt .main{flex:1;min-width:200px}.dlopt .t{font-weight:600;margin-bottom:2px}
+.dlopt .badgeicon{background:var(--primary-c);color:var(--on-primary-c)}
 .pill.wait{background:var(--tertiary-c);color:var(--on-tertiary-c)}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
 .empty{text-align:center;color:var(--on-variant);padding:36px 16px}
@@ -151,6 +155,7 @@ td .sub{font-size:12.5px;color:var(--on-variant)}
 .kv dt{color:var(--on-variant)}
 .kv dd{margin:0;overflow-wrap:anywhere}
 .bigcode{font-size:34px;font-weight:700;letter-spacing:6px;direction:ltr;text-align:center;color:var(--primary)}
+.bigcode.long{font-size:clamp(22px,7vw,30px);letter-spacing:2px;white-space:nowrap}
 .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;margin-bottom:12px}
 .login{max-width:400px;margin:8vh auto 0;padding:0 16px}
 .login .brandbig{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;text-align:center}
@@ -229,6 +234,9 @@ const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null
 const ICON = {
   shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   chat:'<path d="M4 5h16v11H8l-4 4z"/>', back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+  download:'<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',
+  pc:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M15 8l2 2"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>'};
 const icon = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';
 function ago(ms){
@@ -333,7 +341,7 @@ async function load(){
     if(own){
       const [msgs,insts,pub,prof]=await Promise.all([listAll("messages"),listAll("installers"),getDoc("config/public"),getDoc("config/ownerProfile")]);
       D.messages=msgs.sort((a,b)=>b.createdAt-a.createdAt); D.installers=insts; D.config=pub||{}; D.ownerProfile=prof?parse(prof.json):null;
-      backfillCodeProfiles();
+      backfillCodeProfiles(); ensureReleasePool();
     }
     else{
       const inst=await getDoc("installers/"+me.uid).catch(()=>null);
@@ -405,7 +413,7 @@ function render(){
   renderTabs(route);
   const v=$("view");
   if(!loaded){ v.innerHTML='<div class="empty">טוען…</div>'; return; }
-  const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,settings:vSettings};
+  const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,install:vInstall,settings:vSettings};
   if((route==="messages"||route==="installers")&&me.role!=="owner") return vOverview(v);
   (views[route]||vOverview)(v);
 }
@@ -414,7 +422,7 @@ function renderTabs(route){
   if(route===undefined){ const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"); route=i<0?h:h.slice(0,i); }
   const tabs=[["overview","סקירה"],["devices","מכשירים"],["requests","בקשות",openRequests().length]];
   if(me.role==="owner") tabs.push(["messages","פניות",openMessages().length],["installers","מתקינים"]);
-  tabs.push(["settings","הגדרות"]);
+  tabs.push(["install","התקנה"],["settings","הגדרות"]);
   const cur = route==="device"?"devices":route;
   $("tabs").innerHTML=tabs.map(([k,t,n])=>'<a href="#'+k+'" class="'+(k===cur?"on":"")+'">'+t+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("");
 }
@@ -552,6 +560,7 @@ function vDevice(id){
         <dt>מתקין</dt><dd>${esc(installerLabel(d.installerId))}</dd>
         <dt>נרשם</dt><dd>${when(d.createdAt)}</dd>
         ${d.lockedAt?`<dt>ננעל בהתקנה</dt><dd>${when(d.lockedAt)}</dd>`:""}
+        ${d.fid?`<dt>הותקן מקובץ</dt><dd class="num">${esc(d.fid)}</dd>`:""}
         <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
         <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
         ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
@@ -612,7 +621,7 @@ function sensBlock(pol,apps){
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
   <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}><span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
-const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין"};
+const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
 const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
 
@@ -782,6 +791,205 @@ function vInstallers(v){
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
   v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין קישור לאיפוס סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+}
+
+// ---------------------------------------------------------------- install files (personal installer per installer)
+// One signed app for everyone. When a file is downloaded, the installer's details are written into the APK Signing
+// Block, an area the signature does not cover, so the app stays validly signed and nothing is built per installer.
+// The file also carries the END of a one-way chain per emergency action; the chain STARTS stay here in the panel.
+const RAW = "https://raw.githubusercontent.com/EliyahuHillel/kdroid-updates/main/";
+const CH_N = 20, CH_ROUNDS = 120000, CH_MOD = 1000000000000n;
+const ROUTE_ACTS = ["KosherMode","NavigationMode","NavigationMailMode"];
+const fmt12 = x => (BigInt(x) % CH_MOD).toString().padStart(12,"0");
+const group12 = s => s.replace(/(\d{4})(?=\d)/g,"$1 ");
+async function chainStep(x,sid,act,i){
+  const e=new TextEncoder();
+  const key=await crypto.subtle.importKey("raw",e.encode(fmt12(x)),"PBKDF2",false,["deriveBits"]);
+  const b=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:e.encode("kiyd|"+sid+"|"+act+"|"+i),iterations:CH_ROUNDS},key,64));
+  let v=0n; for(let j=0;j<8;j++) v=(v<<8n)|BigInt(b[j]);
+  return (v & ((1n<<63n)-1n)) % CH_MOD;
+}
+async function chainTip(seed,sid,act){ let x=BigInt(seed); for(let i=0;i<CH_N;i++) x=await chainStep(x,sid,act,i); return x; }
+/** the code a phone accepts as its k-th code (1-based, as shown on the phone) for this action */
+async function chainCode(seed,sid,act,k){ let x=BigInt(seed); for(let i=0;i<CH_N-k;i++) x=await chainStep(x,sid,act,i); return x; }
+function randomSeed(){ const b=crypto.getRandomValues(new Uint8Array(8)); let v=0n; b.forEach(x=>v=(v<<8n)|BigInt(x)); return v % CH_MOD; }
+
+/** owner: keep a stock of release chains, so installers can make files without ever holding a release seed */
+async function makeReleaseChain(){
+  const rid=newId(), seed=randomSeed(), tip=await chainTip(seed,rid,"release");
+  await commit([{set:"releaseSeeds/"+rid,create:true,data:{seed:fmt12(seed)}},
+                {set:"releaseTips/"+rid,create:true,data:{tip:fmt12(tip),fid:"",installerId:"",createdAt:Date.now()}}]);
+}
+let poolBusy=false;
+async function ensureReleasePool(){
+  if(me.role!=="owner"||poolBusy) return; poolBusy=true;
+  try{ const free=await query("releaseTips","fid",""); for(let n=free.length;n<12;n++) await makeReleaseChain(); }
+  catch(e){ console.warn("pool",e); }
+  poolBusy=false;
+}
+
+const PAD_ID=0x42726577, KIY_ID=0x4b445931;
+/** writes the installer block into the APK Signing Block; keeps the block 4096-aligned like apksigner does */
+function injectApk(u8,payload){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let eocd=-1; for(let i=u8.length-22;i>=Math.max(0,u8.length-65557);i--){ if(u8[i]===0x50&&u8[i+1]===0x4b&&u8[i+2]===5&&u8[i+3]===6){eocd=i;break;} }
+  if(eocd<0) throw new Error("not an apk");
+  const cd=dv.getUint32(eocd+16,true);
+  if(new TextDecoder().decode(u8.subarray(cd-16,cd))!=="APK Sig Block 42") throw new Error("unsigned apk");
+  const sz=Number(dv.getBigUint64(cd-24,true)), st=cd-sz-8;
+  const pairs=[]; let o=st+8;
+  while(o<cd-24){ const l=Number(dv.getBigUint64(o,true)), id=dv.getUint32(o+8,true);
+    if(id!==PAD_ID&&id!==KIY_ID) pairs.push([id,u8.subarray(o+12,o+8+l)]); o+=8+l; }
+  pairs.push([KIY_ID,new TextEncoder().encode(payload)]);
+  let body=pairs.reduce((a,[,v])=>a+12+v.length,0);
+  const pad=(4096-((8+body+8+16+12)%4096))%4096; body+=12+pad;
+  const nsz=body+24, blk=new Uint8Array(nsz+8), b=new DataView(blk.buffer);
+  b.setBigUint64(0,BigInt(nsz),true); let p=8;
+  for(const [id,v] of pairs){ b.setBigUint64(p,BigInt(v.length+4),true); b.setUint32(p+8,id,true); blk.set(v,p+12); p+=12+v.length; }
+  b.setBigUint64(p,BigInt(pad+4),true); b.setUint32(p+8,PAD_ID,true); p+=12+pad;
+  b.setBigUint64(p,BigInt(nsz),true); blk.set(new TextEncoder().encode("APK Sig Block 42"),p+8);
+  const tail=u8.slice(cd); new DataView(tail.buffer).setUint32(eocd-cd+16,st+blk.length,true);
+  return new Blob([u8.subarray(0,st),blk,tail],{type:"application/vnd.android.package-archive"});
+}
+
+/** a file from this site, with progress; falls back to GitHub's raw server */
+async function fetchFile(path,onPct){
+  let last;
+  for(const u of ["../"+path+"?t="+Date.now(), RAW+path+"?t="+Date.now()]){
+    try{
+      const r=await fetch(u,{cache:"no-store"}); if(!r.ok){ last=new Error("http "+r.status); continue; }
+      const total=+r.headers.get("content-length")||0, rd=r.body.getReader(), parts=[]; let got=0;
+      for(;;){ const {done,value}=await rd.read(); if(done) break; parts.push(value); got+=value.length; if(onPct&&total) onPct(Math.min(99,Math.round(got*100/total))); }
+      const out=new Uint8Array(got); let q=0; parts.forEach(x=>{out.set(x,q);q+=x.length;}); return out;
+    }catch(e){ last=e; }
+  }
+  throw last||new Error("download");
+}
+let jszipP=null;
+function loadJSZip(){ return jszipP||(jszipP=new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="jszip.min.js"; s.onload=()=>ok(window.JSZip); s.onerror=no; document.head.appendChild(s); })); }
+function saveBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000); }
+
+/** who a new file is for: me, or (owner) one of the installers */
+function fileTarget(sel){
+  if(me.role==="installer") return {installerId:me.uid,code:me.code,iName:me.name,iPhone:me.phone,profile:me.defaultProfile||null};
+  if(!sel||sel==="owner") return {installerId:"owner",code:"",iName:D.config.ownerName||"מוקד קיידרואיד",iPhone:D.config.ownerPhone||"",profile:D.ownerProfile||null};
+  const i=D.installers.find(x=>x._id===sel)||{};
+  return {installerId:i._id,code:i.code||"",iName:i.name||"",iPhone:i.phone||"",profile:parse(i.defaultProfile)||null};
+}
+
+async function createFile(kind,target,status){
+  status("מכין מפתחות לקודי חירום…",0);
+  let made=null;
+  for(let t=0;t<4&&!made;t++){
+    let free=await query("releaseTips","fid","");
+    if(!free.length&&me.role==="owner"){ await makeReleaseChain(); free=await query("releaseTips","fid",""); }
+    if(!free.length) throw new Error("nopool");
+    const r=free[Math.floor(Math.random()*free.length)];
+    const fid=String(100000+Math.floor(Math.random()*900000)), seeds={}, tips={release:r.tip};
+    for(const a of ROUTE_ACTS){ const sd=randomSeed(); seeds[a]=fmt12(sd); tips[a]=fmt12(await chainTip(sd,fid,a)); }
+    try{
+      await commit([{set:"releaseTips/"+r._id,data:{fid,installerId:target.installerId},mask:["fid","installerId"]},
+        {set:"installFiles/"+fid,create:true,data:{installerId:target.installerId,kind,createdAt:Date.now(),by:me.uid,seeds:JSON.stringify(seeds),releaseId:r._id}},
+        audit("","install_file",(kind==="pc"?"קובץ למחשב ":"קובץ לטלפון ")+fid+(me.role==="owner"?" · "+target.iName:""))]);
+      made={fid,rid:r._id,tips};
+    }catch(e){ console.warn("claim retry",e); }
+  }
+  if(!made) throw new Error("claim");
+  const api=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
+  const payload=JSON.stringify({v:1,kind,fid:made.fid,rid:made.rid,installerId:target.installerId,code:target.code,
+    iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,createdAt:Date.now()});
+  status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",1);
+  const apk=injectApk(await fetchFile("kdroid.bin",p=>status(null,p)),payload);
+  if(kind==="phone"){ saveBlob(apk,"kiydroid-setup-"+made.fid+".apk"); return made.fid; }
+  status("אורז את תוכנת ההתקנה למחשב…",99);
+  const JSZip=await loadJSZip(), zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+made.fid);
+  for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
+                          ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
+    dir.file(dst,await fetchFile("installer/base/"+src));
+  dir.file("kiydroid.apk",apk);
+  dir.file("installer.json",JSON.stringify({fid:made.fid,version:api.version||"",installer:target.iName}));
+  saveBlob(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+made.fid+".zip");
+  return made.fid;
+}
+
+async function offlineCode(fid,act,k){
+  const f=await getDoc("installFiles/"+fid);
+  if(!f) throw new Error("nofile");
+  let seed,sid;
+  if(act==="release"){
+    const s=await getDoc("releaseSeeds/"+f.releaseId).catch(()=>null);
+    if(!s) throw new Error("noperm");
+    seed=s.seed; sid=f.releaseId;
+  } else { seed=(parse(f.seeds)||{})[act]; sid=fid; }
+  if(!seed) throw new Error("nofile");
+  return fmt12(await chainCode(seed,sid,act,k));
+}
+
+let myFiles=null;
+function vInstall(v){
+  const own=me.role==="owner";
+  const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
+  v.innerHTML=`<div class="split"><div class="grid">
+    <section class="card"><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd">
+      ${own?`<div class="field"><label class="f" for="ftWho">הקובץ בשביל</label><select id="ftWho">
+        <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
+        ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
+      <p class="muted" style="margin-top:0">כל קובץ כולל את הגרסה העדכנית של האפליקציה, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל ${own?"שלו":"שלך"}.
+        הוא עובד בלי אינטרנט, ונמחק מהטלפון או מהמחשב בסוף ההתקנה. כדאי להוריד קובץ חדש לכל לקוח.</p>
+      ${prof?`<div class="note ok">ברירת המחדל בקובץ: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
+            :`<div class="note warn">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
+      <div class="dlopts">
+        <div class="dlopt"><div class="badgeicon">${icon("phone")}</div><div class="main"><div class="t">קובץ לטלפון</div>
+          <div class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט. אפשר לשלוח בוואטסאפ או להעביר בדיסק און קי.</div></div>
+          <button class="btn fill" data-mk="phone">הורד</button></div>
+        <div class="dlopt"><div class="badgeicon">${icon("pc")}</div><div class="main"><div class="t">קובץ למחשב</div>
+          <div class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט. מחלצים את הקובץ ופותחים את Install-Kiydroid.</div></div>
+          <button class="btn fill" data-mk="pc">הורד</button></div>
+      </div>
+      <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
+    </div></section>
+    <section class="card"><div class="hd"><h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>
+  </div><div class="grid">
+    <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
+      <p class="muted" style="margin-top:0">למכשיר שהותקן מקובץ ועוד לא התחבר לאינטרנט. במסך "קוד חירום" שלו מופיעים מספר הקובץ ומספר הקוד. מכשיר שכבר מופיע בפאנל מקבל קוד מהעמוד שלו.</p>
+      <div class="field"><label class="f" for="ofFid">מספר הקובץ</label><input id="ofFid" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="6 ספרות"></div>
+      <div class="field"><label class="f" for="ofAct">הבקשה</label><select id="ofAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,x])=>`<option value="${k}">${x}</option>`).join("")}</select></div>
+      <div class="field"><label class="f" for="ofK">קוד מספר</label><input id="ofK" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="1"></div>
+      <button class="btn tonal" id="ofBtn" style="width:100%">צור קוד</button>
+      <div id="ofOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode long num" id="ofCode" dir="ltr"></div></div>
+    </div></section>
+  </div></div>`;
+  if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
+  const st=$("mkStatus");
+  const status=(msg,pct)=>{ st.hidden=false; if(msg!=null) status.m=msg; st.textContent=status.m+(pct?" "+pct+"%":""); };
+  v.querySelectorAll("[data-mk]").forEach(b=>b.onclick=async()=>{
+    v.querySelectorAll("[data-mk]").forEach(x=>x.disabled=true); typing=true;
+    try{ const fid=await createFile(b.dataset.mk,fileTarget(who),status);
+         st.className="note ok"; st.textContent="הקובץ מוכן ("+fid+") ונשמר בהורדות."; myFiles=null; listFiles(); }
+    catch(e){ st.className="note err"; st.hidden=false;
+      st.textContent=e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים. בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם."
+        :"יצירת הקובץ נכשלה. בדקו את החיבור ונסו שוב."; console.error(e); }
+    v.querySelectorAll("[data-mk]").forEach(x=>x.disabled=false); typing=false;
+  });
+  $("ofBtn").onclick=async()=>{
+    const fid=$("ofFid").value.replace(/\D/g,""), k=parseInt($("ofK").value.replace(/\D/g,"")||"1",10), act=$("ofAct").value;
+    if(fid.length!==6){ toast("מספר הקובץ צריך להיות 6 ספרות"); return; }
+    if(!(k>=1&&k<=CH_N)){ toast("מספר הקוד צריך להיות בין 1 ל-"+CH_N); return; }
+    const b=$("ofBtn"); b.disabled=true; b.textContent="מחשב…";
+    try{ const c=await offlineCode(fid,act,k); $("ofCode").textContent=group12(c); $("ofOut").hidden=false;
+         commit([audit("","offline_code",EMERG.find(x=>x[0]===act)[1]+" · קובץ "+fid+" · קוד "+k)]).catch(()=>{}); }
+    catch(e){ toast(e.message==="noperm"?"אין לך הרשאה לשחרר מכשירים":e.message==="nofile"?"לא נמצא קובץ עם המספר הזה אצלך":"יצירת הקוד נכשלה"); }
+    b.disabled=false; b.textContent="צור קוד";
+  };
+  listFiles();
+}
+async function listFiles(){
+  const el=$("fileList"); if(!el) return;
+  try{
+    if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).sort((a,b)=>b.createdAt-a.createdAt);
+    el.innerHTML=myFiles.slice(0,40).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
+      <div class="muted">${when(f.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(f.installerId)):""}</div></div></div>`).join("")||'<div class="empty">עוד לא הורדו קבצים</div>';
+  }catch(e){ el.innerHTML='<div class="empty">לא הצלחתי לטעון</div>'; }
 }
 
 // ---------------------------------------------------------------- settings
