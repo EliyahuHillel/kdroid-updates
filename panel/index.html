@@ -104,6 +104,7 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);m
 .dlopts{display:grid;gap:10px;margin-top:14px}
 .dlopt{display:flex;align-items:center;gap:14px;border:1px solid var(--outline-v);border-radius:12px;padding:14px 16px;flex-wrap:wrap}
 .dlopt .main{flex:1;min-width:200px}.dlopt .t{font-weight:600;margin-bottom:2px}
+.dlbtns{display:flex;gap:8px;flex-wrap:wrap}
 .dlopt .badgeicon{background:var(--primary-c);color:var(--on-primary-c)}
 .pill.wait{background:var(--tertiary-c);color:var(--on-tertiary-c)}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
@@ -823,7 +824,7 @@ async function makeReleaseChain(){
 let poolBusy=false;
 async function ensureReleasePool(){
   if(me.role!=="owner"||poolBusy) return; poolBusy=true;
-  try{ const free=await query("releaseTips","fid",""); for(let n=free.length;n<12;n++) await makeReleaseChain(); }
+  try{ const free=await query("releaseTips","fid",""); for(let n=free.length;n<30;n++) await makeReleaseChain(); }
   catch(e){ console.warn("pool",e); }
   poolBusy=false;
 }
@@ -877,18 +878,29 @@ function fileTarget(sel){
   return {installerId:i._id,code:i.code||"",iName:i.name||"",iPhone:i.phone||"",profile:parse(i.defaultProfile)||null};
 }
 
-async function createFile(kind,target,status){
+async function createFile(kind,target,status,keep){
   status("מכין מפתחות לקודי חירום…",0);
   let made=null;
   for(let t=0;t<4&&!made;t++){
-    let free=await query("releaseTips","fid","");
-    if(!free.length&&me.role==="owner"){ await makeReleaseChain(); free=await query("releaseTips","fid",""); }
-    if(!free.length) throw new Error("nopool");
-    const r=free[Math.floor(Math.random()*free.length)];
-    const fid=String(100000+Math.floor(Math.random()*900000)), seeds={}, tips={release:r.tip};
+    const fid=String(100000+Math.floor(Math.random()*900000)), seeds={};
+    // the release chain: made right here by whoever may release (the owner, or an installer allowed to release),
+    // otherwise taken from the owner's stock, so an installer without release permission never holds a release seed
+    let r, claim;
+    if(me.canRelease){
+      const rid=newId(), sd=randomSeed();
+      r={_id:rid,tip:fmt12(await chainTip(sd,rid,"release"))};
+      claim=[{set:"releaseTips/"+rid,create:true,data:{tip:r.tip,fid,installerId:target.installerId,createdAt:Date.now()}},
+             {set:"releaseSeeds/"+rid,create:true,data:{seed:fmt12(sd)}}];
+    } else {
+      const free=await query("releaseTips","fid","");
+      if(!free.length) throw new Error("nopool");
+      r=free[Math.floor(Math.random()*free.length)];
+      claim=[{set:"releaseTips/"+r._id,data:{fid,installerId:target.installerId},mask:["fid","installerId"]}];
+    }
+    const tips={release:r.tip};
     for(const a of ROUTE_ACTS){ const sd=randomSeed(); seeds[a]=fmt12(sd); tips[a]=fmt12(await chainTip(sd,fid,a)); }
     try{
-      await commit([{set:"releaseTips/"+r._id,data:{fid,installerId:target.installerId},mask:["fid","installerId"]},
+      await commit([...claim,
         {set:"installFiles/"+fid,create:true,data:{installerId:target.installerId,kind,createdAt:Date.now(),by:me.uid,seeds:JSON.stringify(seeds),releaseId:r._id}},
         audit("","install_file",(kind==="pc"?"קובץ למחשב ":"קובץ לטלפון ")+fid+(me.role==="owner"?" · "+target.iName:""))]);
       made={fid,rid:r._id,tips};
@@ -897,18 +909,19 @@ async function createFile(kind,target,status){
   if(!made) throw new Error("claim");
   const api=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
   const payload=JSON.stringify({v:1,kind,fid:made.fid,rid:made.rid,installerId:target.installerId,code:target.code,
-    iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,createdAt:Date.now()});
+    iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,keep:!!keep,createdAt:Date.now()});
   status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",1);
   const apk=injectApk(await fetchFile("kdroid.bin",p=>status(null,p)),payload);
-  if(kind==="phone"){ saveBlob(apk,"kiydroid-setup-"+made.fid+".apk"); return made.fid; }
+  if(kind==="phone"){ saveBlob(apk,(keep?"kiydroid-installer-":"kiydroid-setup-")+made.fid+".apk"); return made.fid; }
   status("אורז את תוכנת ההתקנה למחשב…",99);
-  const JSZip=await loadJSZip(), zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+made.fid);
+  const base=(keep?"Kiydroid-Installer-Permanent-":"Kiydroid-Installer-")+made.fid;
+  const JSZip=await loadJSZip(), zip=new JSZip(), dir=zip.folder(base);
   for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
                           ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
     dir.file(dst,await fetchFile("installer/base/"+src));
   dir.file("kiydroid.apk",apk);
-  dir.file("installer.json",JSON.stringify({fid:made.fid,version:api.version||"",installer:target.iName}));
-  saveBlob(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+made.fid+".zip");
+  dir.file("installer.json",JSON.stringify({fid:made.fid,version:api.version||"",installer:target.iName,keep:!!keep}));
+  saveBlob(await zip.generateAsync({type:"blob"}),base+".zip");
   return made.fid;
 }
 
@@ -935,16 +948,17 @@ function vInstall(v){
         <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
         ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
       <p class="muted" style="margin-top:0">כל קובץ כולל את הגרסה העדכנית של האפליקציה, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל ${own?"שלו":"שלך"}.
-        הוא עובד בלי אינטרנט, ונמחק מהטלפון או מהמחשב בסוף ההתקנה. כדאי להוריד קובץ חדש לכל לקוח.</p>
+        הוא עובד בלי אינטרנט. לכל סוג יש שתי אפשרויות: <b>נמחק בסוף</b> — לשליחה ללקוח, לא נשאר אצלו כלום חוץ מהאפליקציה;
+        <b>קבוע</b> — נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש.</p>
       ${prof?`<div class="note ok">ברירת המחדל בקובץ: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
             :`<div class="note warn">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
       <div class="dlopts">
         <div class="dlopt"><div class="badgeicon">${icon("phone")}</div><div class="main"><div class="t">קובץ לטלפון</div>
           <div class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט. אפשר לשלוח בוואטסאפ או להעביר בדיסק און קי.</div></div>
-          <button class="btn fill" data-mk="phone">הורד</button></div>
+          <div class="dlbtns"><button class="btn fill" data-mk="phone">נמחק בסוף</button><button class="btn out" data-mk="phone" data-keep="1">קבוע</button></div></div>
         <div class="dlopt"><div class="badgeicon">${icon("pc")}</div><div class="main"><div class="t">קובץ למחשב</div>
           <div class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט. מחלצים את הקובץ ופותחים את Install-Kiydroid.</div></div>
-          <button class="btn fill" data-mk="pc">הורד</button></div>
+          <div class="dlbtns"><button class="btn fill" data-mk="pc">נמחק בסוף</button><button class="btn out" data-mk="pc" data-keep="1">קבוע</button></div></div>
       </div>
       <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
     </div></section>
@@ -964,8 +978,8 @@ function vInstall(v){
   const status=(msg,pct)=>{ st.hidden=false; if(msg!=null) status.m=msg; st.textContent=status.m+(pct?" "+pct+"%":""); };
   v.querySelectorAll("[data-mk]").forEach(b=>b.onclick=async()=>{
     v.querySelectorAll("[data-mk]").forEach(x=>x.disabled=true); typing=true;
-    try{ const fid=await createFile(b.dataset.mk,fileTarget(who),status);
-         st.className="note ok"; st.textContent="הקובץ מוכן ("+fid+") ונשמר בהורדות."; myFiles=null; listFiles(); }
+    try{ const keep=!!b.dataset.keep, fid=await createFile(b.dataset.mk,fileTarget(who),status,keep);
+         st.className="note ok"; st.textContent="הקובץ מוכן ("+fid+(keep?", קבוע":", נמחק בסוף ההתקנה")+") ונשמר בהורדות."; myFiles=null; listFiles(); }
     catch(e){ st.className="note err"; st.hidden=false;
       st.textContent=e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים. בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם."
         :"יצירת הקובץ נכשלה. בדקו את החיבור ונסו שוב."; console.error(e); }

@@ -10,8 +10,8 @@ $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Pkg  = 'com.kdroid.filter'
 $Adb  = Join-Path $Here 'adb\adb.exe'
 $Apk  = Join-Path $Here 'kiydroid.apk'
-$Info = @{ fid = ''; version = ''; installer = '' }
-try { $j = Get-Content -Raw -Encoding UTF8 (Join-Path $Here 'installer.json') | ConvertFrom-Json; $Info.fid = "$($j.fid)"; $Info.version = "$($j.version)"; $Info.installer = "$($j.installer)" } catch {}
+$Info = @{ fid = ''; version = ''; installer = ''; keep = $false }
+try { $j = Get-Content -Raw -Encoding UTF8 (Join-Path $Here 'installer.json') | ConvertFrom-Json; $Info.fid = "$($j.fid)"; $Info.version = "$($j.version)"; $Info.installer = "$($j.installer)"; $Info.keep = [bool]$j.keep } catch {}
 # adb keeps its key in %USERPROFILE%\.android. If that folder was not there before, it goes away with the installer.
 $AndroidDir = Join-Path $env:USERPROFILE '.android'
 $HadAndroidDir = Test-Path $AndroidDir
@@ -62,6 +62,7 @@ $parts = @()
 if ($Info.installer) { $parts += ('מתקין: ' + $Info.installer) }
 if ($Info.fid) { $parts += ('קובץ ' + $Info.fid) }
 if ($Info.version) { $parts += ('גרסה ' + $Info.version) }
+if ($Info.keep) { $parts += 'קובץ קבוע' }
 $sub.Text = ($parts -join '  ·  ')
 $sub.ForeColor = $Muted
 $sub.AutoSize = $true
@@ -254,7 +255,8 @@ function Install-All {
   Say ''
   Say 'ההתקנה הושלמה. המשיכו בטלפון: פרטי המכשיר, הגדרות החסימה, ונעילה.' 'DarkGreen'
   Say 'מומלץ לכבות עכשיו את ניפוי הבאגים ב-USB. קיידרואיד גם יחסום אותו בעצמו לאחר הנעילה.' 'DimGray'
-  Say 'תוכנת ההתקנה תימחק מהמחשב כשתסגרו את החלון.' 'DimGray'
+  if ($Info.keep) { Say 'זה קובץ קבוע: התוכנה נשארת במחשב, ואפשר להתקין ממנה מכשיר נוסף.' 'DimGray' }
+  else { Say 'תוכנת ההתקנה תימחק מהמחשב כשתסגרו את החלון.' 'DimGray' }
   $script:Done = $true
 }
 
@@ -262,7 +264,8 @@ $go.Add_Click({
   if ($script:Done) { $form.Close(); return }
   $go.Enabled = $false; $onlyInstall.Enabled = $false
   try { Install-All } catch { if ("$_" -ne 'stop') { $status.ForeColor = [System.Drawing.Color]::Firebrick; $status.Text = 'ההתקנה לא הושלמה'; Say ('שגיאה: ' + $_) 'Firebrick' } }
-  if ($script:Done) { $go.Text = 'סיום'; $go.Enabled = $true }
+  if ($script:Done -and $Info.keep) { $script:Done = $false; $go.Text = 'התקנה במכשיר נוסף'; $go.Enabled = $true; $onlyInstall.Enabled = $true }
+  elseif ($script:Done) { $go.Text = 'סיום'; $go.Enabled = $true }
   else { $go.Text = 'התקן שוב'; $go.Enabled = $true; $onlyInstall.Enabled = $true }
 })
 $form.Add_FormClosed({ if ($script:Done) { Erase-Self } else { try { Run $Adb 'kill-server' 20 | Out-Null } catch {} } })
