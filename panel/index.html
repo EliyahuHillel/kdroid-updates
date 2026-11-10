@@ -333,6 +333,7 @@ async function load(){
     if(own){
       const [msgs,insts,pub,prof]=await Promise.all([listAll("messages"),listAll("installers"),getDoc("config/public"),getDoc("config/ownerProfile")]);
       D.messages=msgs.sort((a,b)=>b.createdAt-a.createdAt); D.installers=insts; D.config=pub||{}; D.ownerProfile=prof?parse(prof.json):null;
+      backfillCodeProfiles();
     }
     else{
       const inst=await getDoc("installers/"+me.uid).catch(()=>null);
@@ -341,6 +342,18 @@ async function load(){
     loaded=true;
   }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
   loading=false; if(!draft&&!typing) render(); else renderTabs();
+}
+
+/** installers who saved a default profile before installing phones could read it: copy it onto their code, once */
+let backfilled=false;
+async function backfillCodeProfiles(){
+  if(backfilled) return; backfilled=true;
+  try{
+    const codes=Object.fromEntries((await listAll("installerCodes")).map(c=>[c._id,c]));
+    const w=D.installers.filter(i=>i.active&&i.defaultProfile&&codes[i.code]&&codes[i.code].profile!==i.defaultProfile)
+      .map(i=>({set:"installerCodes/"+i.code,data:{profile:i.defaultProfile},mask:["profile"],exists:true}));
+    if(w.length) await commit(w);
+  }catch(e){ console.warn("backfill",e); }
 }
 
 // ---------------------------------------------------------------- derived
@@ -538,6 +551,7 @@ function vDevice(id){
         ${d.email?`<dt>מייל</dt><dd dir="ltr" style="text-align:right">${esc(d.email)}</dd>`:""}
         <dt>מתקין</dt><dd>${esc(installerLabel(d.installerId))}</dd>
         <dt>נרשם</dt><dd>${when(d.createdAt)}</dd>
+        ${d.lockedAt?`<dt>ננעל בהתקנה</dt><dd>${when(d.lockedAt)}</dd>`:""}
         <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
         <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
         ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
@@ -764,7 +778,7 @@ function vInstallers(v){
   v.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async()=>{
     const i=D.installers.find(x=>x._id===b.dataset.toggle), on=!i.active;
     const w=[{set:"installers/"+i._id,data:{active:on},mask:["active"]},
-      on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:i.phone}}:{del:"installerCodes/"+i.code}];
+      on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:i.phone,profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
   v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין קישור לאיפוס סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
@@ -774,7 +788,7 @@ function vInstallers(v){
 function vSettings(v){
   const own=me.role==="owner", p=defaultProfile();
   v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>פרופיל ברירת מחדל</h2></div><div class="bd">
-    <p class="muted" style="margin-top:0">כך יוגדר כל מכשיר חדש ${own?"שמשויך אליך":"שלך"} כשתאשרו לו הפעלה. אפשר לשנות לפני האישור.</p>
+    <p class="muted" style="margin-top:0">זו ברירת המחדל שמוצעת בהתקנה של כל מכשיר ${own?"שנרשם בלי קוד מתקין":"עם הקוד שלך"}. במכשיר אפשר לבחור בה, או להגדיר אחרת לפני הנעילה.</p>
     ${MODES.map(m=>`<label class="opt ${p.filter_mode===m.v?"on":""}"><input type="radio" name="dmode" value="${m.v}" ${p.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
     ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-dk="${k}" ${p.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}
     <button class="btn fill" id="saveProf" style="margin-top:16px">שמור פרופיל</button></div></section>
@@ -793,7 +807,9 @@ function vSettings(v){
     v.querySelectorAll("[data-dk]").forEach(c=>s[c.dataset.dk]=c.checked);
     const json=JSON.stringify({filter_mode:fm,settings:s});
     try{ if(own){ await commit([{set:"config/ownerProfile",data:{json}}]); D.ownerProfile=parse(json); }
-         else{ await commit([{set:"installers/"+me.uid,data:{defaultProfile:json},mask:["defaultProfile"]}]); me.defaultProfile=parse(json); }
+         else{ // the copy on the installer code is what an installing phone reads
+           await commit([{set:"installers/"+me.uid,data:{defaultProfile:json},mask:["defaultProfile"]},
+                         {set:"installerCodes/"+me.code,data:{profile:json},mask:["profile"],exists:true}]); me.defaultProfile=parse(json); }
          toast("הפרופיל נשמר"); }catch(e){ toast("השמירה נכשלה"); }
   };
   v.querySelectorAll('input[name=dmode]').forEach(r=>r.onchange=()=>v.querySelectorAll(".opt").forEach(o=>o.classList.toggle("on",o.contains(v.querySelector('input[name=dmode]:checked')))));
