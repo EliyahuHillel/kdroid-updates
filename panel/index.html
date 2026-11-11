@@ -231,6 +231,9 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 dialog .in{padding:22px}
 dialog h3{font-size:19px;margin-bottom:8px}
 svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rowact{width:1%;white-space:nowrap;text-align:left}
+.bulkdel{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px dashed var(--line,#ddd);border-radius:12px}
+@media (max-width:720px){ table.cards td.rowact{text-align:start} table.cards td.rowact:empty{display:none} }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -611,8 +614,9 @@ function vDevices(v){
   v.innerHTML=`<section class="card"><div class="bd">
     <div class="toolbar"><input type="search" id="q" placeholder="חיפוש לפי שם, טלפון או דגם" value="${esc(devSearch)}" aria-label="חיפוש">
       <div class="chips">${Object.entries(f).map(([k,t])=>`<button class="chip ${devFilter===k?"on":""}" data-f="${k}">${t}<span class="cn">${cnt[k]}</span></button>`).join("")}</div></div>
-    <div class="tablewrap"><table class="cards devs"><thead><tr><th>מכשיר</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
-    <tbody id="devRows"></tbody></table></div><div id="devEmpty" class="empty" hidden>לא נמצאו מכשירים</div></div></section>`;
+    <div class="tablewrap"><table class="cards devs"><thead><tr><th>מכשיר</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th>${me.canDelete?'<th aria-label="פעולות"></th>':""}</tr></thead>
+    <tbody id="devRows"></tbody></table></div><div id="devEmpty" class="empty" hidden>לא נמצאו מכשירים</div>
+    ${me.canDelete&&devFilter==="released"&&cnt.released>1?`<div class="bulkdel"><span class="muted">מכשירים ששוחררו כבר לא מסוננים. אפשר למחוק אותם מהרשימה.</span><button class="btn danger sm" id="delAllReleased">מחק את כל ${cnt.released} המשוחררים</button></div>`:""}</div></section>`;
   const draw=()=>{
     const q=devSearch.trim();
     const rows=D.devices.filter(d=>{
@@ -627,13 +631,29 @@ function vDevices(v){
       <td class="num" dir="ltr" style="text-align:right" data-l="טלפון">${esc(d.phone)}</td>${me.role==="owner"?`<td data-l="מתקין">${esc(installerLabel(d.installerId))}</td>`:""}
       <td data-l="מצב">${pill(statusOf(d))}${iss.length?' <span class="pill pending" title="'+esc(iss.map(issueText).join("\n"))+'">⚠ '+(iss.length===1?'בעיה אחת':iss.length+' בעיות')+'</span>':""}</td>
       <td data-l="מסלול">${mode?`<span class="rt">${esc(MODE_NAME[mode]||mode)}</span>`:"—"}</td>
-      <td data-l="נראה לאחרונה">${ago(lastSeen(d._id))}</td><td class="num" data-l="גרסה">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
+      <td data-l="נראה לאחרונה">${ago(lastSeen(d._id))}</td><td class="num" data-l="גרסה">${esc(st.appVersion||d.appVersion||"")}</td>${me.canDelete?`<td class="rowact">${d.status==="released"?`<button class="btn danger sm" data-del="${esc(d._id)}" title="מחיקה מהמערכת">מחק</button>`:""}</td>`:""}</tr>`;}).join("");
     $("devEmpty").hidden=rows.length>0;
   };
   draw();
   $("q").oninput=e=>{devSearch=e.target.value; draw();};
   v.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{devFilter=b.dataset.f; vDevices(v);});
-  $("devRows").onclick=e=>{const tr=e.target.closest("tr[data-go]"); if(tr) location.hash="#device/"+tr.dataset.go;};
+  $("devRows").onclick=e=>{
+    const del=e.target.closest("[data-del]");
+    if(del){ e.stopPropagation(); const d=devById(del.dataset.del); if(!d) return;
+      confirmDlg("מחיקת "+(d.name||"המכשיר"),"המכשיר שוחרר ויימחק מהרשימה. אפשר לרשום אותו שוב בהתקנה חדשה.","מחק",async()=>{
+        try{ await deleteDevices([d]); toast("המכשיר נמחק"); load(); }catch(err){ toast("המחיקה נכשלה"); } });
+      return; }
+    const tr=e.target.closest("tr[data-go]"); if(tr) location.hash="#device/"+tr.dataset.go;};
+  if($("delAllReleased")) $("delAllReleased").onclick=()=>{ const list=D.devices.filter(d=>d.status==="released");
+    confirmDlg("מחיקת כל המכשירים ששוחררו",`${list.length} מכשירים ששוחררו יימחקו מהרשימה. אפשר לרשום כל אחד מהם שוב בהתקנה חדשה.`,"מחק הכל",async()=>{
+      try{ await deleteDevices(list); toast("נמחקו "+list.length+" מכשירים"); load(); }catch(err){ toast("המחיקה נכשלה"); } }); };
+}
+// delete from the system: the device record, its report and (owner) its secret; up to 100 devices per request
+async function deleteDevices(list){
+  for(let i=0;i<list.length;i+=100){
+    const w=[]; list.slice(i,i+100).forEach(d=>{ w.push({del:"devices/"+d._id},{del:"reports/"+d._id},audit(d._id,"deleted",d.name)); if(me.role==="owner") w.push({del:"deviceSecrets/"+d._id}); });
+    await commit(w);
+  }
 }
 const initialsOf = n => { const w=String(n||"?").trim().split(/\s+/); return (w[0]||"?").charAt(0)+(w[1]?w[1].charAt(0):""); };
 
@@ -746,7 +766,7 @@ function vDevice(id){
     try{ await reassign(d,to); toast("המכשיר הועבר"); load(); }catch(e){ toast("ההעברה נכשלה"); }
   };
   if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
-    await commit([{del:"devices/"+id},{del:"reports/"+id},audit(id,"deleted",d.name)].concat(me.role==="owner"?[{del:"deviceSecrets/"+id}]:[])); draft=null; location.hash="#devices"; load(); });
+    await deleteDevices([d]); draft=null; location.hash="#devices"; load(); });
   fillIcons();
   if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
     list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
