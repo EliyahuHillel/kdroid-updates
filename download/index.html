@@ -294,10 +294,9 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
   <div class="guide" id="g3" role="tabpanel" hidden>
     <div class="need"><span>מחשב Windows</span><span>כבל USB שמעביר נתונים</span><span>לא צריך אינטרנט במחשב</span></div>
     <ol class="steps">
-      <li><h3>מורידים "תוכנה למחשב" ומחלצים</h3><p>לוחצים לחיצה ימנית על קובץ ה-ZIP שירד ← "חלץ הכל".</p></li>
-      <li><h3>בטלפון: מדליקים "ניפוי באגים ב-USB"</h3><p>הגדרות ← אודות הטלפון ← לוחצים 7 פעמים על "מספר גרסה". אחר כך: הגדרות ← אפשרויות מפתחים ← "ניפוי באגים ב-USB".</p></li>
-      <li><h3>מחברים בכבל ומאשרים</h3><p>בטלפון מופיעה הודעה "לאפשר ניפוי באגים?". מסמנים "אפשר תמיד מהמחשב הזה" ולוחצים "אישור".</p></li>
-      <li><h3>מפעילים את Install-Kiydroid ולוחצים "התקן"</h3><p>התוכנה מתקינה ומפעילה הכל לבד. כשסוגרים את החלון בסוף, היא נמחקת מהמחשב יחד עם קובץ ה-ZIP.</p></li>
+      <li><h3>מורידים "תוכנה למחשב" ופותחים אותה</h3><p>קובץ אחד, בלי ZIP ובלי התקנה. אם Windows מציג "Windows protected your PC", לוחצים "מידע נוסף" ← "הפעל בכל זאת".</p></li>
+      <li><h3>עוקבים אחרי ההדרכה בתוכנה</h3><p>התוכנה מראה צעד אחרי צעד, לפי יצרן הטלפון, איך מדליקים "ניפוי באגים ב-USB", מזהה לבד את הטלפון כשמחברים אותו בכבל, ומסבירה מה לאשר בטלפון.</p></li>
+      <li><h3>לוחצים "התקנה"</h3><p>התוכנה מתקינה ומפעילה הכל לבד. אם יש אינטרנט היא מתקינה את הגרסה העדכנית ביותר; בלי אינטרנט, את הגרסה שבתוכה. כשסוגרים את החלון בסוף, היא נמחקת מהמחשב.</p></li>
       <li><h3>בטלפון: בוחרים ונועלים</h3><p>ממלאים פרטים, בוחרים מסלול והגבלות, ולוחצים "נעל את המכשיר".</p></li>
     </ol>
   </div>
@@ -354,7 +353,6 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
 
 <footer><div class="wrap">קיידרואיד · חסימה כשרה לאנדרואיד</div></footer>
 
-<script src="../panel/jszip.min.js" defer></script>
 <script src="webadb.js" defer></script>
 <script>
 // ------------------------------------------------------------ guide tabs
@@ -485,21 +483,20 @@ async function personalApp(kind,onStep,onPct){
   const ver=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
   onStep("download",ver.version);
   const apk=injectApk(await fetchFile("kdroid.bin",onPct),JSON.stringify(payload));
-  return {apk,id,offline:!!f,version:ver.version||"",installer:payload.iName};
+  return {apk,id,offline:!!f,version:ver.version||"",installer:payload.iName,phone:payload.iPhone||""};
 }
 
 async function makeFile(kind){
   const r=await personalApp(kind,(s,v)=>show(s==="prep"?"מכין קובץ אישי…":"מוריד את קיידרואיד"+(v?" (גרסה "+v+")":"")+"…","",s==="prep"?3:5),
     p=>show("מוריד את קיידרואיד…",p+"%",p));
   if(kind==="phone"){ save(r.apk,"kiydroid-setup-"+r.id+".apk"); return r; }
-  show("אורז את התוכנה למחשב…","",99);
-  const zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+r.id);
-  for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
-                          ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
-    dir.file(dst,await fetchFile("installer/base/"+src));
-  dir.file("kiydroid.apk",r.apk);
-  dir.file("installer.json",JSON.stringify({fid:r.id,version:r.version,installer:r.installer,keep:false}));
-  save(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+r.id+".zip");
+  show("מכין את תוכנת ההתקנה…","",99);
+  const stub=await fetchFile("installer/base/KiydroidSetup.exe");
+  const json=new TextEncoder().encode(JSON.stringify({fid:r.id,version:r.version,installer:r.installer,phone:r.phone||"",keep:false,kind:"pc"}));
+  const ft=new Uint8Array(32), dv=new DataView(ft.buffer);
+  ft.set(new TextEncoder().encode("KIYDPAY1"),0); dv.setBigUint64(8,BigInt(json.length),true); dv.setBigUint64(16,BigInt(r.apk.size),true);
+  ft.set(new TextEncoder().encode("KIYDEND1"),24);
+  save(new Blob([stub,json,r.apk,ft],{type:"application/octet-stream"}),"Kiydroid-Setup-"+r.id+".exe");
   return r;
 }
 document.querySelectorAll("[data-kind]").forEach(b=>b.onclick=async()=>{
@@ -508,7 +505,7 @@ document.querySelectorAll("[data-kind]").forEach(b=>b.onclick=async()=>{
     const r=await makeFile(b.dataset.kind);
     show("הקובץ מוכן ונשמר בהורדות ✓", b.dataset.kind==="phone"
       ? "פתחו את הקובץ שירד והתקינו אותו, ואז המשיכו לפי המדריך למעלה."+(r.offline?"":" שימו לב: לנעילה הטלפון יצטרך חיבור לאינטרנט פעם אחת.")
-      : "חלצו את קובץ ה-ZIP והפעילו את Install-Kiydroid, לפי המדריך למעלה (לשונית 'דרך מחשב').", 100, "ok");
+      : "פתחו את הקובץ שירד ועקבו אחרי ההדרכה שבתוכו. אם Windows מזהיר, לחצו \"מידע נוסף\" ← \"הפעל בכל זאת\".", 100, "ok");
   }catch(e){ console.error(e); show("ההורדה נכשלה","בדקו את החיבור לאינטרנט ונסו שוב.",0,"err"); }
   setBusy(false);
 });

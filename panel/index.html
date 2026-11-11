@@ -1088,16 +1088,20 @@ async function createFile(kind,target,status,keep){
   status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",1);
   const apk=injectApk(await fetchFile("kdroid.bin",p=>status(null,p)),payload);
   if(kind==="phone"){ saveBlob(apk,(keep?"kiydroid-installer-":"kiydroid-setup-")+made.fid+".apk"); return made.fid; }
-  status("אורז את תוכנת ההתקנה למחשב…",99);
-  const base=(keep?"Kiydroid-Installer-Permanent-":"Kiydroid-Installer-")+made.fid;
-  const JSZip=await loadJSZip(), zip=new JSZip(), dir=zip.folder(base);
-  for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
-                          ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
-    dir.file(dst,await fetchFile("installer/base/"+src));
-  dir.file("kiydroid.apk",apk);
-  dir.file("installer.json",JSON.stringify({fid:made.fid,version:api.version||"",installer:target.iName,keep:!!keep}));
-  saveBlob(await zip.generateAsync({type:"blob"}),base+".zip");
+  status("מכין את תוכנת ההתקנה למחשב…",99);
+  const base=(keep?"Kiydroid-Installer-Permanent-":"Kiydroid-Setup-")+made.fid;
+  saveBlob(await pcSetup(apk,{fid:made.fid,version:api.version||"",installer:target.iName,phone:target.iPhone||"",keep:!!keep,kind:"pc"}),base+".exe");
   return made.fid;
+}
+
+/** the PC installer: one portable program (adb inside) with this app and its details appended (pcsetup/payload.go) */
+async function pcSetup(apk,info){
+  const stub=await fetchFile("installer/base/KiydroidSetup.exe");
+  const json=new TextEncoder().encode(JSON.stringify(info));
+  const ft=new Uint8Array(32), dv=new DataView(ft.buffer);
+  ft.set(new TextEncoder().encode("KIYDPAY1"),0); dv.setBigUint64(8,BigInt(json.length),true); dv.setBigUint64(16,BigInt(apk.size),true);
+  ft.set(new TextEncoder().encode("KIYDEND1"),24);
+  return new Blob([stub,json,apk,ft],{type:"application/octet-stream"});
 }
 
 async function offlineCode(fid,act,k){
@@ -1185,13 +1189,13 @@ function vInstall(v){
           <button type="button" role="radio" class="pk ${mkType==="phone"?"on":""}" aria-checked="${mkType==="phone"}" data-type="phone"><span class="badgeicon">${icon("phone")}</span>
             <span><b>לטלפון</b><span class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט</span></span></button>
           <button type="button" role="radio" class="pk ${mkType==="pc"?"on":""}" aria-checked="${mkType==="pc"}" data-type="pc"><span class="badgeicon">${icon("pc")}</span>
-            <span><b>למחשב</b><span class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט</span></span></button>
+            <span><b>למחשב</b><span class="muted">קובץ אחד ל-Windows שמתקין דרך כבל USB, עם הדרכה מלאה. עובד גם בלי אינטרנט, ומתעדכן לבד כשיש</span></span></button>
         </div>
         <div class="seg" role="radiogroup" aria-label="סוג הקובץ">
           <button type="button" role="radio" class="${mkKeep?"":"on"}" aria-checked="${!mkKeep}" data-keep2="0">נמחק בסוף ההתקנה</button>
           <button type="button" role="radio" class="${mkKeep?"on":""}" aria-checked="${mkKeep}" data-keep2="1">קבוע</button>
         </div>
-        <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש.":"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
+        <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש."+(mkType==="pc"?" כשיש אינטרנט הוא מוריד לבד את הגרסה החדשה ביותר.":""):"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
         <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
       </div>
       <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
