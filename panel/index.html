@@ -37,32 +37,73 @@ button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--primary)}
 h1,h2,h3{margin:0;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums}
-.topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--outline-v)}
-.topbar .in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;min-height:64px;
-  padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
-.brand{display:flex;align-items:center;gap:10px}
-.brand img{width:34px;height:34px;border-radius:9px}
-.brand b{font-size:19px;font-weight:700}
-.brand small{display:block;font-size:12px;color:var(--on-variant);margin-top:-3px}
-.spacer{flex:1}
-.who{font-size:13px;color:var(--on-variant);text-align:left}
-.role{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:6px;background:var(--secondary-c);color:var(--on-secondary-c);margin-inline-start:6px}
-nav.tabs{max-width:1200px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));scrollbar-width:none}
-nav.tabs a{display:flex;align-items:center;gap:6px;padding:10px 14px 12px;color:var(--on-variant);text-decoration:none;font-weight:500;white-space:nowrap;border-bottom:3px solid transparent}
-nav.tabs a.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+@media (max-width:720px){
+  #devRows~*{}
+  table.cards thead{display:none}
+  table.cards,table.cards tbody{display:block}
+  table.cards tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;padding:14px 4px;border-bottom:1px solid var(--outline-v)}
+  table.cards td{border:0;padding:0;font-size:13.5px}
+  table.cards td.nm{grid-column:1/-1;font-size:15.5px}
+  table.cards td[data-l]::before{content:attr(data-l);display:block;font-size:11.5px;color:var(--on-variant);font-weight:600}
+}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--outline-v);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.subtabs button{font:inherit;font-weight:600;font-size:14.5px;background:none;border:0;padding:10px 14px;color:var(--on-variant);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.subtabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
+.sw2 span b{display:block;font-weight:600}.sw2 span .muted{display:block}
+.shell{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;background:var(--surface);border-inline-end:1px solid var(--outline-v);padding:18px 12px 14px;overflow-y:auto;z-index:30}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px}
+.brand img{width:36px;height:36px;border-radius:10px}
+.brand b{font-size:18px;font-weight:700;display:block;line-height:1.2}
+.brand small{display:block;font-size:12px;color:var(--on-variant)}
+nav.tabs{display:flex;flex-direction:column;gap:2px;flex:1}
+nav.tabs .grp{font-size:11.5px;font-weight:700;letter-spacing:.3px;color:var(--outline);padding:14px 12px 6px}
+nav.tabs a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;color:var(--on-variant);text-decoration:none;font-weight:500;font-size:14.5px}
+nav.tabs a svg{width:21px;height:21px;flex:none}
+nav.tabs a:hover{background:var(--surface-hi);color:var(--on)}
+nav.tabs a.on{background:var(--secondary-c);color:var(--on-secondary-c);font-weight:700}
+nav.tabs a .count{margin-inline-start:auto}
+.me{margin-top:14px;border-top:1px solid var(--outline-v);padding:14px 8px 0;display:flex;align-items:center;gap:10px}
+.me .av{width:38px;height:38px;border-radius:50%;background:var(--primary-c);color:var(--on-primary-c);display:grid;place-items:center;font-weight:700;flex:none}
+.me .nm{flex:1;min-width:0;font-size:13.5px;line-height:1.35}
+.me .nm span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.role{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:6px;background:var(--secondary-c);color:var(--on-secondary-c)}
 .count{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--error);color:#fff;font-size:11.5px;font-weight:700;display:inline-grid;place-items:center}
 @media (prefers-color-scheme:dark){.count{color:#690005}}
-main{max-width:1200px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+.mtop{display:none}
+main{padding:28px 32px 56px;max-width:1240px;width:100%}
+.phead{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.phead .tt{flex:1;min-width:220px}
+.phead h1{font-size:26px;font-weight:700;letter-spacing:-.2px}
+.phead p{margin:4px 0 0;color:var(--on-variant);font-size:14.5px}
+.scrim{display:none}
+@media (max-width:1000px){
+  .shell{display:block}
+  .mtop{display:flex;position:sticky;top:0;z-index:20;align-items:center;gap:10px;min-height:58px;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));background:var(--surface);border-bottom:1px solid var(--outline-v)}
+  .mtop b{font-size:17px}
+  .mtop img{width:30px;height:30px;border-radius:8px}
+  .mtop .mb{width:44px;height:44px;border:0;background:none;border-radius:12px;display:grid;place-items:center;cursor:pointer;color:var(--on)}
+  .side{position:fixed;inset:0 0 0 auto;width:min(300px,86vw);transform:translateX(105%);transition:transform .2s;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
+  body.navopen .side{transform:none}
+  body.navopen .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:25}
+  main{padding:18px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+  .phead h1{font-size:22px}
+}
 .card{background:var(--surface);border:1px solid var(--outline-v);border-radius:16px;box-shadow:var(--shadow)}
 .card>.hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--outline-v);flex-wrap:wrap}
 .card>.hd h2{font-size:16px;font-weight:600}
 .card>.bd{padding:16px 18px}
-.grid{display:grid;gap:16px}
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:860px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tile{padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--outline-v);text-decoration:none;color:inherit;display:block}
 .tile:hover{border-color:var(--primary)}
-.tile .v{font-size:30px;font-weight:700;line-height:1.1}
+.tile{display:flex!important;gap:14px;align-items:center}
+.tile .ti{width:44px;height:44px;border-radius:14px;background:var(--secondary-c);color:var(--on-secondary-c);display:grid;place-items:center;flex:none}
+.tile.alert .ti{background:var(--error-c);color:var(--on-error-c)}
+.tile .v{font-size:28px;font-weight:700;line-height:1.1}
+.linkbox{display:flex;gap:8px;align-items:center;border:1px dashed var(--outline);border-radius:12px;padding:8px 8px 8px 12px;background:var(--surface-hi)}
+.linkbox span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
 .tile .l{font-size:13px;color:var(--on-variant);margin-top:4px}
 .tile.alert .v{color:var(--error)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:20px;border:1px solid transparent;cursor:pointer;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
@@ -187,16 +228,18 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke
 </section>
 
 <div id="appView" hidden>
-  <header class="topbar">
-    <div class="in">
+  <div class="mtop"><button class="mb" id="navBtn" aria-label="תפריט"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <img src="icon.webp" alt=""><b>קיידרואיד</b></div>
+  <div class="shell">
+    <aside class="side" aria-label="ניווט">
       <div class="brand"><img src="icon.webp" alt=""><div><b>קיידרואיד</b><small>מערכת ניהול</small></div></div>
-      <div class="spacer"></div>
-      <div class="who"><span id="whoName" dir="auto"></span><span class="role" id="whoRole"></span></div>
-      <button class="btn text sm" id="logoutBtn">יציאה</button>
-    </div>
-    <nav class="tabs" id="tabs"></nav>
-  </header>
-  <main id="view"></main>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="me"><div class="av" id="whoAv"></div><div class="nm"><span id="whoName" dir="auto"></span><span class="role" id="whoRole"></span></div>
+        <button class="btn text sm" id="logoutBtn">יציאה</button></div>
+    </aside>
+    <main id="main"><div id="phead"></div><div id="view"></div></main>
+  </div>
+  <div class="scrim" id="scrim"></div>
 </div>
 
 <dialog id="dlg"><div class="in" id="dlgIn"></div></dialog>
@@ -238,6 +281,13 @@ const ICON = {
   chat:'<path d="M4 5h16v11H8l-4 4z"/>', back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
   download:'<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
   phone:'<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17v.01"/>',
+  home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
+  inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5c1.7.9 2.8 2.9 3 5.5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3.6 14H3.5a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 7.1a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9.4A1.7 1.7 0 0 0 10 1.5V1.4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V7.4a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
   pc:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M15 8l2 2"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>'};
 const icon = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';
@@ -254,11 +304,14 @@ function toast(s){ const t=$("toast"); t.textContent=s; t.hidden=false; clearTim
 // ---------------------------------------------------------------- firestore REST (plain requests: works behind filtering)
 async function tok(){ return auth.currentUser.getIdToken(); }
 function val(v){ if(!v) return null; if("stringValue" in v) return v.stringValue; if("integerValue" in v) return Number(v.integerValue);
-  if("doubleValue" in v) return v.doubleValue; if("booleanValue" in v) return v.booleanValue; return null; }
+  if("doubleValue" in v) return v.doubleValue; if("booleanValue" in v) return v.booleanValue;
+  if("mapValue" in v){ const o={}; for(const k in (v.mapValue.fields||{})) o[k]=val(v.mapValue.fields[k]); return o; } return null; }
 function decode(doc){ const o={_id:decodeURIComponent(doc.name.split("/").pop())}; for(const k in (doc.fields||{})) o[k]=val(doc.fields[k]); return o; }
 function encode(o){ const f={}; for(const k in o){ const v=o[k]; if(v===undefined) continue;
   if(typeof v==="boolean") f[k]={booleanValue:v}; else if(typeof v==="number"&&Number.isInteger(v)) f[k]={integerValue:String(v)};
-  else if(typeof v==="number") f[k]={doubleValue:v}; else f[k]={stringValue:String(v==null?"":v)}; } return f; }
+  else if(typeof v==="number") f[k]={doubleValue:v};
+  else if(v&&typeof v==="object") f[k]={mapValue:{fields:encode(v)}};
+  else f[k]={stringValue:String(v==null?"":v)}; } return f; }
 async function req(method,url,body){
   const r=await fetch(url,{method,headers:{Authorization:"Bearer "+await tok(),"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));
@@ -311,6 +364,7 @@ auth.onAuthStateChanged(async u=>{
   }catch(e){ $("loginErr").textContent="לא הצלחתי להתחבר לשרת. נסו שוב."; return; }
   $("loginView").hidden=true; $("appView").hidden=false;
   $("whoName").textContent=me.role==="owner"?u.email:me.name; $("whoRole").textContent=me.role==="owner"?"בעלים":"מתקין";
+  $("whoAv").textContent=(me.role==="owner"?"מ":String(me.name||"?").trim().charAt(0));
   if(!location.hash) history.replaceState(null,"","#overview");
   render(); await load(); pollT=setInterval(()=>{ if(!draft) load(); },15000);
 });
@@ -323,6 +377,9 @@ $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
   try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
 };
+$("navBtn").onclick=()=>document.body.classList.toggle("navopen");
+$("scrim").onclick=()=>document.body.classList.remove("navopen");
+$("tabs").addEventListener("click",e=>{ if(e.target.closest("a")) document.body.classList.remove("navopen"); });
 $("logoutBtn").onclick=()=>{ if(draft&&!confirm("יש שינויים שלא נשמרו. לצאת בכל זאת?")) return; draft=null; auth.signOut(); };
 let lastHash=location.hash;
 window.addEventListener("hashchange",()=>{
@@ -346,6 +403,7 @@ async function load(){
       backfillCodeProfiles(); ensureReleasePool(); ensurePublicStock(); loadPublicLog();
     }
     else{
+      D.config=(await getDoc("config/public").catch(()=>null))||{};
       const inst=await getDoc("installers/"+me.uid).catch(()=>null);
       if(inst){ me.canRelease=inst.canRelease!==false; me.canDelete=inst.canDelete===true; }
     }
@@ -419,41 +477,78 @@ function render(){
   if((route==="messages"||route==="installers")&&me.role!=="owner") return vOverview(v);
   (views[route]||vOverview)(v);
 }
+const PAGE_HEAD={
+  overview:()=>["שלום"+(me.role==="installer"?", "+me.name:""), me.role==="owner"?"תמונת מצב של כל המערכת":"המכשירים והבקשות שלך במבט אחד"],
+  devices:()=>["מכשירים", D.devices.length+" מכשירים "+(me.role==="owner"?"במערכת":"שלך")],
+  requests:()=>["בקשות","בקשות שינוי ששלחו המשתמשים מהאפליקציה"],
+  messages:()=>["פניות למערכת","הודעות ובקשות עזרה מהמשתמשים, אליך בלבד"],
+  installers:()=>["מתקינים","צוות המתקינים, ההרשאות שלהם והמכשירים של כל אחד"],
+  install:()=>["התקנה והורדות","קישור אישי, קובצי התקנה, וקודי חירום למכשירים בלי אינטרנט"],
+  settings:()=>["הגדרות",me.role==="owner"?"ברירות מחדל, פרטי המוקד, מתגים וחשבון":"ברירת המחדל שלך והחשבון"]};
 function renderTabs(route){
   if(!me) return;
-  if(route===undefined){ const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"); route=i<0?h:h.slice(0,i); }
-  const tabs=[["overview","סקירה"],["devices","מכשירים"],["requests","בקשות",openRequests().length]];
-  if(me.role==="owner") tabs.push(["messages","פניות",openMessages().length],["installers","מתקינים"]);
-  tabs.push(["install","התקנה"],["settings","הגדרות"]);
-  const cur = route==="device"?"devices":route;
-  $("tabs").innerHTML=tabs.map(([k,t,n])=>'<a href="#'+k+'" class="'+(k===cur?"on":"")+'">'+t+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("");
+  const navOnly = route===undefined; // a background refresh redraws the menu (badges) and leaves the page header alone
+  if(navOnly){ const h=(location.hash||"#overview").slice(1), i=h.indexOf("/"); route=i<0?h:h.slice(0,i); }
+  const own=me.role==="owner", cur=route==="device"?"devices":route;
+  const groups=[["ניהול",[["overview","סקירה","home"],["devices","מכשירים","phone"],["requests","בקשות","inbox",openRequests().length]]]];
+  if(own) groups.push(["תקשורת",[["messages","פניות","chat",openMessages().length]]]);
+  groups.push(["התקנה",[["install","התקנה והורדות","download"]]]);
+  if(own) groups.push(["צוות",[["installers","מתקינים","users"]]]);
+  groups.push(["מערכת",[["settings","הגדרות","gear"]]]);
+  $("tabs").innerHTML=groups.map(([g,items])=>'<div class="grp">'+g+'</div>'+items.map(([k,t,ic,n])=>
+    '<a href="#'+k+'" class="'+(k===cur?"on":"")+'"'+(k===cur?' aria-current="page"':'')+'>'+icon(ic)+'<span>'+t+'</span>'+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("")).join("");
+  if(navOnly) return;
+  const h=PAGE_HEAD[route];
+  $("phead").innerHTML = h ? (([t,sub])=>'<div class="phead"><div class="tt"><h1>'+esc(t)+'</h1><p>'+esc(sub)+'</p></div><div class="row" id="pacts"></div></div>')(h()) : "";
 }
 
 // ---------------------------------------------------------------- overview
+/** the public download page, and an installer's personal link to it */
+const siteUrl = code => new URL("../download/"+(code?"?i="+code:""), location.href).href;
+async function copyText(t,ok){ try{ await navigator.clipboard.writeText(t); toast(ok||"הועתק"); }catch(e){ prompt("העתיקו:",t); } }
+const tile = (href,ic,val,label,alert) => `<a class="tile ${alert?"alert":""}" href="${href}"><div class="ti">${icon(ic)}</div><div><div class="v num">${val}</div><div class="l">${label}</div></div></a>`;
+function linkCard(){
+  const own=me.role==="owner", f=D.config.features||{}, linksOn=f.links!==false, siteOn=f.site!==false;
+  const url=own?siteUrl(""):siteUrl(me.code);
+  if(!own&&!linksOn) return `<section class="card"><div class="hd">${icon("link")}<h2>הקישור האישי שלך</h2></div><div class="bd"><div class="note info">הקישורים האישיים כבויים כרגע על ידי מנהל המערכת.</div></div></section>`;
+  return `<section class="card"><div class="hd">${icon("link")}<h2>${own?"אתר ההורדה הציבורי":"הקישור האישי שלך"}</h2>
+      ${own?`<span class="pill ${siteOn?"active":"released"}">${siteOn?"פתוח":"סגור"}</span>`:""}</div><div class="bd">
+    <p class="muted" style="margin-top:0">${own?"מכאן כל אחד יכול להתקין לבד. המכשירים מגיעים אליך כמוקד.":"מי שמתקין דרך הקישור הזה מתחבר אליך: המכשיר מופיע אצלך, עם ברירת המחדל שלך."}</p>
+    <div class="linkbox"><span dir="ltr">${esc(url)}</span><button class="btn tonal sm" data-copy="${esc(url)}">${icon("copy")}העתק</button></div>
+    ${own?"":`<div class="muted" style="margin-top:10px">קוד המתקין שלך: <b class="num" style="letter-spacing:2px">${esc(me.code)}</b> · למי שמתקין בלי הקישור</div>`}
+  </div></section>`;
+}
 function vOverview(v){
   const act=D.devices.filter(d=>d.status==="active").length, pend=D.devices.filter(d=>d.status==="pending").length;
-  const stale=D.devices.filter(isStale), reqs=openRequests(), att=attention();
+  const stale=D.devices.filter(isStale), reqs=openRequests(), att=attention(), own=me.role==="owner";
   const pf=D.publicFree;
-  const stockAlert = me.role==="owner"&&pf!=null&&pf<PUBLIC_LOW ? `<a class="note ${pf===0?"err":"warn"}" href="#install" style="display:block;text-decoration:none;color:inherit">
+  const stockAlert = own&&pf!=null&&pf<PUBLIC_LOW ? `<a class="note ${pf===0?"err":"warn"}" href="#install" style="display:block;text-decoration:none;color:inherit">
     <b>${pf===0?"מלאי ההורדה הציבורית נגמר.":"מלאי ההורדה הציבורית עומד להיגמר ("+pf+" נשארו)."}</b>
     ${pf===0?"מי שמוריד עכשיו מקבל קובץ שדורש אינטרנט פעם אחת בנעילה.":""} השאירו את הפאנל פתוח כדי שהמלאי יתמלא.</a>` : "";
   v.innerHTML=`<div class="grid">
     ${stockAlert}
-    ${me.role==="installer"?`<div class="note ok">קוד המתקין שלך: <b class="num" style="font-size:18px;letter-spacing:2px">${esc(me.code)}</b> · מסרו אותו למי שמתקין לבד, כדי שהמכשיר יגיע אליכם.</div>`:""}
     <div class="tiles">
-      <a class="tile" href="#devices"><div class="v num">${act}</div><div class="l">מכשירים מוגנים</div></a>
-      <a class="tile ${pend?"alert":""}" href="#devices"><div class="v num">${pend}</div><div class="l">ממתינים להפעלה</div></a>
-      <a class="tile ${reqs.length?"alert":""}" href="#requests"><div class="v num">${reqs.length}</div><div class="l">בקשות פתוחות</div></a>
-      <a class="tile ${stale.length?"alert":""}" href="#devices"><div class="v num">${stale.length}</div><div class="l">לא התחברו 3 ימים ומעלה</div></a>
+      ${tile("#devices","shield",act,"מכשירים מוגנים")}
+      ${tile("#devices","phone",pend,"ממתינים להפעלה",pend)}
+      ${tile("#requests","inbox",reqs.length,"בקשות פתוחות",reqs.length)}
+      ${tile("#devices","alert",stale.length,"לא התחברו 3 ימים ומעלה",stale.length)}
     </div>
     <div class="split">
-      <section class="card"><div class="hd"><h2>בקשות פתוחות</h2><span class="spacer"></span><a class="btn text sm" href="#requests">לכל הבקשות</a></div>
-        <div class="list">${reqs.slice(0,6).map(reqItem).join("")||'<div class="empty">אין בקשות פתוחות</div>'}</div></section>
-      <section class="card"><div class="hd"><h2>דורשים תשומת לב</h2></div>
-        <div class="list">${att.map(d=>`<a class="item" style="text-decoration:none;color:inherit" href="#device/${encodeURIComponent(d._id)}">
-          <div class="main"><div class="t">${esc(d.name)}</div><div class="muted">${esc(d.why)}</div></div>${pill(statusOf(d))}</a>`).join("")||'<div class="empty">הכל תקין</div>'}</div></section>
+      <div class="grid">
+        <section class="card"><div class="hd"><h2>בקשות פתוחות</h2><span class="spacer"></span><a class="btn text sm" href="#requests">לכל הבקשות</a></div>
+          <div class="list">${reqs.slice(0,6).map(reqItem).join("")||'<div class="empty">אין בקשות פתוחות</div>'}</div></section>
+        <section class="card"><div class="hd"><h2>דורשים תשומת לב</h2></div>
+          <div class="list">${att.map(d=>`<a class="item" style="text-decoration:none;color:inherit" href="#device/${encodeURIComponent(d._id)}">
+            <div class="main"><div class="t">${esc(d.name)}</div><div class="muted">${esc(d.why)}</div></div>${pill(statusOf(d))}</a>`).join("")||'<div class="empty">הכל תקין</div>'}</div></section>
+      </div>
+      <div class="grid">${linkCard()}
+        ${own?`<section class="card"><div class="hd"><h2>מלאי ההורדה הציבורית</h2><span class="spacer"></span><a class="btn text sm" href="#install">פרטים</a></div><div class="bd">
+          <div class="v num" style="font-size:28px;font-weight:700">${pf==null?"…":pf}<span class="muted" style="font-size:14px;font-weight:500"> מתוך ${PUBLIC_TARGET}</span></div>
+          <div class="bar"><i style="width:${pf==null?0:Math.min(100,Math.round(pf*100/PUBLIC_TARGET))}%"></i></div></div></section>`:""}
+      </div>
     </div></div>`;
 }
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-copy]"); if(b) copyText(b.dataset.copy,"הקישור הועתק"); });
 function attention(){
   const out=[];
   D.devices.forEach(d=>{
@@ -492,7 +587,7 @@ function vDevices(v){
   v.innerHTML=`<section class="card"><div class="bd">
     <div class="toolbar"><input type="search" id="q" placeholder="חיפוש לפי שם או טלפון" value="${esc(devSearch)}" aria-label="חיפוש">
       <div class="chips">${Object.entries(f).map(([k,t])=>`<button class="chip ${devFilter===k?"on":""}" data-f="${k}">${t}</button>`).join("")}</div></div>
-    <div class="tablewrap"><table><thead><tr><th>שם</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
+    <div class="tablewrap"><table class="cards"><thead><tr><th>שם</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
     <tbody id="devRows"></tbody></table></div><div id="devEmpty" class="empty" hidden>לא נמצאו מכשירים</div></div></section>`;
   const draw=()=>{
     const q=devSearch.trim();
@@ -502,10 +597,10 @@ function vDevices(v){
       return devFilter==="all"||d.status===devFilter;
     }).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(b.createdAt||0)-(a.createdAt||0));
     $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{};
-      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}</td>
-      <td class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</td>${me.role==="owner"?`<td>${esc(installerLabel(d.installerId))}</td>`:""}
-      <td>${pill(statusOf(d))}${issuesOf(d._id).length?' <span class="pill pending" title="'+esc(issuesOf(d._id).map(issueText).join("\n"))+'">⚠ '+(issuesOf(d._id).length===1?'בעיה אחת':issuesOf(d._id).length+' בעיות')+'</span>':""}</td><td>${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
-      <td>${ago(lastSeen(d._id))}</td><td class="num">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
+      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td class="nm"><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}</td>
+      <td class="num" dir="ltr" style="text-align:right" data-l="טלפון">${esc(d.phone)}</td>${me.role==="owner"?`<td data-l="מתקין">${esc(installerLabel(d.installerId))}</td>`:""}
+      <td data-l="מצב">${pill(statusOf(d))}${issuesOf(d._id).length?' <span class="pill pending" title="'+esc(issuesOf(d._id).map(issueText).join("\n"))+'">⚠ '+(issuesOf(d._id).length===1?'בעיה אחת':issuesOf(d._id).length+' בעיות')+'</span>':""}</td><td data-l="מסלול">${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
+      <td data-l="נראה לאחרונה">${ago(lastSeen(d._id))}</td><td class="num" data-l="גרסה">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
     $("devEmpty").hidden=rows.length>0;
   };
   draw();
@@ -738,7 +833,8 @@ function vInstallers(v){
       ${i.self?"":`<div class="instperm">
         <div class="sw"><span>יכול לשחרר מכשירים</span><label class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""} aria-label="יכול לשחרר מכשירים"><i></i></label></div>
         <div class="sw"><span>יכול למחוק מכשירים מהמערכת</span><label class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""} aria-label="יכול למחוק מכשירים"><i></i></label></div>
-        <div class="row"><button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
+        <div class="row"><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק קישור אישי</button>
+          <button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
           <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת מתקין":"הפעל מתקין"}</button></div>
       </div>`}
       ${open?`<div class="instdevs">
@@ -1001,8 +1097,10 @@ let myFiles=null;
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
+  const filesOff = !own && (D.config.features||{}).installerFiles===false;
   v.innerHTML=`<div class="split"><div class="grid">
-    <section class="card"><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd">
+    ${linkCard()}
+    <section class="card" ${filesOff?"hidden":""}><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd">
       ${own?`<div class="field"><label class="f" for="ftWho">הקובץ בשביל</label><select id="ftWho">
         <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
         ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
@@ -1024,6 +1122,7 @@ function vInstall(v){
     ${own?`<section class="card"><div class="hd"><h2>הורדה ציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
       <p class="muted" style="margin-top:0">מי שמוריד מדף ההורדה הציבורי מקבל קובץ ייחודי משלו מהמלאי. המכשיר יופיע אצלך כמוקד, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>
       <div id="stockBox" class="note info">בודק את המלאי…</div></div></section>`:""}
+    ${filesOff?`<section class="card"><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd"><div class="note warn">הורדת קבצים כבויה כרגע על ידי מנהל המערכת. אפשר להתקין דרך הקישור האישי.</div></div></section>`:""}
     <section class="card"><div class="hd"><h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>
   </div><div class="grid">
     <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
@@ -1069,37 +1168,68 @@ async function listFiles(){
 }
 
 // ---------------------------------------------------------------- settings
+// what the owner can switch off. Every switch is on unless turned off; the security rules check them too.
+const FEATURES=[
+  ["אתר ההורדה הציבורי",[
+    ["site","האתר כולו","כשכבוי, אי אפשר להוריד או להתקין מהאתר בכלל"],
+    ["siteWeb","התקנה מהדפדפן","חיבור הטלפון בכבל למחשב והתקנה ישירות מהדף"],
+    ["sitePhone","הורדה לטלפון","קובץ להתקנה בטלפון או במסך מולטימדיה"],
+    ["sitePc","תוכנה למחשב","תוכנת התקנה ל-Windows דרך כבל"]]],
+  ["מתקינים",[
+    ["links","קישורים אישיים","התקנה דרך הקישור של מתקין מחברת את המכשיר אליו"],
+    ["installerFiles","הורדת קבצים בפאנל","מתקינים יכולים להוריד קובצי התקנה בלשונית 'התקנה'"]]],
+  ["משתמשים",[
+    ["messages","פניות למערכת","משתמשים יכולים לשלוח לך הודעות מהאפליקציה"]]]];
+let setTab="profile";
 function vSettings(v){
   const own=me.role==="owner", p=defaultProfile();
-  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>פרופיל ברירת מחדל</h2></div><div class="bd">
-    <p class="muted" style="margin-top:0">זו ברירת המחדל שמוצעת בהתקנה של כל מכשיר ${own?"שנרשם בלי קוד מתקין":"עם הקוד שלך"}. במכשיר אפשר לבחור בה, או להגדיר אחרת לפני הנעילה.</p>
-    ${MODES.map(m=>`<label class="opt ${p.filter_mode===m.v?"on":""}"><input type="radio" name="dmode" value="${m.v}" ${p.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
-    ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-dk="${k}" ${p.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}
-    <button class="btn fill" id="saveProf" style="margin-top:16px">שמור פרופיל</button></div></section>
-    <div class="grid">
-    ${own?`<section class="card"><div class="hd"><h2>פרטי המוקד</h2></div><form class="bd" id="pubForm">
-      <p class="muted" style="margin-top:0">מוצגים במכשירים שנרשמו בלי קוד מתקין.</p>
+  const tabs=[["profile","ברירת מחדל"]].concat(own?[["centre","פרטי המוקד"],["switches","מתגים"]]:[["me","הפרטים שלי"]]).concat([["account","חשבון"]]);
+  if(!tabs.some(t=>t[0]===setTab)) setTab="profile";
+  const f=D.config.features||{}, isOn=k=>k==="messages"?D.config.messagesOff!==true:f[k]!==false;
+  const body={
+    profile:`<section class="card"><div class="hd"><h2>פרופיל ברירת מחדל</h2></div><div class="bd">
+      <p class="muted" style="margin-top:0">זו ברירת המחדל שמוצעת בהתקנה של כל מכשיר ${own?"שנרשם בלי קוד מתקין":"עם הקוד שלך"}. במכשיר אפשר לבחור בה, או להגדיר אחרת לפני הנעילה.</p>
+      ${MODES.map(m=>`<label class="opt ${p.filter_mode===m.v?"on":""}"><input type="radio" name="dmode" value="${m.v}" ${p.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
+      ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-dk="${k}" ${p.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}
+      <button class="btn fill" id="saveProf" style="margin-top:16px">שמור פרופיל</button></div></section>`,
+    centre:`<section class="card"><div class="hd"><h2>פרטי המוקד</h2></div><form class="bd" id="pubForm">
+      <p class="muted" style="margin-top:0">מוצגים במכשירים שנרשמו בלי קוד מתקין, ובאתר ההורדה.</p>
       <div class="field"><label class="f" for="oName">שם</label><input id="oName" type="text" value="${esc(D.config.ownerName||"מוקד קיידרואיד")}"></div>
       <div class="field"><label class="f" for="oPhone">טלפון</label><input id="oPhone" type="tel" dir="ltr" value="${esc(D.config.ownerPhone||"")}"></div>
-      <button class="btn tonal" type="submit">שמור</button></form></section>`:
-     `<section class="card"><div class="hd"><h2>הפרטים שלי</h2></div><div class="bd"><dl class="kv"><dt>שם</dt><dd>${esc(me.name)}</dd><dt>טלפון</dt><dd dir="ltr" style="text-align:right">${esc(me.phone)}</dd><dt>קוד מתקין</dt><dd><b class="num" style="letter-spacing:2px">${esc(me.code)}</b></dd></dl></div></section>`}
-    <section class="card"><div class="hd"><h2>החלפת סיסמה</h2></div><form class="bd" id="pwForm">
+      <button class="btn tonal" type="submit">שמור</button></form></section>`,
+    switches:`<div class="grid">${FEATURES.map(([g,items])=>`<section class="card"><div class="hd"><h2>${g}</h2></div><div class="bd" style="padding-top:4px">
+      ${items.map(([k,t,d])=>`<div class="sw sw2"><span><b>${t}</b><span class="muted">${d}</span></span>
+        <label class="toggle"><input type="checkbox" data-feat="${k}" ${isOn(k)?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}</div></section>`).join("")}
+      <div class="note info">כשמתג כבוי, האפשרות נעלמת מהאתר או מהפאנל, וגם השרת עצמו חוסם אותה, כך שאי אפשר לעקוף אותה.</div></div>`,
+    me:`<section class="card"><div class="hd"><h2>הפרטים שלי</h2></div><div class="bd"><dl class="kv"><dt>שם</dt><dd>${esc(me.name)}</dd><dt>טלפון</dt><dd dir="ltr" style="text-align:right">${esc(me.phone)}</dd><dt>קוד מתקין</dt><dd><b class="num" style="letter-spacing:2px">${esc(me.code)}</b></dd>
+      <dt>שחרור מכשירים</dt><dd>${me.canRelease?"מותר":"רק דרך מנהל המערכת"}</dd><dt>מחיקת מכשירים</dt><dd>${me.canDelete?"מותר":"רק דרך מנהל המערכת"}</dd></dl></div></section>`,
+    account:`<section class="card"><div class="hd"><h2>החלפת סיסמה</h2></div><form class="bd" id="pwForm">
       <div class="field"><label class="f" for="np">סיסמה חדשה</label><input id="np" type="password" dir="ltr" minlength="8" autocomplete="new-password" required></div>
-      <button class="btn tonal" type="submit">החלף סיסמה</button><p class="err" id="pwErr"></p></form></section></div></div>`;
-  $("saveProf").onclick=async()=>{
-    const fm=(v.querySelector('input[name=dmode]:checked')||{}).value||"NavigationMode", s={};
-    v.querySelectorAll("[data-dk]").forEach(c=>s[c.dataset.dk]=c.checked);
-    const json=JSON.stringify({filter_mode:fm,settings:s});
+      <button class="btn tonal" type="submit">החלף סיסמה</button><p class="err" id="pwErr"></p></form></section>`};
+  v.innerHTML=`<div class="subtabs" role="tablist">${tabs.map(([k,t])=>`<button role="tab" class="${k===setTab?"on":""}" aria-selected="${k===setTab}" data-st="${k}">${t}</button>`).join("")}</div>
+    <div style="max-width:760px">${body[setTab]}</div>`;
+  v.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ setTab=b.dataset.st; vSettings(v); });
+  if($("saveProf")) $("saveProf").onclick=async()=>{
+    const fm=(v.querySelector('input[name=dmode]:checked')||{}).value||"NavigationMode", st={};
+    v.querySelectorAll("[data-dk]").forEach(c=>st[c.dataset.dk]=c.checked);
+    const json=JSON.stringify({filter_mode:fm,settings:st});
     try{ if(own){ await commit([{set:"config/ownerProfile",data:{json}}]); D.ownerProfile=parse(json); }
-         else{ // the copy on the installer code is what an installing phone reads
-           await commit([{set:"installers/"+me.uid,data:{defaultProfile:json},mask:["defaultProfile"]},
-                         {set:"installerCodes/"+me.code,data:{profile:json},mask:["profile"],exists:true}]); me.defaultProfile=parse(json); }
+         else{ await commit([{set:"installers/"+me.uid,data:{defaultProfile:json},mask:["defaultProfile"]},
+                             {set:"installerCodes/"+me.code,data:{profile:json},mask:["profile"],exists:true}]); me.defaultProfile=parse(json); }
          toast("הפרופיל נשמר"); }catch(e){ toast("השמירה נכשלה"); }
   };
   v.querySelectorAll('input[name=dmode]').forEach(r=>r.onchange=()=>v.querySelectorAll(".opt").forEach(o=>o.classList.toggle("on",o.contains(v.querySelector('input[name=dmode]:checked')))));
   if($("pubForm")) $("pubForm").onsubmit=async e=>{ e.preventDefault();
     try{ await commit([{set:"config/public",data:{ownerName:$("oName").value.trim(),ownerPhone:$("oPhone").value.trim()},mask:["ownerName","ownerPhone"]}]); toast("נשמר"); load(); }catch(err){ toast("השמירה נכשלה"); } };
-  $("pwForm").onsubmit=async e=>{ e.preventDefault(); $("pwErr").textContent="";
+  v.querySelectorAll("[data-feat]").forEach(c=>c.onchange=async()=>{
+    const k=c.dataset.feat, onNow=c.checked;
+    try{
+      if(k==="messages"){ await commit([{set:"config/public",data:{messagesOff:!onNow},mask:["messagesOff"]}]); D.config.messagesOff=!onNow; }
+      else { const nf=Object.assign({},D.config.features||{},{[k]:onNow}); await commit([{set:"config/public",data:{features:nf},mask:["features"]}]); D.config.features=nf; }
+      toast(onNow?"הופעל":"כובה");
+    }catch(e){ c.checked=!onNow; toast("השינוי נכשל"); }
+  });
+  if($("pwForm")) $("pwForm").onsubmit=async e=>{ e.preventDefault(); $("pwErr").textContent="";
     try{ await auth.currentUser.updatePassword($("np").value); toast("הסיסמה הוחלפה"); e.target.reset(); }
     catch(err){ $("pwErr").textContent=err.code==="auth/requires-recent-login"?"מטעמי אבטחה, צאו והיכנסו שוב ואז נסו שוב.":"ההחלפה נכשלה."; } };
 }

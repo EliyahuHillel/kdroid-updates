@@ -154,6 +154,18 @@ details .a{padding:0 18px 16px;color:var(--on-variant)}
 .prog .bar i{display:block;height:100%;width:0;background:var(--primary);transition:width .2s}
 .prog.ok{border-color:var(--primary);background:color-mix(in srgb,var(--primary-c) 25%,var(--surface))}
 .prog.err{border-color:var(--error);background:var(--error-c);color:var(--on-error-c)}
+.wsteps{list-style:none;margin:14px 0 0;padding:0}
+.wsteps li{display:flex;gap:12px;align-items:center;padding:8px 0;color:var(--on-variant)}
+.wsteps li i{width:24px;height:24px;border-radius:50%;border:2px solid var(--outline-v);flex:none;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:700}
+.wsteps li.now{color:var(--on);font-weight:600}.wsteps li.now i{border-color:var(--primary);border-top-color:transparent;animation:spin .8s linear infinite}
+.wsteps li.done i{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.wsteps li.bad{color:var(--error);font-weight:600}.wsteps li.bad i{border-color:var(--error);color:var(--error)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.banner{border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;font-weight:500}
+.banner.inst{background:var(--secondary-c);color:var(--on-secondary-c)}
+.banner.closed{background:var(--warn-c)}
+.badge{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--primary-c);color:var(--on-primary-c);margin-inline-start:6px;vertical-align:middle}
+.dl.three{grid-template-columns:repeat(3,1fr)}@media (max-width:900px){.dl.three{grid-template-columns:1fr}}
 footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px solid var(--outline-v)}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 60%,transparent);outline-offset:2px;border-radius:8px}
 </style>
@@ -183,6 +195,7 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
     <span class="eyebrow"><svg width="16" height="16"><use href="#i-shield"/></svg> חסימה כשרה לאנדרואיד</span>
     <h1>חוסמים את הטלפון <em>לבד</em>,<br>ואף אחד לא יכול לפתוח אותו לבד.</h1>
     <p class="lead">מתקינים, בוחרים מסלול ונועלים. מרגע הנעילה אי אפשר להסיר את החסימה או לשנות אותה מהמכשיר עצמו. כל שינוי נעשה רק דרך מוקד קיידרואיד.</p>
+    <div id="instBanner" class="banner inst" hidden style="margin-top:18px"></div>
     <div class="ctas">
       <a class="btn fill" href="#download"><svg><use href="#i-dl"/></svg>להורדה</a>
       <a class="btn out" href="#guide">איך מתקינים?</a>
@@ -246,6 +259,7 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
     <button role="tab" aria-selected="true" data-g="g1">טלפון רגיל</button>
     <button role="tab" aria-selected="false" data-g="g2">מסך מולטימדיה ברכב</button>
     <button role="tab" aria-selected="false" data-g="g3">דרך מחשב</button>
+    <button role="tab" aria-selected="false" data-g="g4">מהדפדפן במחשב</button>
   </div>
 
   <div class="guide" id="g1" role="tabpanel">
@@ -287,6 +301,18 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
       <li><h3>בטלפון: בוחרים ונועלים</h3><p>ממלאים פרטים, בוחרים מסלול והגבלות, ולוחצים "נעל את המכשיר".</p></li>
     </ol>
   </div>
+  <div class="guide" id="g4" role="tabpanel" hidden>
+    <div class="need"><span>מחשב עם Chrome או Edge</span><span>כבל USB שמעביר נתונים</span><span>בלי להתקין שום תוכנה</span></div>
+    <ol class="steps">
+      <li><h3>בטלפון: מדליקים "ניפוי באגים ב-USB"</h3><p>הגדרות ← אודות הטלפון ← לוחצים 7 פעמים על "מספר גרסה". אחר כך: הגדרות ← אפשרויות מפתחים ← "ניפוי באגים ב-USB".</p>
+        <div class="what"><b>מה זה אומר?</b> "ניפוי באגים ב-USB" מאפשר למחשב להתקין את האפליקציה ולתת לה את הרשאת מנהל המכשיר. אחרי הנעילה קיידרואיד סוגר את האפשרות הזו.</div></li>
+      <li><h3>מחברים את הטלפון למחשב בכבל</h3><p>אם במחשב פתוחה תוכנה אחרת שעובדת מול טלפונים (למשל תוכנת גיבוי או adb), סוגרים אותה קודם.</p></li>
+      <li><h3>לוחצים "התקנה מהדפדפן" למטה</h3><p>הדפדפן מציג רשימה עם הטלפון. בוחרים אותו ולוחצים "התחברות". בטלפון מופיעה הודעה "לאפשר ניפוי באגים?": מסמנים "אפשר תמיד מהמחשב הזה" ולוחצים "אישור".</p></li>
+      <li><h3>מחכים בערך דקה</h3><p>הדף מכין קובץ אישי, מעתיק אותו לטלפון, מתקין ומפעיל. כל שלב מסומן על המסך. בסוף קיידרואיד נפתח בטלפון.</p></li>
+      <li><h3>בטלפון: בוחרים ונועלים</h3><p>ממלאים פרטים, בוחרים מסלול והגבלות, ולוחצים "נעל את המכשיר".</p>
+        <div class="what"><b>לא עובד?</b> בחלק מהמחשבים עם Windows הדפדפן לא רואה את הטלפון בלי מנהל התקן (Driver) של היצרן. במקרה כזה משתמשים בלשונית "דרך מחשב". שם התוכנה מגיעה עם כל מה שצריך.</div></li>
+    </ol>
+  </div>
 </div></section>
 
 <section class="s" id="faq"><div class="wrap">
@@ -304,13 +330,22 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
 <section class="s alt" id="download"><div class="wrap">
   <h2>הורדה</h2>
   <p class="sub">כל לחיצה מכינה קובץ אישי משלכם, עם קודים שלא עובדים על אף מכשיר אחר. ההכנה לוקחת כמה שניות, והקובץ שוקל בערך 43MB.</p>
-  <div class="dl">
-    <div class="card"><div class="ico"><svg><use href="#i-phone"/></svg></div><h3>הורדה לטלפון</h3>
+  <div id="closedNote" class="banner closed" hidden style="margin-top:20px"></div>
+  <div class="dl three" id="dlCards">
+    <div class="card" id="cardWeb"><div class="ico"><svg><use href="#i-pc"/></svg></div><h3>התקנה מהדפדפן <span class="badge">הכי פשוט</span></h3>
+      <p>מחברים את הטלפון בכבל למחשב, לוחצים כאן, וזהו. בלי להוריד ובלי להתקין שום תוכנה. עובד ב-Chrome או Edge במחשב.</p>
+      <button class="btn fill" id="webBtn"><svg><use href="#i-check"/></svg>התקנה מהדפדפן</button></div>
+    <div class="card" id="cardPhone"><div class="ico"><svg><use href="#i-phone"/></svg></div><h3>הורדה לטלפון</h3>
       <p>לטלפון רגיל (ניפוי באגים אלחוטי) ולמסכי מולטימדיה. אחרי ההפעלה הקובץ נמחק מהמכשיר לבד.</p>
-      <button class="btn fill" data-kind="phone"><svg><use href="#i-dl"/></svg>הורדה לטלפון</button></div>
-    <div class="card"><div class="ico"><svg><use href="#i-pc"/></svg></div><h3>תוכנה למחשב</h3>
+      <button class="btn tonal" data-kind="phone"><svg><use href="#i-dl"/></svg>הורדה לטלפון</button></div>
+    <div class="card" id="cardPc"><div class="ico"><svg><use href="#i-pc"/></svg></div><h3>תוכנה למחשב</h3>
       <p>ל-Windows, דרך כבל USB, בלי אינטרנט במחשב. בסוף ההתקנה היא נמחקת מהמחשב.</p>
       <button class="btn tonal" data-kind="pc"><svg><use href="#i-dl"/></svg>הורדה למחשב</button></div>
+  </div>
+  <div class="prog" id="webFlow" hidden role="status" aria-live="polite">
+    <b id="webT">התקנה מהדפדפן</b><div class="small" id="webS"></div>
+    <ol class="wsteps" id="webSteps"></ol>
+    <div class="bar"><i id="webB"></i></div>
   </div>
   <div class="prog" id="prog" hidden role="status" aria-live="polite"><b id="progT"></b><div class="small" id="progS"></div><div class="bar"><i id="progB"></i></div></div>
   <div class="note info" style="margin-top:18px"><svg><use href="#i-info"/></svg><div>בהורדה אתם מאשרים שידוע לכם: אחרי הנעילה אין אפשרות להסיר את החסימה מהמכשיר, אין התחייבות של קיידרואיד להסיר אותה או להחליף מסלול, וייתכן שייגבה על כך תשלום סמלי.</div></div>
@@ -320,6 +355,7 @@ footer{padding:36px 0 48px;color:var(--on-variant);font-size:14px;border-top:1px
 <footer><div class="wrap">קיידרואיד · חסימה כשרה לאנדרואיד</div></footer>
 
 <script src="../panel/jszip.min.js" defer></script>
+<script src="webadb.js" defer></script>
 <script>
 // ------------------------------------------------------------ guide tabs
 document.querySelectorAll('[role=tab]').forEach(b=>b.onclick=()=>{
@@ -329,13 +365,15 @@ document.querySelectorAll('[role=tab]').forEach(b=>b.onclick=()=>{
 
 // ------------------------------------------------------------ download: a personal file per click
 // The site takes one free lock set from the stock (only the ends of the code chains; the starts stay with the
-// owner), writes it into the signed app in the browser, and saves it. Empty stock: a file that must reach the
-// server once at lock time, so it still gets codes of its own.
+// owner, or with the installer whose link was used), writes it into the signed app in the browser, and either
+// saves it or installs it over USB. Empty stock: a file that must reach the server once at lock time.
 const KEY="AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI";
 const FS="https://firestore.googleapis.com/v1/projects/kiydroid/databases/(default)/documents";
 const DOCS="projects/kiydroid/databases/(default)/documents";
 const RAW="https://raw.githubusercontent.com/EliyahuHillel/kdroid-updates/main/";
+const PKG="com.kdroid.filter";
 const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let idToken=null;
 async function signIn(){
   if(idToken) return idToken;
@@ -346,16 +384,55 @@ async function api(method,url,body){
   const r=await fetch(url,{method,headers:{Authorization:"Bearer "+await signIn(),"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error((j.error&&j.error.message)||r.status); e.code=r.status; throw e; } return j;
 }
-const val=v=>v==null?null:"stringValue" in v?v.stringValue:"integerValue" in v?Number(v.integerValue):"booleanValue" in v?v.booleanValue:null;
-const dec=d=>{ const o={_id:d.name.split("/").pop()}; for(const k in d.fields||{}) o[k]=val(d.fields[k]); return o; };
+const val=v=>v==null?null:"stringValue" in v?v.stringValue:"integerValue" in v?Number(v.integerValue):"booleanValue" in v?v.booleanValue:"mapValue" in v?mapOf(v.mapValue):null;
+const mapOf=m=>{ const o={}; for(const k in (m&&m.fields)||{}) o[k]=val(m.fields[k]); return o; };
+const dec=d=>Object.assign({_id:d.name.split("/").pop()},mapOf(d));
 async function getDoc(p){ try{ return dec(await api("GET",FS+"/"+p)); }catch(e){ return null; } }
-async function takeStock(){
+
+// ---- what the site offers right now (switches in the owner's panel) and whose link this is
+let CFG={pub:null,features:{},installer:null,profile:null,ready:false};
+const on=k=>CFG.features[k]!==false;
+async function loadConfig(){
+  try{
+    const code=(new URLSearchParams(location.search).get("i")||"").replace(/\D/g,"");
+    const [pub,prof,inst]=await Promise.all([getDoc("config/public"),getDoc("config/ownerProfile"),code?getDoc("installerCodes/"+code):null]);
+    CFG.pub=pub||{}; CFG.features=(pub&&pub.features)||{};
+    try{ CFG.profile=prof&&prof.json?JSON.parse(prof.json):null; }catch(e){}
+    if(code){
+      if(inst&&inst.installerId&&on("links")){
+        CFG.installer={id:inst.installerId,code,name:inst.name||"",phone:inst.phone||""};
+        try{ if(inst.profile) CFG.profile=JSON.parse(inst.profile); }catch(e){}
+        const b=$("instBanner"); b.hidden=false;
+        b.innerHTML=`<svg width="22" height="22"><use href="#i-check"/></svg><span>ההתקנה תחובר למתקין <b>${esc(inst.name)}</b>${inst.phone?" · <span dir=ltr>"+esc(inst.phone)+"</span>":""}. הוא יטפל בבקשות שלכם.</span>`;
+      } else {
+        const b=$("instBanner"); b.hidden=false; b.className="banner closed";
+        b.textContent="הקישור של המתקין אינו פעיל כרגע. אפשר להתקין כרגיל, והמכשיר יגיע למוקד קיידרואיד.";
+      }
+    }
+  }catch(e){ CFG.pub={}; }
+  CFG.ready=true; applySwitches();
+}
+function applySwitches(){
+  const all=on("site"), web=all&&on("siteWeb"), ph=all&&on("sitePhone"), pc=all&&on("sitePc");
+  $("cardWeb").hidden=!web; $("cardPhone").hidden=!ph; $("cardPc").hidden=!pc;
+  const n=$("closedNote");
+  if(!web&&!ph&&!pc){ n.hidden=false; n.textContent="ההורדה סגורה כרגע. נסו שוב מאוחר יותר."; $("dlCards").hidden=true; }
+  const cnt=[web,ph,pc].filter(Boolean).length; $("dlCards").className="dl"+(cnt===3?" three":"");
+  if(web&&!(window.KiyAdb&&KiyAdb.supported())){
+    $("webBtn").disabled=true;
+    $("cardWeb").querySelector("p").textContent="הדפדפן הזה לא יכול להתחבר לטלפון. פתחו את הדף ב-Chrome או ב-Edge במחשב (לא בטלפון ולא בספארי).";
+  }
+}
+
+async function takeStock(kind){
   const j=await api("POST",FS+":runQuery",{structuredQuery:{from:[{collectionId:"publicFiles"}],
     where:{fieldFilter:{field:{fieldPath:"state"},op:"EQUAL",value:{stringValue:"free"}}},limit:12}});
   const free=j.filter(x=>x.document).map(x=>dec(x.document)).sort(()=>Math.random()-.5);
+  const fields={state:{stringValue:"taken"},takenAt:{integerValue:String(Date.now())},takenKind:{stringValue:kind}}, mask=["state","takenAt","takenKind"];
+  if(CFG.installer){ fields.takenFor={stringValue:CFG.installer.id}; fields.takenCode={stringValue:CFG.installer.code}; mask.push("takenFor","takenCode"); }
   for(const f of free){
-    try{ await api("POST",FS+":commit",{writes:[{update:{name:DOCS+"/publicFiles/"+f._id,fields:{state:{stringValue:"taken"},takenAt:{integerValue:String(Date.now())}}},
-      updateMask:{fieldPaths:["state","takenAt"]}}]}); return f; }catch(e){ /* someone took it a moment ago: next */ }
+    try{ await api("POST",FS+":commit",{writes:[{update:{name:DOCS+"/publicFiles/"+f._id,fields},updateMask:{fieldPaths:mask}}]}); return f; }
+    catch(e){ /* someone took it a moment ago: next */ }
   }
   return null;
 }
@@ -393,42 +470,122 @@ async function fetchFile(path,onPct){
 function save(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},5000); }
 function show(t,s,pct,cls){ const p=$("prog"); p.hidden=false; p.className="prog"+(cls?" "+cls:""); $("progT").textContent=t; $("progS").textContent=s||""; $("progB").style.width=(pct||0)+"%"; }
 
-async function makeFile(kind){
-  show("מכין קובץ אישי…","",3);
-  let f=null, pub={}, prof=null;
-  try{
-    [pub,prof]=await Promise.all([getDoc("config/public"),getDoc("config/ownerProfile")]);
-    f=await takeStock();
-  }catch(e){ f=null; }
-  let profile=null; try{ profile=prof&&prof.json?JSON.parse(prof.json):null; }catch(e){}
-  const base={v:1,kind:"public",installerId:"owner",code:"",iName:(pub&&pub.ownerName)||"מוקד קיידרואיד",iPhone:(pub&&pub.ownerPhone)||"",profile,n:20,keep:false,createdAt:Date.now()};
-  let payload, id;
+/** the personal app for one download: {apk: Blob, id, offline: has its own codes, version} */
+async function personalApp(kind,onStep,onPct){
+  if(!CFG.ready) await loadConfig();
+  onStep("prep");
+  let f=null; try{ f=await takeStock(kind); }catch(e){ f=null; }
+  const I=CFG.installer;
+  const base={v:1,kind:"public",installerId:I?I.id:"owner",code:I?I.code:"",
+    iName:I?I.name:((CFG.pub&&CFG.pub.ownerName)||"מוקד קיידרואיד"),iPhone:I?I.phone:((CFG.pub&&CFG.pub.ownerPhone)||""),
+    profile:CFG.profile,n:20,keep:false,createdAt:Date.now()};
+  let payload,id;
   if(f){ payload=Object.assign(base,{fid:f._id,rid:f.rid,tips:JSON.parse(f.tips)}); id=f._id; logEvent("download"); }
   else { payload=Object.assign(base,{needOnline:true}); id="p"+Math.random().toString(36).slice(2,8); logEvent("empty"); }
-  const api_=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
-  show("מוריד את קיידרואיד"+(api_.version?" (גרסה "+api_.version+")":"")+"…","",5);
-  const apk=injectApk(await fetchFile("kdroid.bin",p=>show("מוריד את קיידרואיד…",p+"%",p)),JSON.stringify(payload));
-  if(kind==="phone"){ save(apk,"kiydroid-setup-"+id+".apk"); return {id,offline:!!f}; }
+  const ver=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
+  onStep("download",ver.version);
+  const apk=injectApk(await fetchFile("kdroid.bin",onPct),JSON.stringify(payload));
+  return {apk,id,offline:!!f,version:ver.version||"",installer:payload.iName};
+}
+
+async function makeFile(kind){
+  const r=await personalApp(kind,(s,v)=>show(s==="prep"?"מכין קובץ אישי…":"מוריד את קיידרואיד"+(v?" (גרסה "+v+")":"")+"…","",s==="prep"?3:5),
+    p=>show("מוריד את קיידרואיד…",p+"%",p));
+  if(kind==="phone"){ save(r.apk,"kiydroid-setup-"+r.id+".apk"); return r; }
   show("אורז את התוכנה למחשב…","",99);
-  const zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+id);
+  const zip=new JSZip(), dir=zip.folder("Kiydroid-Installer-"+r.id);
   for(const [src,dst] of [["Install-Kiydroid.bat","Install-Kiydroid.bat"],["installer.ps1","installer.ps1"],["readme.txt","קרא-אותי.txt"],
                           ["adb/adb.exe","adb/adb.exe"],["adb/AdbWinApi.dll","adb/AdbWinApi.dll"],["adb/AdbWinUsbApi.dll","adb/AdbWinUsbApi.dll"]])
     dir.file(dst,await fetchFile("installer/base/"+src));
-  dir.file("kiydroid.apk",apk);
-  dir.file("installer.json",JSON.stringify({fid:id,version:api_.version||"",installer:payload.iName,keep:false}));
-  save(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+id+".zip");
-  return {id,offline:!!f};
+  dir.file("kiydroid.apk",r.apk);
+  dir.file("installer.json",JSON.stringify({fid:r.id,version:r.version,installer:r.installer,keep:false}));
+  save(await zip.generateAsync({type:"blob"}),"Kiydroid-Installer-"+r.id+".zip");
+  return r;
 }
 document.querySelectorAll("[data-kind]").forEach(b=>b.onclick=async()=>{
-  document.querySelectorAll("[data-kind]").forEach(x=>x.disabled=true);
+  setBusy(true);
   try{
     const r=await makeFile(b.dataset.kind);
     show("הקובץ מוכן ונשמר בהורדות ✓", b.dataset.kind==="phone"
       ? "פתחו את הקובץ שירד והתקינו אותו, ואז המשיכו לפי המדריך למעלה."+(r.offline?"":" שימו לב: לנעילה הטלפון יצטרך חיבור לאינטרנט פעם אחת.")
       : "חלצו את קובץ ה-ZIP והפעילו את Install-Kiydroid, לפי המדריך למעלה (לשונית 'דרך מחשב').", 100, "ok");
   }catch(e){ console.error(e); show("ההורדה נכשלה","בדקו את החיבור לאינטרנט ונסו שוב.",0,"err"); }
-  document.querySelectorAll("[data-kind]").forEach(x=>x.disabled=false);
+  setBusy(false);
 });
+function setBusy(b){ document.querySelectorAll("[data-kind],#webBtn").forEach(x=>{ if(!(x.id==="webBtn"&&!(window.KiyAdb&&KiyAdb.supported()))) x.disabled=b; }); }
+
+// ------------------------------------------------------------ install from the browser (WebUSB)
+// The same activation the app and the PC installer run (Activator.ACTIVATE_ALL).
+const ACTIVATE=[
+  "A=$(cmd package query-services -a android.accounts.AccountAuthenticator | grep packageName | cut -d '=' -f 2 | tr -d '\\r' | sort -u | grep -viE 'bluetooth|telecom|telephony|dialer|contacts|phonebook|calendar|carservice|car.')",
+  "echo \"$A\" | sed 's/^/pm disable-user --user 0 /' | sh",
+  "sleep 3",
+  "dpm set-device-owner com.kdroid.filter/.listener.AdminListener",
+  "appops set com.kdroid.filter ACTIVATE_VPN allow",
+  "pm grant com.kdroid.filter android.permission.POST_NOTIFICATIONS",
+  "appops set com.kdroid.filter SYSTEM_ALERT_WINDOW allow",
+  "appops set com.kdroid.filter GET_USAGE_STATS allow",
+  "echo \"$A\" | sed 's/^/pm enable /' | sh",
+  "pm enable com.google.android.gms","pm enable com.google.android.gsf","pm enable com.android.vending"].join("\n")+"\n";
+const WSTEPS=[["connect","מתחבר לטלפון"],["auth","מחכה לאישור בטלפון"],["prep","מכין קובץ אישי"],["download","מוריד את קיידרואיד"],
+  ["push","מעתיק לטלפון"],["install","מתקין"],["activate","מפעיל ניהול מכשיר"],["open","פותח את קיידרואיד בטלפון"]];
+function wstep(key,detail,cls){
+  const i=WSTEPS.findIndex(x=>x[0]===key);
+  $("webSteps").innerHTML=WSTEPS.map(([k,t],j)=>`<li class="${j<i?"done":j===i?(cls||"now"):""}"><i>${j<i?"✓":j===i&&cls==="bad"?"!":""}</i><span>${t}${j===i&&detail?` · <span class="small">${esc(detail)}</span>`:""}</span></li>`).join("");
+}
+function wset(title,sub,pct,cls){ const f=$("webFlow"); f.hidden=false; f.className="prog"+(cls?" "+cls:""); $("webT").textContent=title; $("webS").textContent=sub||""; if(pct!=null) $("webB").style.width=pct+"%"; }
+async function isOwner(adb){
+  let r=await KiyAdb.shell(adb,"dpm list-owners");
+  if(/(\d+ owners?:|no owners)/i.test(r)) return new RegExp(PKG.replace(/\./g,"\\.")+".*DeviceOwner").test(r);
+  r=await KiyAdb.shell(adb,"dumpsys device_policy");
+  return /Device Owner:\s*\r?\n\s*admin=ComponentInfo\{com\.kdroid\.filter\//.test(r);
+}
+$("webBtn").onclick=async()=>{
+  if(!(window.KiyAdb&&KiyAdb.supported())) return;
+  setBusy(true); let adb=null, cur="prep";
+  const step=(k,d)=>{ cur=k; wstep(k,d); };
+  const fail=(t,s)=>{ wstep(cur,"","bad"); wset(t,s,null,"err"); };
+  try{
+    // the phone first: a personal file is taken from the stock only once a phone is really connected
+    step("connect","בחרו את הטלפון ברשימה ולחצו התחברות"); wset("התקנה מהדפדפן","בחרו את הטלפון ברשימה שהדפדפן פותח. אל תנתקו את הכבל עד הסוף.",3);
+    try{ adb=await KiyAdb.connect(s=>{ if(s==="auth"){ step("auth","בטלפון: \"אפשר תמיד מהמחשב הזה\" ← אישור"); wset("אשרו בטלפון","בטלפון מופיעה הודעה \"לאפשר ניפוי באגים?\". סמנו \"אפשר תמיד מהמחשב הזה\" ולחצו \"אישור\".",8); } }); }
+    catch(e){
+      if(e&&e.busy) return fail("הטלפון תפוס","תוכנה אחרת במחשב מחוברת לטלפון (למשל adb או תוכנת גיבוי). סגרו אותה, נתקו וחברו את הכבל, ונסו שוב.");
+      if(e&&/NotFound|No device selected/i.test(e.name+e.message)) return fail("לא נבחר טלפון","אם הטלפון לא הופיע ברשימה: בדקו שניפוי באגים ב-USB פעיל ושהכבל מעביר נתונים. ב-Windows ייתכן שצריך מנהל התקן של היצרן, ואז עדיף להשתמש בתוכנה למחשב.");
+      throw e;
+    }
+    if(!adb) return fail("לא נבחר טלפון","לחצו שוב על 'התקנה מהדפדפן' ובחרו את הטלפון ברשימה.");
+    const app=await personalApp("web",(k,v)=>{ step(k,k==="download"&&v?"גרסה "+v:""); wset("התקנה מהדפדפן","הטלפון מחובר. אל תנתקו את הכבל עד הסוף.",k==="prep"?12:15); },
+      p=>{ wset("התקנה מהדפדפן","מוריד: "+p+"%",15+Math.round(p*.33)); });
+    const bytes=new Uint8Array(await app.apk.arrayBuffer());
+    step("push"); await KiyAdb.push(adb,"/data/local/tmp/kiydroid.apk",bytes,p=>wset("מעתיק לטלפון…",p+"%",50+Math.round(p*.3)));
+    step("install"); wset("מתקין…","",82);
+    const ins=await KiyAdb.shell(adb,"pm install -r -g /data/local/tmp/kiydroid.apk");
+    await KiyAdb.shell(adb,"rm -f /data/local/tmp/kiydroid.apk");
+    if(!/Success/.test(ins)){
+      if(/UPDATE_INCOMPATIBLE|SIGNATURES/.test(ins)) return fail("בטלפון יש גרסה אחרת של קיידרואיד","היא חתומה אחרת, וצריך להסיר אותה קודם. אם ההסרה חסומה, צריך לשחרר את המכשיר דרך המוקד.");
+      if(/VERSION_DOWNGRADE/.test(ins)) return fail("בטלפון מותקנת כבר גרסה חדשה יותר","אין צורך להתקין. פתחו את קיידרואיד בטלפון.");
+      if(/INSUFFICIENT_STORAGE/.test(ins)) return fail("אין מספיק מקום בטלפון","פנו מקום ונסו שוב.");
+      return fail("ההתקנה נכשלה",ins.trim().slice(0,200));
+    }
+    step("activate"); wset("מפעיל ניהול מכשיר…","זה לוקח כמה שניות.",88);
+    if(!(await isOwner(adb))){
+      await KiyAdb.push(adb,"/data/local/tmp/kd-activate.sh",new TextEncoder().encode(ACTIVATE));
+      const out=await KiyAdb.shell(adb,"sh /data/local/tmp/kd-activate.sh 2>&1; rm -f /data/local/tmp/kd-activate.sh");
+      if(!(await isOwner(adb))){
+        if(/already some accounts|accounts on the device/i.test(out)) return fail("יש בטלפון חשבונות שמונעים הפעלה","הסירו את החשבונות (הגדרות ← חשבונות), לחצו שוב 'התקנה מהדפדפן', ואחר כך אפשר להחזיר אותם. שום מידע לא נמחק.");
+        if(/several users|already provisioned|is already set|device owner is already/i.test(out)) return fail("לא ניתן להפעיל ניהול מכשיר","בטלפון יש משתמש נוסף, פרופיל עבודה, או אפליקציית ניהול אחרת.");
+        return fail("הפעלת ניהול המכשיר נכשלה",out.trim().slice(0,240));
+      }
+    }
+    step("open"); wset("כמעט סיימנו…","",96);
+    await KiyAdb.shell(adb,"am start -n "+PKG+"/.MainActivity");
+    wstep("open"); $("webSteps").querySelectorAll("li").forEach(li=>{li.className="done";li.querySelector("i").textContent="✓";});
+    wset("קיידרואיד הותקן והופעל ✓","המשיכו בטלפון: פרטים, הגדרות החסימה, ונעילה. אפשר לנתק את הכבל."+(app.offline?"":" לנעילה הטלפון יצטרך חיבור לאינטרנט פעם אחת."),100,"ok");
+  }catch(e){ console.error(e); fail("משהו השתבש",(e&&e.message?e.message:String(e)).slice(0,200)+". נתקו וחברו את הכבל ונסו שוב."); }
+  finally{ if(adb) KiyAdb.close(adb); setBusy(false); }
+};
+window.addEventListener("load",()=>loadConfig());
 </script>
 </body>
 </html>
