@@ -142,6 +142,15 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--on-variant);m
 .instdevs select{width:auto;min-width:140px;max-width:240px;height:36px;padding:0 10px}
 .instdevs .addrow .row select{flex:1;max-width:none}
 .instdevs .empty{padding:16px}
+.pickrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media (max-width:640px){.pickrow{grid-template-columns:1fr}}
+.pk{display:flex;gap:12px;align-items:flex-start;text-align:right;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--outline-v);border-radius:14px;padding:14px;cursor:pointer}
+.pk b{display:block;font-size:15px}.pk .muted{display:block;margin-top:2px}
+.pk.on{border:2px solid var(--primary);background:color-mix(in srgb,var(--secondary-c) 55%,var(--surface));padding:13px}
+.pk .badgeicon{background:var(--primary-c);color:var(--on-primary-c)}
+.seg{display:inline-flex;margin-top:14px;border:1px solid var(--outline);border-radius:999px;padding:3px;gap:3px}
+.seg button{font:inherit;font-weight:600;font-size:14px;border:0;background:none;color:var(--on-variant);border-radius:999px;padding:7px 16px;cursor:pointer}
+.seg button.on{background:var(--secondary-c);color:var(--on-secondary-c)}
 .dlopts{display:grid;gap:10px;margin-top:14px}
 .dlopt{display:flex;align-items:center;gap:14px;border:1px solid var(--outline-v);border-radius:12px;padding:14px 16px;flex-wrap:wrap}
 .dlopt .main{flex:1;min-width:200px}.dlopt .t{font-weight:600;margin-bottom:2px}
@@ -188,6 +197,18 @@ td .sub{font-size:12.5px;color:var(--on-variant)}
 .applist label{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--outline-v);cursor:pointer}
 .applist label:last-child{border-bottom:none}
 .applist input{accent-color:var(--primary)}
+.acts .act{display:flex;gap:14px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--outline-v)}
+.acts .act:last-child{border-bottom:0}
+.acts .act .main{flex:1;min-width:0}.acts .act b{display:block;font-weight:600}.acts .act .muted{display:block}
+.acts .act.danger b{color:var(--error)}
+.chip .cn{display:inline-block;min-width:20px;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--surface-hi);font-size:12px;font-weight:700}
+.chip.on .cn{background:var(--surface)}
+.who2{display:flex;gap:12px;align-items:center}
+.who2 .av2{width:36px;height:36px;border-radius:50%;background:var(--secondary-c);color:var(--on-secondary-c);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.who2 .sub{display:block;font-size:12px;color:var(--on-variant)}
+.rt{display:inline-block;font-size:12.5px;font-weight:600;padding:2px 10px;border-radius:8px;background:var(--surface-hi);border:1px solid var(--outline-v)}
+.aico{width:32px;height:32px;border-radius:9px;flex:none;object-fit:contain}
+.aico.ph{display:grid;place-items:center;background:var(--surface-hi);border:1px solid var(--outline-v);color:var(--on-variant);font-weight:700;font-size:13px}
 .applist small{display:block;color:var(--on-variant);font-size:11.5px;direction:ltr;text-align:right}
 .note{border-radius:12px;padding:12px 14px;font-size:13.5px}
 .note.warn{background:var(--warn-c);color:var(--warn)}
@@ -262,12 +283,13 @@ const MODES = [
   {v:"NavigationMode", t:"מסלול ניווט", d:"אינטרנט רק ל: "+NAV_APPS+"."},
   {v:"NavigationMailMode", t:"מסלול ניווט ומייל", d:"כמו מסלול ניווט, ועוד ג'ימייל."}];
 const MODE_NAME = Object.fromEntries(MODES.map(m=>[m.v,m.t]));
+// "disable sensitive apps" is always last: its app list opens right under it
 const SETTINGS = [
   ["app_installation_block","חסום התקנת אפליקציות"],["app_uninstall_block","מניעת הסרת אפליקציות"],
-  ["hide_store_icon","הסתר את חנות האפליקציות"],["disable_sensible_apps","השבת אפליקציות רגישות"],
+  ["hide_store_icon","הסתר את חנות האפליקציות"],
   ["call_block","חסום שיחות יוצאות"],["message_block","חסום הודעות"],["wifi_block","חסום וויפי לחלוטין"],
   ["bluetooth_sharing_block","חסום העברת קבצים דרך בלוטות"],["usb_sharing_block","חסום העברת קבצים דרך USB"],
-  ["external_storage_block","חסום גישה לאחסון חיצוני"]];
+  ["external_storage_block","חסום גישה לאחסון חיצוני"],["disable_sensible_apps","השבת אפליקציות רגישות"]];
 const REQ_TYPE = {activate:"בקשת הפעלה", route:"שינוי מסלול", setting:"שינוי הגדרה", remove:"הסרת הסינון"};
 const TOPIC = {help:"בקשת עזרה", tech:"תקלה טכנית", question:"שאלה", other:"אחר"};
 const EMERG = [["NavigationMode","מעבר למסלול ניווט"],["NavigationMailMode","מעבר למסלול ניווט ומייל"],["KosherMode","מעבר למסלול כשר"],["release","שחרור המכשיר"]];
@@ -584,22 +606,27 @@ document.addEventListener("click",async e=>{
 let devFilter="all", devSearch="";
 function vDevices(v){
   const f={all:"הכל",pending:"ממתינים להפעלה",active:"מוגנים",stale:"לא מתחברים",released:"שוחררו"};
+  const cnt={all:D.devices.length,stale:D.devices.filter(isStale).length};
+  ["pending","active","released"].forEach(k=>cnt[k]=D.devices.filter(d=>d.status===k).length);
   v.innerHTML=`<section class="card"><div class="bd">
-    <div class="toolbar"><input type="search" id="q" placeholder="חיפוש לפי שם או טלפון" value="${esc(devSearch)}" aria-label="חיפוש">
-      <div class="chips">${Object.entries(f).map(([k,t])=>`<button class="chip ${devFilter===k?"on":""}" data-f="${k}">${t}</button>`).join("")}</div></div>
-    <div class="tablewrap"><table class="cards"><thead><tr><th>שם</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
+    <div class="toolbar"><input type="search" id="q" placeholder="חיפוש לפי שם, טלפון או דגם" value="${esc(devSearch)}" aria-label="חיפוש">
+      <div class="chips">${Object.entries(f).map(([k,t])=>`<button class="chip ${devFilter===k?"on":""}" data-f="${k}">${t}<span class="cn">${cnt[k]}</span></button>`).join("")}</div></div>
+    <div class="tablewrap"><table class="cards devs"><thead><tr><th>מכשיר</th><th>טלפון</th>${me.role==="owner"?"<th>מתקין</th>":""}<th>מצב</th><th>מסלול</th><th>נראה לאחרונה</th><th>גרסה</th></tr></thead>
     <tbody id="devRows"></tbody></table></div><div id="devEmpty" class="empty" hidden>לא נמצאו מכשירים</div></div></section>`;
   const draw=()=>{
     const q=devSearch.trim();
     const rows=D.devices.filter(d=>{
-      if(q && !(String(d.name).includes(q)||String(d.phone).includes(q))) return false;
+      if(q && !(String(d.name).includes(q)||String(d.phone).includes(q)||String(modelOf(d)).toLowerCase().includes(q.toLowerCase()))) return false;
       if(devFilter==="stale") return isStale(d);
       return devFilter==="all"||d.status===devFilter;
     }).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(b.createdAt||0)-(a.createdAt||0));
-    $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{};
-      return `<tr class="click" data-go="${encodeURIComponent(d._id)}"><td class="nm"><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}</td>
+    $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{}, iss=issuesOf(d._id), mode=pol.filter_mode||st.filter_mode;
+      return `<tr class="click" data-go="${encodeURIComponent(d._id)}">
+      <td class="nm"><div class="who2"><span class="av2">${esc(initialsOf(d.name))}</span><span><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}
+        ${modelOf(d)?`<span class="sub" dir="auto">${esc(modelOf(d))}</span>`:""}</span></div></td>
       <td class="num" dir="ltr" style="text-align:right" data-l="טלפון">${esc(d.phone)}</td>${me.role==="owner"?`<td data-l="מתקין">${esc(installerLabel(d.installerId))}</td>`:""}
-      <td data-l="מצב">${pill(statusOf(d))}${issuesOf(d._id).length?' <span class="pill pending" title="'+esc(issuesOf(d._id).map(issueText).join("\n"))+'">⚠ '+(issuesOf(d._id).length===1?'בעיה אחת':issuesOf(d._id).length+' בעיות')+'</span>':""}</td><td data-l="מסלול">${esc(MODE_NAME[pol.filter_mode||st.filter_mode]||"—")}</td>
+      <td data-l="מצב">${pill(statusOf(d))}${iss.length?' <span class="pill pending" title="'+esc(iss.map(issueText).join("\n"))+'">⚠ '+(iss.length===1?'בעיה אחת':iss.length+' בעיות')+'</span>':""}</td>
+      <td data-l="מסלול">${mode?`<span class="rt">${esc(MODE_NAME[mode]||mode)}</span>`:"—"}</td>
       <td data-l="נראה לאחרונה">${ago(lastSeen(d._id))}</td><td class="num" data-l="גרסה">${esc(st.appVersion||d.appVersion||"")}</td></tr>`;}).join("");
     $("devEmpty").hidden=rows.length>0;
   };
@@ -608,6 +635,7 @@ function vDevices(v){
   v.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{devFilter=b.dataset.f; vDevices(v);});
   $("devRows").onclick=e=>{const tr=e.target.closest("tr[data-go]"); if(tr) location.hash="#device/"+tr.dataset.go;};
 }
+const initialsOf = n => { const w=String(n||"?").trim().split(/\s+/); return (w[0]||"?").charAt(0)+(w[1]?w[1].charAt(0):""); };
 
 // ---------------------------------------------------------------- device page
 function vDevice(id){
@@ -648,8 +676,6 @@ function vDevice(id){
             <button class="btn fill" id="saveBtn">${primaryLabel}</button>
             ${draft?'<button class="btn text" id="undoBtn">בטל שינויים</button>':""}
             <span class="spacer"></span>
-            ${(d.status==="active"||openReq&&openReq.type==="remove")?(me.canRelease?'<button class="btn danger" id="releaseBtn">שחרר מכשיר</button>'
-              :'<span class="muted">שחרור מכשירים מתבצע על ידי מנהל המערכת</span>'):""}
           </div>`}
         </div></section>
       <section class="card"><div class="hd"><h2>היסטוריית בקשות</h2></div>
@@ -668,11 +694,18 @@ function vDevice(id){
         ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
         <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
       </dl>
-      ${me.role==="owner"?`<div class="sw" style="margin-top:10px"><span>חסום פניות למערכת מהמכשיר הזה</span><label class="toggle"><input type="checkbox" id="msgBlk" ${d.msgBlocked?"checked":""} aria-label="חסום פניות"><i></i></label></div>`:""}
-      ${me.role==="owner"?`<div class="field" style="margin:16px 0 0"><label class="f" for="reassign">העבר למתקין</label>
-        <div class="row"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
-        ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}" ${d.installerId===i._id?"selected":""}>${esc(i.name)}</option>`).join("")}</select>
-        <button class="btn out sm" id="reassignBtn">העבר</button></div></div>`:""}
+
+      </div></section>
+      <section class="card"><div class="hd"><h2>פעולות</h2></div><div class="acts">
+        ${me.role==="owner"?`<div class="act"><div class="main"><b>העברה למתקין אחר</b><span class="muted">המכשיר, הבקשות והדיווחים עוברים אליו</span>
+          <div class="row" style="margin-top:8px"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
+          ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}" ${d.installerId===i._id?"selected":""}>${esc(i.name)}</option>`).join("")}</select><button class="btn out sm" id="reassignBtn">העבר</button></div></div></div>
+          <div class="act"><div class="main"><b>חסימת פניות</b><span class="muted">המשתמש לא יוכל לשלוח לך הודעות מהאפליקציה</span></div>
+            <label class="toggle"><input type="checkbox" id="msgBlk" ${d.msgBlocked?"checked":""} aria-label="חסום פניות"><i></i></label></div>`:""}
+        ${d.status!=="released"?`<div class="act danger"><div class="main"><b>שחרור המכשיר</b><span class="muted">${me.canRelease?"הסינון יוסר מהמכשיר כשיתחבר, והמשתמש יוכל להסיר את קיידרואיד. אי אפשר לבטל.":"שחרור מכשירים מתבצע על ידי מנהל המערכת."}</span></div>
+          ${me.canRelease?`<button class="btn danger sm" id="releaseBtn">שחרר</button>`:""}</div>`:""}
+        <div class="act danger"><div class="main"><b>מחיקה מהמערכת</b><span class="muted">${me.canDelete?"המכשיר נמחק מהפאנל. הסינון בו ממשיך לפעול, אבל לא תוכלו לשלוט בו מרחוק.":"רק מנהל המערכת יכול למחוק מכשירים."}</span></div>
+          ${me.canDelete?`<button class="btn danger sm" id="deleteBtn">מחק</button>`:""}</div>
       </div></section>
       ${d.status!=="released"?`<section class="card"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
         <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: בקשו מהמשתמש את המספר שמופיע אצלו במסך "קוד חירום".</p>
@@ -682,7 +715,7 @@ function vDevice(id){
         <div id="emOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode num" id="emCode"></div></div>
       </div></section>`:""}
       ${me.role==="owner"?`<section class="card"><div class="hd"><h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>`:""}
-      ${me.canDelete?`<div><button class="btn danger sm" id="deleteBtn">מחק את המכשיר מהמערכת</button></div>`:""}
+
     </div>
   </div>`;
 
@@ -714,14 +747,34 @@ function vDevice(id){
   };
   if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
     await commit([{del:"devices/"+id},{del:"reports/"+id},audit(id,"deleted",d.name)].concat(me.role==="owner"?[{del:"deviceSecrets/"+id}]:[])); draft=null; location.hash="#devices"; load(); });
+  fillIcons();
   if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
     list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
+}
+// app icons: uploaded by devices once per package (appIcons/{pkg}); read in one batch per screen
+const ICONS={};
+const appIcon = a => ICONS[a.p] ? `<img class="aico" src="${ICONS[a.p]}" alt="">`
+  : `<span class="aico ph" data-icon="${esc(a.p)}" aria-hidden="true">${esc(String(a.l||a.p).trim().charAt(0))}</span>`;
+let iconBusy=false;
+async function fillIcons(){
+  if(iconBusy) return;
+  const want=[...new Set([...document.querySelectorAll("[data-icon]")].map(e=>e.dataset.icon))].filter(p=>!(p in ICONS));
+  if(!want.length) return; iconBusy=true;
+  try{
+    for(let i=0;i<want.length;i+=100){
+      const part=want.slice(i,i+100);
+      const j=await req("POST",FS+":batchGet",{documents:part.map(p=>DOCS+"/appIcons/"+p)});
+      j.forEach(r=>{ if(r.found){ const d=decode(r.found); ICONS[d._id]=d.png?"data:image/png;base64,"+d.png:""; } else if(r.missing){ ICONS[r.missing.split("/").pop()]=""; } });
+    }
+    document.querySelectorAll("[data-icon]").forEach(e=>{ const u=ICONS[e.dataset.icon]; if(u){ const im=document.createElement("img"); im.className="aico"; im.src=u; im.alt=""; e.replaceWith(im); } });
+  }catch(e){ console.warn("icons",e); }
+  iconBusy=false;
 }
 function sensBlock(pol,apps){
   if(!apps) return '<div class="note info" style="margin:6px 0 10px">המכשיר עוד לא שלח את רשימת האפליקציות שלו.</div>';
   const on=new Set(pol.hiddenApps||[]);
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
-  <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}><span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
+  <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}>${appIcon(a)}<span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
 const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
@@ -1093,7 +1146,7 @@ function showStock(){
       המלאי מתמלא כשהפאנל פתוח אצלך, בערך 4 קבצים בכמה שניות.</div>`;
 }
 
-let myFiles=null;
+let myFiles=null, mkType="phone", mkKeep=false;
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
@@ -1104,18 +1157,22 @@ function vInstall(v){
       ${own?`<div class="field"><label class="f" for="ftWho">הקובץ בשביל</label><select id="ftWho">
         <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
         ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
-      <p class="muted" style="margin-top:0">כל קובץ כולל את הגרסה העדכנית של האפליקציה, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל ${own?"שלו":"שלך"}.
-        הוא עובד בלי אינטרנט. לכל סוג יש שתי אפשרויות: <b>נמחק בסוף</b> — לשליחה ללקוח, לא נשאר אצלו כלום חוץ מהאפליקציה;
-        <b>קבוע</b> — נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש.</p>
+      <p class="muted" style="margin-top:0">כל קובץ כולל את הגרסה העדכנית של האפליקציה, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל ${own?"שלו":"שלך"}, ועובד בלי אינטרנט.</p>
       ${prof?`<div class="note ok">ברירת המחדל בקובץ: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
             :`<div class="note warn">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
-      <div class="dlopts">
-        <div class="dlopt"><div class="badgeicon">${icon("phone")}</div><div class="main"><div class="t">קובץ לטלפון</div>
-          <div class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט. אפשר לשלוח ללקוח או להעביר בדיסק און קי.</div></div>
-          <div class="dlbtns"><button class="btn fill" data-mk="phone">נמחק בסוף</button><button class="btn out" data-mk="phone" data-keep="1">קבוע</button></div></div>
-        <div class="dlopt"><div class="badgeicon">${icon("pc")}</div><div class="main"><div class="t">קובץ למחשב</div>
-          <div class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט. מחלצים את הקובץ ופותחים את Install-Kiydroid.</div></div>
-          <div class="dlbtns"><button class="btn fill" data-mk="pc">נמחק בסוף</button><button class="btn out" data-mk="pc" data-keep="1">קבוע</button></div></div>
+      <div class="pick">
+        <div class="pickrow" role="radiogroup" aria-label="בשביל מה הקובץ">
+          <button type="button" role="radio" class="pk ${mkType==="phone"?"on":""}" aria-checked="${mkType==="phone"}" data-type="phone"><span class="badgeicon">${icon("phone")}</span>
+            <span><b>לטלפון</b><span class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט</span></span></button>
+          <button type="button" role="radio" class="pk ${mkType==="pc"?"on":""}" aria-checked="${mkType==="pc"}" data-type="pc"><span class="badgeicon">${icon("pc")}</span>
+            <span><b>למחשב</b><span class="muted">תוכנה ל-Windows שמתקינה דרך כבל USB, בלי אינטרנט</span></span></button>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="סוג הקובץ">
+          <button type="button" role="radio" class="${mkKeep?"":"on"}" aria-checked="${!mkKeep}" data-keep2="0">נמחק בסוף ההתקנה</button>
+          <button type="button" role="radio" class="${mkKeep?"on":""}" aria-checked="${mkKeep}" data-keep2="1">קבוע</button>
+        </div>
+        <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש.":"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
+        <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
       </div>
       <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
     </div></section>
@@ -1137,15 +1194,17 @@ function vInstall(v){
   if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
   const st=$("mkStatus");
   const status=(msg,pct)=>{ st.hidden=false; if(msg!=null) status.m=msg; st.textContent=status.m+(pct?" "+pct+"%":""); };
-  v.querySelectorAll("[data-mk]").forEach(b=>b.onclick=async()=>{
-    v.querySelectorAll("[data-mk]").forEach(x=>x.disabled=true); typing=true;
-    try{ const keep=!!b.dataset.keep, fid=await createFile(b.dataset.mk,fileTarget(who),status,keep);
+  v.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{ mkType=b.dataset.type; vInstall(v); });
+  v.querySelectorAll("[data-keep2]").forEach(b=>b.onclick=()=>{ mkKeep=b.dataset.keep2==="1"; vInstall(v); });
+  if($("mkBtn")) $("mkBtn").onclick=async()=>{ const b=$("mkBtn");
+    b.disabled=true; typing=true;
+    try{ const keep=mkKeep, fid=await createFile(mkType,fileTarget(who),status,keep);
          st.className="note ok"; st.textContent="הקובץ מוכן ("+fid+(keep?", קבוע":", נמחק בסוף ההתקנה")+") ונשמר בהורדות."; myFiles=null; listFiles(); }
     catch(e){ st.className="note err"; st.hidden=false;
       st.textContent=e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים. בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם."
         :"יצירת הקובץ נכשלה. בדקו את החיבור ונסו שוב."; console.error(e); }
-    v.querySelectorAll("[data-mk]").forEach(x=>x.disabled=false); typing=false;
-  });
+    b.disabled=false; typing=false;
+  };
   $("ofBtn").onclick=async()=>{
     const fid=$("ofFid").value.replace(/\D/g,""), k=parseInt($("ofK").value.replace(/\D/g,"")||"1",10), act=$("ofAct").value;
     if(fid.length!==6){ toast("מספר הקובץ צריך להיות 6 ספרות"); return; }
