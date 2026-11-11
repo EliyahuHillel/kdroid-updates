@@ -234,6 +234,41 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke
 .rowact{width:1%;white-space:nowrap;text-align:left}
 .bulkdel{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px dashed var(--line,#ddd);border-radius:12px}
 @media (max-width:720px){ table.cards td.rowact{text-align:start} table.cards td.rowact:empty{display:none} }
+.mkprog{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2,#f1f5f3);border:1px solid var(--line,#e3e8e5)}
+.mkrow{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:8px}
+.mkbar{height:8px;border-radius:8px;background:rgba(0,0,0,.08);overflow:hidden}
+.mkbar i{display:block;height:100%;width:0;border-radius:8px;background:var(--primary,#006c51);transition:width .3s}
+.guide{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;align-items:start}
+.gtoc{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px;background:var(--surface,#fff);border:1px solid var(--line,#e3e8e5);border-radius:16px;padding:10px}
+.gtoc a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;color:inherit;text-decoration:none;font-size:14px}
+.gtoc a:hover{background:var(--surface-2,#f1f5f3)}
+.gtoc a b{width:24px;height:24px;border-radius:8px;background:var(--primary-container,#d6efe4);color:var(--primary,#006c51);display:grid;place-items:center;font-size:12.5px;flex:none}
+.gbody{display:grid;gap:16px;min-width:0}
+.gsec{scroll-margin-top:12px}
+.gsec .gnum{width:28px;height:28px;border-radius:9px;background:var(--primary,#006c51);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.gsec h4{margin:18px 0 8px;font-size:15px}
+.gsec p{margin:0 0 10px}
+.gflow{display:flex;align-items:stretch;gap:8px;margin:14px 0 6px;flex-wrap:wrap}
+.gflow>div{flex:1;min-width:120px;border:1px solid var(--line,#e3e8e5);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px;background:var(--surface-2,#f6f8f7)}
+.gflow>div b{width:26px;height:26px;border-radius:50%;background:var(--primary,#006c51);color:#fff;display:grid;place-items:center;font-size:13px;margin-bottom:4px}
+.gflow>div span{font-weight:650}.gflow>div small{color:var(--muted,#5b6862);font-size:12.5px}
+.gflow>i{align-self:center;width:14px;height:2px;background:var(--line,#cfd8d3)}
+.gtable{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:14px}
+.gtable td,.gtable th{border-bottom:1px solid var(--line,#e3e8e5);padding:10px 8px;text-align:start;vertical-align:top}
+.gtable th{font-size:12.5px;color:var(--muted,#5b6862);font-weight:600}
+.gtable td:first-child{white-space:nowrap;font-weight:600;width:1%}
+.gtable td small{display:block;font-weight:400;color:var(--muted,#5b6862);font-size:12px}
+.gcols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 12px}
+.gc{padding:14px 16px;box-shadow:none}.gc h5{margin:6px 0 4px;font-size:15px}.gc p,.gc ol{margin:0;font-size:14px}.gc ol{padding-inline-start:18px;display:grid;gap:4px;margin-top:6px}
+.gl{margin:6px 0 12px;padding-inline-start:20px;display:grid;gap:8px}
+.gsteps{margin:6px 0 12px;padding-inline-start:20px;display:grid;gap:8px}
+details.gd{border:1px solid var(--line,#e3e8e5);border-radius:12px;margin:8px 0;background:var(--surface,#fff)}
+details.gd summary{padding:12px 14px;cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.gd summary::-webkit-details-marker{display:none}
+details.gd summary::after{content:"+";color:var(--muted,#5b6862);font-size:18px;line-height:1}
+details.gd[open] summary::after{content:"−"}
+details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-start:20px;display:grid;gap:4px;margin:0 0 8px}
+@media (max-width:900px){ .guide{grid-template-columns:1fr} .gtoc{position:static;flex-direction:row;flex-wrap:wrap} .gtoc a{font-size:13px;padding:6px 8px} .gcols{grid-template-columns:1fr} .gtable td:first-child{white-space:normal} }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -302,6 +337,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null; } };
 const ICON = {
+  book:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zM4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/><path d="M9 7h7M9 11h5"/>',
   shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   chat:'<path d="M4 5h16v11H8l-4 4z"/>', back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
   download:'<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
@@ -372,6 +408,8 @@ const audit = (deviceId,action,detail) => ({set:"audit/"+newId(),create:true,dat
 let me=null;
 let D={devices:[],reports:{},requests:[],messages:[],installers:[],config:{},ownerProfile:null};
 let loaded=false, loading=false, draft=null, pollT=null, typing=false;
+// while an install file is being made, the page is not redrawn (the progress would disappear)
+let fileBusy=false, mkResult=null; // the last file made: its message stays after a refresh
 // typing in any form on the page pauses the automatic redraw, so nothing typed is lost
 document.addEventListener("input",e=>{ if(e.target.closest("#view")) typing=true; });
 
@@ -434,7 +472,7 @@ async function load(){
     }
     loaded=true;
   }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
-  loading=false; if(!draft&&!typing) render(); else renderTabs();
+  loading=false; if(!draft&&!typing&&!fileBusy) render(); else renderTabs();
 }
 
 /** installers who saved a default profile before installing phones could read it: copy it onto their code, once */
@@ -498,7 +536,7 @@ function render(){
   renderTabs(route);
   const v=$("view");
   if(!loaded){ v.innerHTML='<div class="empty">טוען…</div>'; return; }
-  const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,install:vInstall,settings:vSettings};
+  const views={overview:vOverview,devices:vDevices,device:()=>vDevice(arg),requests:vRequests,messages:vMessages,installers:vInstallers,install:vInstall,settings:vSettings,guide:vGuide};
   if((route==="messages"||route==="installers")&&me.role!=="owner") return vOverview(v);
   (views[route]||vOverview)(v);
 }
@@ -509,6 +547,7 @@ const PAGE_HEAD={
   messages:()=>["פניות למערכת","הודעות ובקשות עזרה מהמשתמשים, אליך בלבד"],
   installers:()=>["מתקינים","צוות המתקינים, ההרשאות שלהם והמכשירים של כל אחד"],
   install:()=>["התקנה והורדות","קישור אישי, קובצי התקנה, וקודי חירום למכשירים בלי אינטרנט"],
+  guide:()=>["מדריך",me.role==="owner"?"כל מה שמתקין צריך לדעת, ומה שרק מנהל המערכת צריך":"כל מה שצריך לדעת: התקנה, הפעלה, נעילה, ניהול וקודי חירום"],
   settings:()=>["הגדרות",me.role==="owner"?"ברירות מחדל, פרטי המוקד, מתגים וחשבון":"ברירת המחדל שלך והחשבון"]};
 function renderTabs(route){
   if(!me) return;
@@ -519,12 +558,108 @@ function renderTabs(route){
   if(own) groups.push(["תקשורת",[["messages","פניות","chat",openMessages().length]]]);
   groups.push(["התקנה",[["install","התקנה והורדות","download"]]]);
   if(own) groups.push(["צוות",[["installers","מתקינים","users"]]]);
-  groups.push(["מערכת",[["settings","הגדרות","gear"]]]);
+  groups.push(["מערכת",[["guide","מדריך","book"],["settings","הגדרות","gear"]]]);
   $("tabs").innerHTML=groups.map(([g,items])=>'<div class="grp">'+g+'</div>'+items.map(([k,t,ic,n])=>
     '<a href="#'+k+'" class="'+(k===cur?"on":"")+'"'+(k===cur?' aria-current="page"':'')+'>'+icon(ic)+'<span>'+t+'</span>'+(n?'<span class="count">'+n+'</span>':"")+'</a>').join("")).join("");
   if(navOnly) return;
   const h=PAGE_HEAD[route];
   $("phead").innerHTML = h ? (([t,sub])=>'<div class="phead"><div class="tt"><h1>'+esc(t)+'</h1><p>'+esc(sub)+'</p></div><div class="row" id="pacts"></div></div>')(h()) : "";
+}
+
+// ---------------------------------------------------------------- guide (for installers; the owner sees one more part)
+let guideOpen = null;
+function vGuide(v){
+  const own=me.role==="owner", rel=me.canRelease, del=me.canDelete;
+  const S=[
+  ["start","איך הכל עובד",`
+    <p>קיידרואיד מותקן בטלפון, ננעל עם מסלול והגדרות, ומאותו רגע אפשר לנהל אותו מכאן. התהליך תמיד אותו דבר:</p>
+    <div class="gflow"><div><b>1</b><span>התקנה</span><small>מקובץ, מקישור או מהמחשב</small></div><i></i><div><b>2</b><span>הפעלה</span><small>ניהול מכשיר, פעם אחת</small></div><i></i><div><b>3</b><span>נעילה</span><small>מסלול והגדרות, גם בלי אינטרנט</small></div><i></i><div><b>4</b><span>ניהול</span><small>מהפאנל, או בקודי חירום</small></div></div>
+    <h4>מצבי מכשיר בפאנל</h4>
+    <table class="gtable"><tr><td><span class="pill pending">ממתין</span></td><td>נרשם ועוד לא אושר או הופעל. פותחים אותו, בודקים מסלול והגדרות, ולוחצים "אשר והפעל את הסינון".</td></tr>
+    <tr><td><span class="pill active">מוגן</span></td><td>הסינון פועל והמכשיר מתחבר. כל שינוי שתשמרו מגיע אליו בחיבור הבא.</td></tr>
+    <tr><td><span class="pill pending">לא מתחבר</span></td><td>לא התחבר לאינטרנט יותר משלושה ימים. הסינון בו ממשיך לפעול, אבל שינויים מהפאנל יגיעו רק כשיתחבר.</td></tr>
+    <tr><td><span class="pill released">שוחרר</span></td><td>הסינון הוסר. ${del?"אפשר למחוק אותו מהרשימה.":"מנהל המערכת יכול למחוק אותו מהרשימה."}</td></tr>
+    <tr><td><span class="pill wait">חוזר</span></td><td>הטלפון הזה כבר היה רשום בעבר (למשל שוחרר והותקן מחדש). שווה לבדוק למה.</td></tr></table>
+    <div class="note info">ברירת המחדל שלכם (מסלול והגבלות) נכנסת לכל קובץ ולכל התקנה דרך הקישור שלכם, כך שבזמן ההתקנה רוב הבחירות כבר מוכנות. קובעים אותה ב<a href="#settings">הגדרות</a>.</div>`],
+
+  ["ways","דרכי ההתקנה ומתי להשתמש בכל אחת",`
+    <table class="gtable head"><tr><th>דרך</th><th>למי זה מתאים</th><th>אינטרנט</th></tr>
+    <tr><td><b>קישור אישי</b><small>מ"התקנה והורדות"</small></td><td>שולחים ללקוח, והוא מתקין לבד מהאתר: מהדפדפן במחשב, קובץ לטלפון, או תוכנה למחשב. המכשיר נרשם אצלכם עם ברירת המחדל שלכם.</td><td>בזמן ההורדה. בנעילה: לא חובה, חוץ ממקרה שהמלאי הציבורי נגמר.</td></tr>
+    <tr><td><b>קובץ לטלפון</b><small>APK מהפאנל</small></td><td>מתקינים מהטלפון עצמו, בלי מחשב: במסכי רכב ובקופסאות (מולטימדיה), בניפוי באגים אלחוטי, או ברוט.</td><td>לא צריך בכלל</td></tr>
+    <tr><td><b>תוכנה למחשב</b><small>EXE מהפאנל</small></td><td>טלפונים רגילים, דרך כבל USB. ההדרכה בתוך התוכנה, לפי יצרן הטלפון.</td><td>לא צריך. אם יש, היא מתקינה את הגרסה העדכנית.</td></tr></table>
+    <h4>חד-פעמי או קבוע?</h4>
+    <div class="gcols"><div class="card gc"><h5>נמחק בסוף ההתקנה</h5><p>לשליחה ללקוח או להתקנה אחת. אחרי התקנה מוצלחת הקובץ נמחק מהטלפון או מהמחשב, ולא נשאר אצל הלקוח כלום חוץ מהאפליקציה.</p></div>
+    <div class="card gc"><h5>קבוע</h5><p>נשאר אצלכם, ואפשר להתקין ממנו מכשיר אחרי מכשיר. התוכנה למחשב מורידה לבד את הגרסה החדשה ביותר כשיש אינטרנט, וזוכרת אותה גם להתקנה הבאה בלי אינטרנט.</p></div></div>`],
+
+  ["files","מה יש בתוך קובץ התקנה",`
+    <ul class="gl"><li><b>הפרטים שלכם</b>: שם, טלפון וקוד מתקין. המכשיר נרשם אצלכם כשהוא מתחבר.</li>
+    <li><b>ברירת המחדל שלכם</b>: מסלול והגבלות שמוכנים מראש במסך הנעילה.</li>
+    <li><b>מספר קובץ</b> (6 ספרות) שמופיע ב"קבצים שהורדו" ובמסך קוד החירום של הטלפון.</li>
+    <li><b>קודי חירום בלי אינטרנט</b>: 20 קודים לכל סוג בקשה (מעבר לכל מסלול${rel?", ושחרור":""}), שמתאימים רק לקובץ הזה.</li></ul>
+    <div class="note warn">כל קובץ ייחודי. אל תעבירו קובץ שלכם למתקין אחר: המכשירים יירשמו אצלכם, וקודי החירום שלו נוצרים רק מהפאנל שלכם.</div>
+    <p class="muted">הקובץ לטלפון כולל את הגרסה שהייתה עדכנית ברגע ההורדה. לגרסה חדשה מורידים קובץ חדש. התוכנה למחשב מתעדכנת לבד.</p>`],
+
+  ["activate","הפעלה בטלפון: כל השיטות",`
+    <p>"הפעלה" נותנת לקיידרואיד את הרשאת ניהול המכשיר, כדי שאי אפשר יהיה להסיר אותו. עושים את זה פעם אחת.</p>
+    <details class="gd"><summary>במחשב, בכבל USB (התוכנה למחשב, או מהדפדפן)</summary><div>
+      <ol><li>בטלפון: הגדרות ← אודות הטלפון ← 7 הקשות על "מספר Build" (בשיאומי: "גרסת MIUI").</li><li>הגדרות ← אפשרויות מפתחים ← "ניפוי באגים ב-USB".</li><li>מחברים בכבל, ומאשרים בטלפון "אפשר תמיד ממחשב זה".</li><li>בתוכנה לוחצים "התקנה". השאר אוטומטי.</li></ol>
+      <p class="muted">מהדפדפן (Chrome או Edge) בלי להתקין כלום: באתר ההורדה לוחצים "התקנה מהדפדפן". אם הטלפון "תפוס", סוגרים תוכנות אחרות שעובדות מול טלפונים (adb, Smart Switch).</p></div></details>
+    <details class="gd"><summary>מולטימדיה: מסכי רכב וקופסאות אנדרואיד</summary><div>
+      <ol><li>מתקינים את הקובץ לטלפון ופותחים את קיידרואיד ← "מולטימדיה".</li><li>מעתיקים את הקוד שמוצג באפליקציה.</li><li>פותחים "אודות" ומקישים על השורה המסומנת עד שנפתחות אפשרויות המפתחים.</li><li>פותחים את אפשרויות המפתחים, וחוזרים ללחוץ "הפעל".</li></ol></div></details>
+    <details class="gd"><summary>ניפוי באגים אלחוטי: טלפון בלי מחשב (אנדרואיד 11 ומעלה)</summary><div>
+      <ol><li>הטלפון מחובר לוויפי. מפעילים אפשרויות מפתחים, ובהן "ניפוי באגים אלחוטי".</li><li>בקיידרואיד בוחרים "ניפוי באגים אלחוטי" ועוקבים אחרי השלבים במסך. מאשרים התראות אם נשאלים.</li><li>בהגדרות: ניפוי באגים אלחוטי ← "צימוד מכשיר עם קוד צימוד".</li><li>קופצת התראה של קיידרואיד: מקלידים בה את 6 הספרות שבחלון.</li></ol>
+      <p class="muted">אם זה נכשל, במסך ההפעלה מופיע כרטיס "הניסיון האחרון נכשל" עם הסיבה. אפשר להעתיק אותו ולשלוח.</p></div></details>
+    <details class="gd"><summary>רוט</summary><div><p>בטלפונים עם הרשאת רוט: בוחרים "רוט" ומאשרים את בקשת ההרשאה.</p></div></details>
+    <h4>כשההפעלה נכשלת</h4>
+    <table class="gtable"><tr><td>"יש חשבונות בטלפון"</td><td>הגדרות ← חשבונות: מסירים זמנית, מפעילים, ומחזירים אחר כך.</td></tr>
+    <tr><td>משתמש נוסף / פרופיל עבודה</td><td>מסירים משתמשים נוספים ופרופיל עבודה, או אפליקציית ניהול אחרת.</td></tr>
+    <tr><td>שיאומי חוסם התקנה</td><td>באפשרויות מפתחים מפעילים גם "התקנה דרך USB" ו"ניפוי באגים ב-USB (הגדרות אבטחה)".</td></tr>
+    <tr><td>הטלפון לא מזוהה במחשב</td><td>כבל אחר (שמעביר נתונים), בטלפון בוחרים "העברת קבצים", ומנהל התקן של היצרן אם צריך.</td></tr></table>`],
+
+  ["lock","נעילה: גם בלי אינטרנט",`
+    <ol class="gsteps"><li><b>פרטי המכשיר</b>: שם וטלפון של בעל המכשיר.</li><li><b>מסלול והגדרות</b>: מסלול, הגבלות, ואפליקציות להשבתה (ההשבתה תמיד אחרונה ברשימה).</li><li><b>נעילה</b>: מאשרים שאין התחייבות לשחרור או לשינוי מסלול, ולוחצים "נעל את המכשיר".</li></ol>
+    <div class="note info">הנעילה עובדת בלי אינטרנט. המכשיר נרשם אצלכם בפעם הראשונה שהוא מתחבר, ורק אז הוא מופיע ברשימת המכשירים. עד אז מנהלים אותו בקודי חירום מהקובץ.</div>
+    <p class="muted">מכשיר שהותקן מהאתר הציבורי כשהמלאי היה ריק צריך אינטרנט פעם אחת בזמן הנעילה.</p>`],
+
+  ["online","ניהול מכשיר שמחובר לאינטרנט",`
+    <p>נכנסים ל<a href="#devices">מכשירים</a> ופותחים את המכשיר.</p>
+    <ul class="gl"><li><b>שינוי מסלול והגדרות</b>: משנים ולוחצים "שמור והחל במכשיר". השינוי מגיע למכשיר בחיבור הבא שלו לאינטרנט. "נראה לאחרונה" מראה מתי הוא התחבר.</li>
+    <li><b>בקשות</b>: משתמש יכול לבקש מהאפליקציה שינוי מסלול, שינוי הגדרה, הפעלה או הסרה. הבקשה מופיעה ב<a href="#requests">בקשות</a>. מאשרים על ידי שמירת השינוי בעמוד המכשיר, או דוחים.</li>
+    <li><b>חסימת פניות</b>: מכשיר שמציף בפניות אפשר לחסום מעמוד המכשיר.</li>
+    <li><b>שחרור</b>: ${rel?"בכרטיס \"פעולות\" בעמוד המכשיר. המכשיר משתחרר בחיבור הבא שלו.":"אצלכם השחרור דרך מנהל המערכת."}</li>
+    <li><b>מחיקה מהרשימה</b>: ${del?"רק מוחקת מהפאנל, והסינון במכשיר ממשיך לפעול. מכשיר ששוחרר אפשר למחוק ישר מרשימת המכשירים.":"אצלכם המחיקה דרך מנהל המערכת."}</li></ul>`],
+
+  ["codes","קודי חירום: כשהמכשיר בלי אינטרנט",`
+    <p>כשצריך לשנות מסלול${rel?" או לשחרר":""} ואין למכשיר אינטרנט, המשתמש פותח בקיידרואיד "קוד חירום" ומקריא לכם מספר. אתם יוצרים קוד ומקריאים לו בחזרה. יש שני מקרים, והטלפון מראה לבד את המתאים:</p>
+    <div class="gcols"><div class="card gc"><span class="pill active">מכשיר שמופיע בפאנל</span><h5>התחבר לפחות פעם אחת</h5>
+      <ol><li>המשתמש מקריא את <b>המספר של המכשיר</b> (8 ספרות). הוא מתחלף בכל בקשה.</li><li>בעמוד המכשיר ← "קוד חירום": מקלידים את המספר ובוחרים מה לאשר.</li><li>מקריאים את הקוד (6 ספרות).</li></ol></div>
+    <div class="card gc"><span class="pill pending">הותקן מקובץ ועוד לא התחבר</span><h5>לא מופיע בפאנל</h5>
+      <ol><li>המשתמש בוחר מה לבקש, ומקריא <b>מספר קובץ</b> ו<b>מספר קוד</b>.</li><li>ב<a href="#install">התקנה והורדות</a> ← "קוד חירום למכשיר שלא התחבר": מקלידים את שניהם ובוחרים את הבקשה.</li><li>מקריאים את הקוד (12 ספרות).</li></ol></div></div>
+    <h4>חשוב לדעת</h4>
+    <ul class="gl"><li>כל קוד עובד <b>פעם אחת</b>, רק במכשיר הזה ורק לבקשה שנבחרה. קוד שדלף לא פותח שום מכשיר אחר.</li>
+    <li>בקובץ יש 20 קודים לכל סוג בקשה, והם נצרכים לפי הסדר. הטלפון אומר איזה מספר קוד הוא מצפה לו.</li>
+    <li>אחרי 5 קודים שגויים המסך ננעל ל-15 דקות.</li>
+    <li>מכשיר שהותקן בלי קובץ (מהאתר או מהקישור) מקבל קודי חירום רק אחרי שהתחבר פעם אחת.</li>
+    ${rel?"":"<li>קודי שחרור יוצר רק מי שיש לו הרשאת שחרור.</li>"}</ul>`],
+
+  ["faq","שאלות ותקלות נפוצות",`
+    <details class="gd"><summary>התקנתי, אבל המכשיר לא מופיע בפאנל</summary><div><p>הוא יופיע אחרי שיתחבר לאינטרנט בפעם הראשונה. עד אז מנהלים אותו בקודי חירום עם מספר הקובץ.</p></div></details>
+    <details class="gd"><summary>שיניתי מסלול בפאנל, אבל בטלפון עוד לא השתנה</summary><div><p>השינוי מגיע בחיבור הבא של המכשיר. אם הוא "לא מתחבר", בקשו מהמשתמש להתחבר לאינטרנט, או השתמשו בקוד חירום.</p></div></details>
+    <details class="gd"><summary>"הטלפון תפוס" בהתקנה מהמחשב</summary><div><p>תוכנה אחרת במחשב (adb, Samsung Smart Switch, Mi PC Suite) מחזיקה את הטלפון. סוגרים אותה. בתוכנה למחשב יש כפתור "סגור אותה".</p></div></details>
+    <details class="gd"><summary>Windows אומר "Windows protected your PC"</summary><div><p>זו אזהרה רגילה לתוכנה חדשה. לוחצים "מידע נוסף" ואז "הפעל בכל זאת". אם הדפדפן שואל אם לשמור את הקובץ, בוחרים "שמור".</p></div></details>
+    <details class="gd"><summary>הצימוד האלחוטי נכשל</summary><div><p>מקלידים את הקוד שמוצג <b>באותו רגע</b> בחלון (בכל פתיחה יש קוד חדש). אם זה נכשל שוב, במסך ההפעלה יש כרטיס עם סיבת הכשל: מעתיקים ושולחים.</p></div></details>
+    <details class="gd"><summary>המשתמש רוצה להסיר את הסינון</summary><div><p>הוא שולח "בקשת הסרה" מהאפליקציה. ${rel?"אם מאשרים, משחררים מעמוד המכשיר, או בקוד חירום אם אין לו אינטרנט.":"השחרור נעשה דרך מנהל המערכת."} אין התחייבות לשחרר.</p></div></details>`],
+  ];
+  if(own) S.push(["owner","למנהל המערכת",`
+    <ul class="gl"><li><b>מתקינים</b>: ב<a href="#installers">מתקינים</a> מוסיפים מתקין, נותנים או לוקחים הרשאת שחרור ומחיקה, ומעבירים מכשירים בין מתקינים.</li>
+    <li><b>מתגים</b>: בהגדרות ← מתגים אפשר לעצור כל אפשרות: האתר הציבורי וכל דרך הורדה בו, קישורים אישיים, קובצי התקנה ופניות.</li>
+    <li><b>מלאי ההורדה הציבורית</b>: כל הורדה מהאתר מקבלת סט קודים ייחודי מתוך מלאי של 1000. הפאנל שלך ממלא אותו כשהוא פתוח, ותופיע התראה כשהוא יורד מתחת ל-100.</li>
+    <li><b>מפתחות שחרור</b>: מתקין בלי הרשאת שחרור מקבל מפתחות ממאגר שהפאנל שלך מחזיק. אם הוא מקבל "אין מפתחות פנויים", פשוט היכנס לפאנל.</li></ul>`]);
+  v.innerHTML=`<div class="guide">
+    <nav class="gtoc" aria-label="נושאים">${S.map(([id,t],i)=>`<a href="#guide/${id}" data-gid="${id}"><b>${i+1}</b>${t}</a>`).join("")}</nav>
+    <div class="gbody">${S.map(([id,t,h],i)=>`<section class="card gsec" id="g_${id}"><div class="hd"><span class="gnum">${i+1}</span><h2>${t}</h2></div><div class="bd">${h}</div></section>`).join("")}</div></div>`;
+  v.querySelectorAll("[data-gid]").forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=$("g_"+a.dataset.gid); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); });
+  const h=(location.hash||"").split("/")[1]; if(h&&$("g_"+h)) setTimeout(()=>$("g_"+h).scrollIntoView({block:"start"}),50);
 }
 
 // ---------------------------------------------------------------- overview
@@ -1054,7 +1189,7 @@ function fileTarget(sel){
 }
 
 async function createFile(kind,target,status,keep){
-  status("מכין מפתחות לקודי חירום…",0);
+  status("מכין מפתחות לקודי חירום…",1);
   let made=null;
   for(let t=0;t<4&&!made;t++){
     const fid=String(100000+Math.floor(Math.random()*900000)), seeds={};
@@ -1085,18 +1220,18 @@ async function createFile(kind,target,status,keep){
   const api=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
   const payload=JSON.stringify({v:1,kind,fid:made.fid,rid:made.rid,installerId:target.installerId,code:target.code,
     iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,keep:!!keep,createdAt:Date.now()});
-  status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",1);
+  status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",0);
   const apk=injectApk(await fetchFile("kdroid.bin",p=>status(null,p)),payload);
   if(kind==="phone"){ saveBlob(apk,(keep?"kiydroid-installer-":"kiydroid-setup-")+made.fid+".apk"); return made.fid; }
-  status("מכין את תוכנת ההתקנה למחשב…",99);
+  status("מכין את תוכנת ההתקנה למחשב…",94);
   const base=(keep?"Kiydroid-Installer-Permanent-":"Kiydroid-Setup-")+made.fid;
-  saveBlob(await pcSetup(apk,{fid:made.fid,version:api.version||"",installer:target.iName,phone:target.iPhone||"",keep:!!keep,kind:"pc"}),base+".exe");
+  saveBlob(await pcSetup(apk,{fid:made.fid,version:api.version||"",installer:target.iName,phone:target.iPhone||"",keep:!!keep,kind:"pc"},p=>status(null,94+Math.round(p*0.05))),base+".exe");
   return made.fid;
 }
 
 /** the PC installer: one portable program (adb inside) with this app and its details appended (pcsetup/payload.go) */
-async function pcSetup(apk,info){
-  const stub=await fetchFile("installer/base/KiydroidSetup.exe");
+async function pcSetup(apk,info,onPct){
+  const stub=await fetchFile("installer/base/KiydroidSetup.exe",onPct);
   const json=new TextEncoder().encode(JSON.stringify(info));
   const ft=new Uint8Array(32), dv=new DataView(ft.buffer);
   ft.set(new TextEncoder().encode("KIYDPAY1"),0); dv.setBigUint64(8,BigInt(json.length),true); dv.setBigUint64(16,BigInt(apk.size),true);
@@ -1198,7 +1333,7 @@ function vInstall(v){
         <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש."+(mkType==="pc"?" כשיש אינטרנט הוא מוריד לבד את הגרסה החדשה ביותר.":""):"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
         <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
       </div>
-      <div id="mkStatus" class="note info" hidden style="margin-top:12px"></div>
+      <div id="mkStatus" class="${mkResult?"note "+mkResult[0]:"mkprog"}" ${mkResult?"":"hidden"}>${mkResult?esc(mkResult[1]):`<div class="mkrow"><span id="mkMsg"></span><b id="mkPct" class="num"></b></div><div class="mkbar"><i id="mkBar"></i></div>`}</div>
     </div></section>
     ${own?`<section class="card"><div class="hd"><h2>הורדה ציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
       <p class="muted" style="margin-top:0">מי שמוריד מדף ההורדה הציבורי מקבל קובץ ייחודי משלו מהמלאי. המכשיר יופיע אצלך כמוקד, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>
@@ -1217,17 +1352,25 @@ function vInstall(v){
   </div></div>`;
   if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
   const st=$("mkStatus");
-  const status=(msg,pct)=>{ st.hidden=false; if(msg!=null) status.m=msg; st.textContent=status.m+(pct?" "+pct+"%":""); };
-  v.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{ mkType=b.dataset.type; vInstall(v); });
-  v.querySelectorAll("[data-keep2]").forEach(b=>b.onclick=()=>{ mkKeep=b.dataset.keep2==="1"; vInstall(v); });
+  // overall progress: keys 0-4%, the app download 4-92%, packing 92-100%; elements looked up each time (never stale)
+  const status=(msg,pct)=>{ const box=$("mkStatus"); if(!box) return; box.hidden=false;
+    if(box.className!=="mkprog"){ box.className="mkprog"; box.innerHTML='<div class="mkrow"><span id="mkMsg"></span><b id="mkPct" class="num"></b></div><div class="mkbar"><i id="mkBar"></i></div>'; }
+    if(msg!=null) status.m=msg; $("mkMsg").textContent=status.m||"";
+    if(pct!=null){ const total=status.m&&status.m.startsWith("מוריד")?4+Math.round(pct*0.88):pct; status.t=Math.max(status.t||0,Math.min(100,total)); }
+    $("mkPct").textContent=(status.t||0)+"%"; $("mkBar").style.width=(status.t||0)+"%"; };
+  v.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{ if(fileBusy) return; mkType=b.dataset.type; mkResult=null; vInstall(v); });
+  v.querySelectorAll("[data-keep2]").forEach(b=>b.onclick=()=>{ if(fileBusy) return; mkKeep=b.dataset.keep2==="1"; mkResult=null; vInstall(v); });
   if($("mkBtn")) $("mkBtn").onclick=async()=>{ const b=$("mkBtn");
-    b.disabled=true; typing=true;
-    try{ const keep=mkKeep, fid=await createFile(mkType,fileTarget(who),status,keep);
-         st.className="note ok"; st.textContent="הקובץ מוכן ("+fid+(keep?", קבוע":", נמחק בסוף ההתקנה")+") ונשמר בהורדות."; myFiles=null; listFiles(); }
-    catch(e){ st.className="note err"; st.hidden=false;
-      st.textContent=e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים. בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם."
-        :"יצירת הקובץ נכשלה. בדקו את החיבור ונסו שוב."; console.error(e); }
-    b.disabled=false; typing=false;
+    b.disabled=true; fileBusy=true; status.t=0;
+    mkResult=null;
+    const done=(cls,text)=>{ mkResult=[cls,text]; const box=$("mkStatus"); if(!box) return; box.hidden=false; box.className="note "+cls; box.textContent=text; };
+    try{ const keep=mkKeep, kind=mkType, fid=await createFile(kind,fileTarget(who),status,keep);
+         status(null,100);
+         done("ok","הקובץ מוכן ונשמר בהורדות ✓ מספר הקובץ "+fid+(keep?" (קבוע)":" (נמחק בסוף ההתקנה)")+"."+(kind==="pc"?" אם הדפדפן שואל אם לשמור, בחרו \"שמור\".":""));
+         myFiles=null; listFiles(); }
+    catch(e){ done("err",e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים. בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם."
+        :"יצירת הקובץ נכשלה. בדקו את החיבור ונסו שוב."); console.error(e); }
+    finally{ fileBusy=false; const bb=$("mkBtn"); if(bb) bb.disabled=false; }
   };
   $("ofBtn").onclick=async()=>{
     const fid=$("ofFid").value.replace(/\D/g,""), k=parseInt($("ofK").value.replace(/\D/g,"")||"1",10), act=$("ofAct").value;
