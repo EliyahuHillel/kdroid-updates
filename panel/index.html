@@ -297,6 +297,41 @@ details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-s
 .wsteps li.bad{color:#b3261e;font-weight:600}.wsteps li.bad i{background:#b3261e;border-color:#b3261e;color:#fff}
 @keyframes wspin{to{transform:rotate(360deg)}}
 .swrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.swrow>div{flex:1}
+/* device page: header + tabs */
+.devhead{padding:0;overflow:hidden;margin-bottom:16px}
+.dh{display:flex;gap:16px;align-items:center;padding:20px 22px;flex-wrap:wrap}
+.av3{width:54px;height:54px;border-radius:16px;background:var(--primary-container,#d6efe4);color:var(--primary,#006c51);display:grid;place-items:center;font-weight:700;font-size:20px;flex:none}
+.dhm{flex:1;min-width:200px}
+.dht{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dht h2{margin:0;font-size:21px}
+.dhs{display:flex;gap:6px 14px;flex-wrap:wrap;color:var(--muted,#5b6862);font-size:13.5px;margin-top:4px}
+.dhk{display:grid;grid-template-columns:repeat(4,auto);gap:4px 22px}
+.dhk div{display:flex;flex-direction:column}.dhk small{color:var(--muted,#5b6862);font-size:12px}.dhk b{font-size:14.5px;white-space:nowrap}
+.dhn{display:grid;gap:8px;padding:0 22px 14px}
+.dtabs{display:flex;gap:2px;border-top:1px solid var(--line,#e3e8e5);padding:0 12px;overflow-x:auto;scrollbar-width:none}
+.dtabs button{border:0;background:none;padding:13px 14px;display:flex;gap:7px;align-items:center;color:var(--muted,#5b6862);font:inherit;font-weight:600;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.dtabs button .i{width:17px;height:17px}
+.dtabs button.on{color:var(--primary,#006c51);border-bottom-color:var(--primary,#006c51)}
+.dtabs button:hover{color:var(--on-bg,#191c1a)}
+.dtabs .count{background:#b3261e;color:#fff;border-radius:9px;padding:0 6px;font-size:11.5px}
+.tdot{width:8px;height:8px;border-radius:50%;background:#b3261e;display:inline-block}
+.dbody{display:grid;gap:16px;padding-bottom:8px}
+.dbody .card.narrow{max-width:520px}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mode{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1.5px solid var(--line,#e3e8e5);border-radius:14px;cursor:pointer;transition:border-color .15s,background .15s}
+.mode input{position:absolute;opacity:0;pointer-events:none}
+.mode b{font-size:15px}.mode .muted{font-size:12.5px;line-height:1.5}
+.mode.on{border-color:var(--primary,#006c51);background:var(--primary-container,#e3f3ec)}
+.mode.on b::before{content:"✓ ";color:var(--primary,#006c51)}
+.sgroups{display:grid;gap:18px}
+.sgh{display:flex;gap:8px;align-items:center;font-weight:650;font-size:14px;color:var(--muted,#5b6862);margin-bottom:8px}.sgh .i{width:17px;height:17px}
+.stiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stile{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px 11px 10px;border:1px solid var(--line,#e3e8e5);border-radius:12px;cursor:pointer;font-size:14px;background:var(--surface,#fff)}
+.stile.on{border-color:#a8d8c3;background:#f1faf5}
+.savebar{position:sticky;bottom:12px;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:16px;background:var(--surface,#fff);border:1px solid var(--line,#e3e8e5);box-shadow:0 6px 24px rgba(16,40,30,.12);font-size:14px;color:var(--muted,#5b6862);z-index:3}
+.savebar.dirty{border-color:var(--primary,#006c51);color:var(--on-bg,#191c1a);font-weight:600}
+.dangerzone{border-color:#f3c7c3}.dangerzone>.hd{color:#b3261e}
+@media (max-width:900px){ .dhk{grid-template-columns:repeat(2,auto)} .modes,.stiles{grid-template-columns:1fr} }
+@media (max-width:600px){ .savebar>span:first-child{display:none} .savebar{padding:10px} .savebar .btn{flex:1} }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -945,9 +980,18 @@ function bindGemach(d){
 }
 
 // ---------------------------------------------------------------- device page
+// the settings, grouped so the page reads in sections; "disable sensitive apps" stays last with its list
+const SET_GROUPS=[
+  ["אפליקציות","shield",["app_installation_block","app_uninstall_block","hide_store_icon"]],
+  ["תקשורת","chat",["call_block","message_block","wifi_block"]],
+  ["העברת קבצים ואחסון","download",["bluetooth_sharing_block","usb_sharing_block","external_storage_block"]],
+  ["השבתת אפליקציות","alert",["disable_sensible_apps"]]];
+let devTab="filter", devTabId=null;
 function vDevice(id){
   const v=$("view"), d=devById(id);
   if(!d){ v.innerHTML='<a class="back" href="#devices">'+icon("back")+' חזרה למכשירים</a><div class="empty">המכשיר לא נמצא</div>'; return; }
+  if(devTabId!==id){ devTabId=id; devTab=d.status==="released"?"info":"filter"; }
+  const own=me.role==="owner";
   const st=stateOf(id)||{}, apps=appsOf(id), s=statusOf(d), myReqs=D.requests.filter(r=>r.deviceId===id);
   const openReq=myReqs.find(r=>r.status==="open");
   if(draft&&draft.id!==id) draft=null;
@@ -959,78 +1003,93 @@ function vDevice(id){
   if(st.lastErr) warn.push("שגיאה אחרונה במכשיר: "+st.lastErr);
   if(isStale(d)) warn.push("המכשיר לא התחבר "+ago(lastSeen(id))+". השינויים יוחלו כשיתחבר.");
   const earlier=earlierOf(d);
-  const returningNote = earlier.length ? `<div class="note warn" style="margin-bottom:14px"><b>${isReturning(d)?"המכשיר הזה כבר היה רשום במערכת בעבר":"המכשיר הזה נרשם שוב מאוחר יותר"}</b>
+  const returningNote = earlier.length ? `<div class="note warn"><b>${isReturning(d)?"המכשיר הזה כבר היה רשום במערכת בעבר":"המכשיר הזה נרשם שוב מאוחר יותר"}</b>
     ${earlier.map(x=>`<div style="margin-top:6px">${isReturning(d)&&(x.createdAt||0)<(d.createdAt||0)?"הרשמה קודמת":"הרשמה נוספת"}: <a href="#device/${encodeURIComponent(x._id)}">${esc(x.name)}</a>
-      · ${esc(x.phone||"")} · ${esc(statusOf(x).t)}${me.role==="owner"?" · "+esc(installerLabel(x.installerId)):""} · נרשם ${when(x.createdAt)}</div>`).join("")}</div>` : "";
+      · ${esc(x.phone||"")} · ${esc(statusOf(x).t)}${own?" · "+esc(installerLabel(x.installerId)):""} · נרשם ${when(x.createdAt)}</div>`).join("")}</div>` : "";
   const primaryLabel = d.status==="active" ? "שמור והחל במכשיר" : "אשר והפעל את הסינון";
+  const mode=pol.filter_mode||st.filter_mode, released=d.status==="released";
+  const tabs=[["filter","סינון והגדרות","shield",!released],["info","פרטים","phone",true],["emergency","קוד חירום","key",!released],
+    ["location",'מיקום'+(isLost(d)?' <span class="tdot"></span>':""),"pin",own&&!released],
+    ["requests","בקשות"+(myReqs.filter(r=>r.status==="open").length?' <span class="count">'+myReqs.filter(r=>r.status==="open").length+'</span>':""),"inbox",true],
+    ["manage","ניהול","gear",true],["log","יומן","edit",own]].filter(t=>t[3]);
+  if(!tabs.some(t=>t[0]===devTab)) devTab=tabs[0][0];
+  const onCount=SETTINGS.filter(([k])=>pol.settings[k]).length;
 
-  v.innerHTML=`<a class="back" href="#devices">${icon("back")} חזרה למכשירים</a>
-  <div class="split">
-    <div class="grid">
-      <section class="card"><div class="hd"><h2>${esc(d.name)}</h2>${pill(s)}<span class="spacer"></span>${draft?'<span class="muted">יש שינויים שלא נשמרו</span>':""}</div>
-        <div class="bd">
-          ${returningNote}
-          ${openReq?`<div class="note warn" style="margin-bottom:14px"><b>${esc(REQ_TYPE[openReq.type])}</b> · ${when(openReq.createdAt)}${openReq.text?"<br>"+esc(openReq.text):""}</div>`:""}
-          ${warn.map(w=>`<div class="note err" style="margin-bottom:10px">${esc(w)}</div>`).join("")}
-          ${d.status==="released"?`<div class="note info">המכשיר שוחרר ואינו מנוהל יותר.</div>`:`
-          ${d.status==="pending"?`<div class="note info" style="margin-bottom:14px">כך יוגדר המכשיר כשתאשרו. ${d.legacy?"ההגנה כבר פעילה במכשיר מהתקנה קודמת, והאישור יעביר אותו לניהול שלכם.":"עד האישור, הסינון אינו פעיל במכשיר."}</div>`:""}
-          <h3 style="font-size:15px;margin-bottom:10px">מסלול</h3>
-          ${MODES.map(m=>`<label class="opt ${pol.filter_mode===m.v?"on":""}"><input type="radio" name="mode" value="${m.v}" ${pol.filter_mode===m.v?"checked":""}><span><b>${m.t}</b><span class="muted">${esc(m.d)}</span></span></label>`).join("")}
-          <h3 style="font-size:15px;margin:18px 0 4px">הגדרות</h3>
-          ${SETTINGS.map(([k,t])=>`<div class="sw"><span>${t}</span><label class="toggle"><input type="checkbox" data-k="${k}" ${pol.settings[k]?"checked":""} aria-label="${t}"><i></i></label></div>
-            ${k==="disable_sensible_apps"&&pol.settings[k]?sensBlock(pol,apps):""}`).join("")}
-          <div class="row" style="margin-top:18px">
-            <button class="btn fill" id="saveBtn">${primaryLabel}</button>
-            ${draft?'<button class="btn text" id="undoBtn">בטל שינויים</button>':""}
-            <span class="spacer"></span>
-          </div>`}
-        </div></section>
-      <section class="card"><div class="hd"><h2>היסטוריית בקשות</h2></div>
-        <div class="list">${myReqs.map(reqItem).join("")||'<div class="empty">אין בקשות מהמכשיר</div>'}</div></section>
-    </div>
-    <div class="grid">
-      <section class="card"><div class="hd"><h2>פרטים</h2></div><div class="bd"><dl class="kv">
+  const body={
+    filter:()=>`${d.status==="pending"?`<div class="note info" style="margin-bottom:14px">כך יוגדר המכשיר כשתאשרו. ${d.legacy?"ההגנה כבר פעילה במכשיר מהתקנה קודמת, והאישור יעביר אותו לניהול שלכם.":"עד האישור, הסינון אינו פעיל במכשיר."}</div>`:""}
+      <section class="card"><div class="hd">${icon("shield")}<h2>מסלול</h2></div><div class="bd">
+        <div class="modes">${MODES.map(m=>`<label class="mode ${pol.filter_mode===m.v?"on":""}"><input type="radio" name="mode" value="${m.v}" ${pol.filter_mode===m.v?"checked":""}><b>${m.t}</b><span class="muted">${esc(m.d)}</span></label>`).join("")}</div>
+      </div></section>
+      <section class="card"><div class="hd">${icon("gear")}<h2>הגבלות</h2><span class="muted" style="margin-inline-start:auto;font-size:13px">${onCount} פעילות</span></div><div class="bd sgroups">
+        ${SET_GROUPS.map(([g,ic,keys])=>`<div class="sgroup"><div class="sgh">${icon(ic)}<span>${g}</span></div><div class="stiles">
+          ${keys.map(k=>{ const t=(SETTINGS.find(x=>x[0]===k)||[k,k])[1]; return `<label class="stile ${pol.settings[k]?"on":""}"><span>${t}</span><span class="toggle"><input type="checkbox" data-k="${k}" ${pol.settings[k]?"checked":""} aria-label="${t}"><i></i></span></label>`; }).join("")}
+        </div>${keys.includes("disable_sensible_apps")&&pol.settings.disable_sensible_apps?sensBlock(pol,apps):""}</div>`).join("")}
+      </div></section>
+      ${!draft&&d.status==="active"?"":`<div class="savebar ${draft?"dirty":""}"><span>${draft?"יש שינויים שלא נשמרו":d.status==="active"?"המסלול וההגדרות הנוכחיים של המכשיר":"עוד לא אושר"}</span><span class="spacer"></span>
+        ${draft?'<button class="btn text" id="undoBtn">בטל שינויים</button>':""}<button class="btn fill" id="saveBtn">${primaryLabel}</button></div>`}`,
+    info:()=>`<section class="card"><div class="hd">${icon("phone")}<h2>פרטים</h2></div><div class="bd"><dl class="kv">
+        <dt>בעל המכשיר</dt><dd>${esc(d.name)}</dd>
         <dt>טלפון</dt><dd class="num" dir="ltr" style="text-align:right">${esc(d.phone)}</dd>
         ${d.email?`<dt>מייל</dt><dd dir="ltr" style="text-align:right">${esc(d.email)}</dd>`:""}
         <dt>מתקין</dt><dd>${esc(installerLabel(d.installerId))}</dd>
+        ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
+        <dt>גרסת קיידרואיד</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
+        <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
         <dt>נרשם</dt><dd>${when(d.createdAt)}</dd>
         ${d.lockedAt?`<dt>ננעל בהתקנה</dt><dd>${when(d.lockedAt)}</dd>`:""}
         ${d.fid?`<dt>הותקן מקובץ</dt><dd class="num">${esc(d.fid)}</dd>`:""}
         <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
-        <dt>גרסה</dt><dd class="num">${esc(st.appVersion||d.appVersion||"—")}</dd>
-        ${modelOf(d)?`<dt>דגם</dt><dd dir="ltr" style="text-align:right">${esc(modelOf(d))}</dd>`:""}
-        <dt>הגנה במכשיר</dt><dd>${st.protected?"פעילה":"לא פעילה"}</dd>
-      </dl>
-
-      </div></section>
-      ${gemachCard(d)}
-      <section class="card"><div class="hd"><h2>פעולות</h2></div><div class="acts">
-        ${me.role==="owner"?`<div class="act"><div class="main"><b>העברה למתקין אחר</b><span class="muted">המכשיר, הבקשות והדיווחים עוברים אליו</span>
+      </dl></div></section>`,
+    emergency:()=>`<section class="card narrow"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
+        <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: המשתמש פותח בקיידרואיד "קוד חירום" ומקריא לכם את המספר שמופיע אצלו. הקוד שתקבלו כאן עובד פעם אחת, רק במכשיר הזה.</p>
+        <div class="field"><label class="f" for="chal">המספר מהמכשיר</label><input type="text" id="chal" inputmode="numeric" dir="ltr" placeholder="8 ספרות" class="num"></div>
+        <div class="field"><label class="f" for="emAct">מה לאשר</label><select id="emAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select></div>
+        <button class="btn fill" id="emBtn" style="width:100%">צור קוד</button>
+        <div id="emOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode num" id="emCode"></div></div>
+      </div></section>`,
+    location:()=>gemachCard(d),
+    requests:()=>`<section class="card"><div class="hd">${icon("inbox")}<h2>בקשות מהמכשיר</h2></div>
+        <div class="list">${myReqs.map(reqItem).join("")||'<div class="empty">אין בקשות מהמכשיר</div>'}</div></section>`,
+    manage:()=>`<section class="card"><div class="acts">
+        ${own?`<div class="act"><div class="main"><b>העברה למתקין אחר</b><span class="muted">המכשיר, הבקשות והדיווחים עוברים אליו</span>
           <div class="row" style="margin-top:8px"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
           ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}" ${d.installerId===i._id?"selected":""}>${esc(i.name)}</option>`).join("")}</select><button class="btn out sm" id="reassignBtn">העבר</button></div></div></div>
           <div class="act"><div class="main"><b>חסימת פניות</b><span class="muted">המשתמש לא יוכל לשלוח לך הודעות מהאפליקציה</span></div>
             <label class="toggle"><input type="checkbox" id="msgBlk" ${d.msgBlocked?"checked":""} aria-label="חסום פניות"><i></i></label></div>`:""}
-        ${d.status!=="released"?`<div class="act danger"><div class="main"><b>שחרור המכשיר</b><span class="muted">${me.canRelease?"הסינון יוסר מהמכשיר כשיתחבר, והמשתמש יוכל להסיר את קיידרואיד. אי אפשר לבטל.":"שחרור מכשירים מתבצע על ידי מנהל המערכת."}</span></div>
+        </div></section>
+        <section class="card dangerzone"><div class="hd">${icon("alert")}<h2>פעולות שאי אפשר לבטל</h2></div><div class="acts">
+        ${!released?`<div class="act danger"><div class="main"><b>שחרור המכשיר</b><span class="muted">${me.canRelease?"הסינון יוסר מהמכשיר כשיתחבר, והמשתמש יוכל להסיר את קיידרואיד.":"שחרור מכשירים מתבצע על ידי מנהל המערכת."}</span></div>
           ${me.canRelease?`<button class="btn danger sm" id="releaseBtn">שחרר</button>`:""}</div>`:""}
         <div class="act danger"><div class="main"><b>מחיקה מהמערכת</b><span class="muted">${me.canDelete?"המכשיר נמחק מהפאנל. הסינון בו ממשיך לפעול, אבל לא תוכלו לשלוט בו מרחוק.":"רק מנהל המערכת יכול למחוק מכשירים."}</span></div>
           ${me.canDelete?`<button class="btn danger sm" id="deleteBtn">מחק</button>`:""}</div>
-      </div></section>
-      ${d.status!=="released"?`<section class="card"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
-        <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: בקשו מהמשתמש את המספר שמופיע אצלו במסך "קוד חירום".</p>
-        <div class="field"><label class="f" for="chal">המספר מהמכשיר</label><input type="text" id="chal" inputmode="numeric" dir="ltr" placeholder="8 ספרות" class="num"></div>
-        <div class="field"><label class="f" for="emAct">מה לאשר</label><select id="emAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select></div>
-        <button class="btn tonal" id="emBtn" style="width:100%">צור קוד</button>
-        <div id="emOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode num" id="emCode"></div></div>
-      </div></section>`:""}
-      ${me.role==="owner"?`<section class="card"><div class="hd"><h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>`:""}
+      </div></section>`,
+    log:()=>`<section class="card"><div class="hd">${icon("edit")}<h2>יומן שינויים</h2></div><div class="list" id="auditList"><div class="empty">טוען…</div></div></section>`
+  };
 
-    </div>
-  </div>`;
+  v.innerHTML=`<a class="back" href="#devices">${icon("back")} חזרה למכשירים</a>
+  <section class="card devhead"><div class="dh">
+      <span class="av3">${esc(initialsOf(d.name))}</span>
+      <div class="dhm"><div class="dht"><h2>${esc(d.name)}</h2>${pill(s)}${own&&isLost(d)?'<span class="pill lostpill">אבד</span>':own&&d.track?'<span class="pill trackpill">מיקום</span>':""}</div>
+        <div class="dhs"><span class="num" dir="ltr">${esc(d.phone)}</span>${modelOf(d)?`<span>${esc(modelOf(d))}</span>`:""}<span>${esc(installerLabel(d.installerId))}</span></div></div>
+      <div class="dhk">
+        <div><small>מסלול</small><b>${mode?esc(MODE_NAME[mode]||mode):"—"}</b></div>
+        <div><small>הגבלות</small><b>${onCount}</b></div>
+        <div><small>נראה לאחרונה</small><b>${ago(lastSeen(id))}</b></div>
+        <div><small>גרסה</small><b class="num">${esc(st.appVersion||d.appVersion||"—")}</b></div>
+      </div></div>
+    ${(returningNote||openReq||warn.length||released)?`<div class="dhn">
+      ${released?'<div class="note info">המכשיר שוחרר ואינו מנוהל יותר.</div>':""}
+      ${openReq?`<div class="note warn"><b>בקשה פתוחה: ${esc(REQ_TYPE[openReq.type])}</b> · ${when(openReq.createdAt)}${openReq.text?" · "+esc(openReq.text):""}</div>`:""}
+      ${warn.map(w=>`<div class="note err">${esc(w)}</div>`).join("")}${returningNote}</div>`:""}
+    <nav class="dtabs" role="tablist">${tabs.map(([k,t,ic])=>`<button role="tab" class="${k===devTab?"on":""}" aria-selected="${k===devTab}" data-dt="${k}">${icon(ic)}<span>${t}</span></button>`).join("")}</nav>
+  </section>
+  <div class="dbody">${body[devTab]()}</div>`;
 
+  v.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{ devTab=b.dataset.dt; vDevice(id); });
   v.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{ mark().filter_mode=r.value; vDevice(id); });
   v.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{ mark().settings[c.dataset.k]=c.checked; vDevice(id); });
   v.querySelectorAll('[data-app]').forEach(c=>c.onchange=()=>{ const p=mark(); const set=new Set(p.hiddenApps||[]);
-    c.checked?set.add(c.dataset.app):set.delete(c.dataset.app); p.hiddenApps=[...set]; });
+    c.checked?set.add(c.dataset.app):set.delete(c.dataset.app); p.hiddenApps=[...set]; vDevice(id); });
   if($("undoBtn")) $("undoBtn").onclick=()=>{ draft=null; vDevice(id); };
   if($("saveBtn")) $("saveBtn").onclick=()=>savePolicy(d,pol,openReq);
   if($("releaseBtn")) $("releaseBtn").onclick=()=>releaseDevice(d,openReq);
@@ -1056,9 +1115,9 @@ function vDevice(id){
   if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
     await deleteDevices([d]); draft=null; location.hash="#devices"; load(); });
   fillIcons();
-  if(me.role==="owner") bindGemach(d);
-  if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
-    list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
+  if(own&&devTab==="location") bindGemach(d);
+  if(own&&devTab==="log") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
+    list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,40).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
 }
 // app icons: uploaded by devices once per package (appIcons/{pkg}); read in one batch per screen
 const ICONS={};
