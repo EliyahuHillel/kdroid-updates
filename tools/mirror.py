@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""
+Keeps a verified copy of an app (all its split parts) for Kiydroid's store.
+
+Runs on GitHub Actions every few hours. For each app in APPS:
+  1. reads the version Google Play shows now (best effort),
+  2. downloads the full package (XAPK: base + split parts) of the latest version,
+  3. checks: every part is signed with the app's real certificate, the package and version are right,
+     the version is the one Google Play has (never a beta / early build), and the parts the phone needs are there,
+  4. only then publishes it as a release asset and updates apps/<package>.json, which the store reads.
+Anything that does not pass leaves the last good version in place.
+"""
+import json, os, re, subprocess, sys, tempfile, zipfile, hashlib, shutil, urllib.request, glob, time
+
+APPS = {
+    "com.unicell.pangoandroid": {
+        "title": "Pango",
+        # SHA-1 of Pango's signing certificate (the same value Kiydroid's route check uses)
+        "cert_sha1": "8e5a73f88599331ad34b99beaaf312179e29c7b",
+    },
+}
+UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
+REPO = os.environ.get("GITHUB_REPOSITORY", "EliyahuHillel/kdroid-updates")
+BT = sorted(glob.glob(os.path.join(os.environ.get("ANDROID_HOME", "/usr/local/lib/android/sdk"), "build-tools", "*")))[-1]
+APKSIGNER, AAPT2 = os.path.join(BT, "apksigner"), os.path.join(BT, "aapt2")
+
+
+def log(*a):
+    print(*a, flush=True)
+
+
+def get(url, binary=False, tries=3):
+    last = None
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.8"})
+            with urllib.request.urlopen(req, timeout=120) as r:
+                data = r.read()
+                return data if binary else data.decode("utf-8", "replace")
+        except Exception as e:
+            last = e
+            time.sleep(5 * (i + 1))
+    raise last
+
+
+def play_version(pkg):
+    """The version Google Play shows (None when the page does not say)."""
+    try:
+        html = get(f"https://play.google.com/store/apps/details?id={pkg}&hl=en&gl=IL")
+    except Exception as e:
+        log("play: page failed", e)
+        return None
+    # the version sits in the page data as [[["13.2105"]], ...
+    for m in re.finditer(r'\[\[\["(\d+(?:\.\d+){1,4})"\]\]', html):
+        return m.group(1)
+    return None
+
+
+def cert_sha1(apk):
+    out = subprocess.run([APKSIGNER, "verify", "--print-certs", apk], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise ValueError("signature does not verify: " + (out.stderr or out.stdout)[-300:])
+    m = re.search(r"Signer #1 certificate SHA-1 digest: ([0-9a-f]+)", out.stdout)
+    if not m:
+        raise ValueError("no signer")
+    return m.group(1).lstrip("0")
+
+
+def badging(apk):
+    out = subprocess.run([AAPT2, "dump", "badging", apk], capture_output=True, text=True).stdout
+    m = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']*)'", out)
+    if not m:
+        raise ValueError("cannot read " + os.path.basename(apk))
+    split = re.search(r"split='([^']+)'", out.splitlines()[0])
+    return {"pkg": m.group(1), "code": int(m.group(2)), "name": m.group(3), "split": split.group(1) if split else None}
+
+
+def mirror(pkg, spec):
+    meta_path = os.path.join("apps", pkg + ".json")
+    current = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
+    play = play_version(pkg)
+    log(pkg, "play version:", play, "| ours:", current.get("versionName"))
+
+    work = tempfile.mkdtemp()
+    xapk = os.path.join(work, "app.xapk")
+    data = get(f"https://d.apkpure.com/b/XAPK/{pkg}?version=latest", binary=True)
+    if data[:2] != b"PK":
+        raise ValueError("download is not a package (blocked or error page)")
+    open(xapk, "wb").write(data)
+    parts = os.path.join(work, "parts")
+    with zipfile.ZipFile(xapk) as z:
+        names = [n for n in z.namelist() if n.lower().endswith(".apk") and "/" not in n.strip("/")]
+        if not names:
+            raise ValueError("no apk inside")
+        for n in names:
+            z.extract(n, parts)
+        manifest = json.loads(z.read("manifest.json")) if "manifest.json" in z.namelist() else {}
+
+    apks = sorted(glob.glob(os.path.join(parts, "*.apk")))
+    base, splits = None, []
+    for a in apks:
+        if cert_sha1(a) != spec["cert_sha1"].lstrip("0"):
+            raise ValueError(os.path.basename(a) + ": not signed with the app's certificate")
+        b = badging(a)
+        if b["pkg"] != pkg:
+            raise ValueError(os.path.basename(a) + ": wrong package " + b["pkg"])
+        if b["split"]:
+            splits.append(b["split"])
+        else:
+            base = (a, b)
+    if not base:
+        raise ValueError("no base apk")
+    b = base[1]
+    log("downloaded", b["name"], b["code"], "parts:", splits)
+
+    # the parts every phone needs: a processor part (when the app has them), screen and Hebrew/English
+    listed = [s.get("id") or s.get("file") for s in manifest.get("split_apks", [])] if manifest else []
+    abis = [s for s in splits if re.search(r"(arm64_v8a|armeabi_v7a|x86_64|x86)$", s)]
+    if any(re.search(r"(arm64_v8a|armeabi_v7a)", str(x)) for x in listed) and not any("arm64_v8a" in s for s in abis):
+        raise ValueError("arm64 part missing")
+    if listed and len(splits) + 1 < len([x for x in listed if x]):
+        raise ValueError(f"parts missing: listed {listed}, got base + {splits}")
+
+    if re.search(r"(beta|alpha|rc|preview)", b["name"], re.I):
+        raise ValueError("beta build " + b["name"])
+    if play and play != b["name"]:
+        log(f"skip: Google Play has {play}, the download is {b['name']} (waiting until they match)")
+        return False
+    if current.get("versionCode", 0) >= b["code"]:
+        log("already published")
+        return False
+
+    # publish: one .apks with all parts; the store installs the ones that fit each phone
+    out = os.path.join(work, f"{pkg.split('.')[-1]}-{b['code']}.apks")
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:
+        z.write(base[0], "base.apk")
+        for a in apks:
+            if a != base[0]:
+                z.write(a, os.path.basename(a))
+    sha = hashlib.sha256(open(out, "rb").read()).hexdigest()
+    tag = f"app-{pkg}-{b['code']}"
+    subprocess.run(["gh", "release", "create", tag, out, "--repo", REPO, "--title", f"{spec['title']} {b['name']}",
+                    "--notes", f"Verified copy of {pkg} {b['name']} ({b['code']}), all parts: {', '.join(splits)}. Same version as Google Play: {play or 'unknown'}."],
+                   check=True)
+    meta = {"package": pkg, "title": spec["title"], "versionName": b["name"], "versionCode": b["code"],
+            "url": f"https://github.com/{REPO}/releases/download/{tag}/{os.path.basename(out)}",
+            "size": os.path.getsize(out), "sha256": sha, "parts": ["base"] + splits, "playVersion": play,
+            "publishedAt": int(time.time() * 1000)}
+    os.makedirs("apps", exist_ok=True)
+    json.dump(meta, open(meta_path, "w"), indent=1)
+    log("published", meta["url"])
+    # keep the last three releases of this app
+    rel = subprocess.run(["gh", "release", "list", "--repo", REPO, "--limit", "100"], capture_output=True, text=True).stdout
+    tags = sorted([l.split("\t")[2] for l in rel.splitlines() if f"\tapp-{pkg}-" in l], key=lambda t: int(t.rsplit("-", 1)[1]))
+    for t in tags[:-3]:
+        subprocess.run(["gh", "release", "delete", t, "--repo", REPO, "--yes", "--cleanup-tag"])
+    shutil.rmtree(work, ignore_errors=True)
+    return True
+
+
+def main():
+    changed, failed = False, False
+    for pkg, spec in APPS.items():
+        try:
+            changed |= bool(mirror(pkg, spec))
+        except Exception as e:
+            failed = True
+            log(f"{pkg}: not published ({e}); the last good version stays")
+    # the status file changes only when the result changes (no commit every run)
+    sp = os.path.join("apps", "_status.json")
+    old = json.load(open(sp)) if os.path.exists(sp) else {}
+    if changed or old.get("ok") != (not failed):
+        json.dump({"ok": not failed, "at": int(time.time() * 1000)}, open(sp, "w"))
+    print("changed" if changed else "no change")
+
+
+if __name__ == "__main__":
+    main()
