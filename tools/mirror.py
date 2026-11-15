@@ -55,7 +55,8 @@ def play_version(pkg):
     if m:
         return m.group(1)
     i = html.find("Version")
-    log("play: version not found; around 'Version':", html[i:i + 200] if i >= 0 else "(none)")
+    log("play: version not found; page", len(html), "chars; title:", re.search(r"<title>([^<]*)", html).group(1) if "<title>" in html else "-",
+        "| sample:", re.findall(r'\[\[\["[^"]{1,20}"\]\][^\n]{0,40}', html)[:5])
     return None
 
 
@@ -103,8 +104,9 @@ def mirror(pkg, spec):
     apks = sorted(glob.glob(os.path.join(parts, "*.apk")))
     base, splits = None, []
     for a in apks:
-        if spec["cert_sha1"].lstrip("0") not in cert_sha1(a):
-            raise ValueError(os.path.basename(a) + ": not signed with the app's certificate")
+        certs = cert_sha1(a)
+        if spec["cert_sha1"].lstrip("0") not in certs:
+            raise ValueError(os.path.basename(a) + ": not signed with the app's certificate (found " + ",".join(certs) + ")")
         b = badging(a)
         if b["pkg"] != pkg:
             raise ValueError(os.path.basename(a) + ": wrong package " + b["pkg"])
