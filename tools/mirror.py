@@ -50,9 +50,12 @@ def play_version(pkg):
     except Exception as e:
         log("play: page failed", e)
         return None
-    # the version sits in the page data as [[["13.2105"]], ...
-    for m in re.finditer(r'\[\[\["(\d+(?:\.\d+){1,4})"\]\]', html):
+    # the version sits in the page data as [[["13.2105"]],[[[33]],[[[23,"6.0"]]]] (min SDK follows it)
+    m = re.search(r'\[\[\["([^"\]]{1,40})"\]\],\[\[\[\d+\]\],\[\[\[\d+,"', html)
+    if m:
         return m.group(1)
+    i = html.find("Version")
+    log("play: version not found; around 'Version':", html[i:i + 200] if i >= 0 else "(none)")
     return None
 
 
@@ -60,10 +63,11 @@ def cert_sha1(apk):
     out = subprocess.run([APKSIGNER, "verify", "--print-certs", apk], capture_output=True, text=True)
     if out.returncode != 0:
         raise ValueError("signature does not verify: " + (out.stderr or out.stdout)[-300:])
-    m = re.search(r"Signer #1 certificate SHA-1 digest: ([0-9a-f]+)", out.stdout)
-    if not m:
-        raise ValueError("no signer")
-    return m.group(1).lstrip("0")
+    # "Signer #1 certificate SHA-1 digest: ..." or, for apps with key rotation, "Signer (minSdkVersion=..) certificate ..."
+    found = [d.lstrip("0") for d in re.findall(r"certificate SHA-1 digest: ([0-9a-f]+)", out.stdout)]
+    if not found:
+        raise ValueError("no signer in: " + out.stdout[:400])
+    return found
 
 
 def badging(apk):
@@ -99,7 +103,7 @@ def mirror(pkg, spec):
     apks = sorted(glob.glob(os.path.join(parts, "*.apk")))
     base, splits = None, []
     for a in apks:
-        if cert_sha1(a) != spec["cert_sha1"].lstrip("0"):
+        if spec["cert_sha1"].lstrip("0") not in cert_sha1(a):
             raise ValueError(os.path.basename(a) + ": not signed with the app's certificate")
         b = badging(a)
         if b["pkg"] != pkg:
@@ -159,6 +163,7 @@ def mirror(pkg, spec):
 
 
 def main():
+    os.makedirs("apps", exist_ok=True)
     changed, failed = False, False
     for pkg, spec in APPS.items():
         try:
