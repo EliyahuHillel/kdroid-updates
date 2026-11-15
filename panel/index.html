@@ -332,6 +332,15 @@ details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-s
 .dangerzone{border-color:#f3c7c3}.dangerzone>.hd{color:#b3261e}
 @media (max-width:900px){ .dhk{grid-template-columns:repeat(2,auto)} .modes,.stiles{grid-template-columns:1fr} }
 @media (max-width:600px){ .savebar>span:first-child{display:none} .savebar{padding:10px} .savebar .btn{flex:1} }
+dialog.wide{width:min(860px,94vw);max-width:none}
+dialog.wide .applist{max-height:260px;overflow:auto}
+.uwh h3{margin:10px 0 6px}
+.uws{display:flex;align-items:center;gap:6px}
+.uws span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;border:2px solid #cfd8d3;color:var(--muted,#5b6862)}
+.uws span.on{border-color:var(--primary,#006c51);color:var(--primary,#006c51)}
+.uws span.ok{background:var(--primary,#006c51);border-color:var(--primary,#006c51);color:#fff}
+.uws i{flex:0 0 22px;height:2px;background:#cfd8d3}
+.usbcard{border-color:#bfe3d3}.usbcard .bd{padding-top:14px;padding-bottom:14px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -393,7 +402,7 @@ const SETTINGS = [
   ["external_storage_block","חסום גישה לאחסון חיצוני"],["disable_sensible_apps","השבת אפליקציות רגישות"]];
 const REQ_TYPE = {activate:"בקשת הפעלה", route:"שינוי מסלול", setting:"שינוי הגדרה", remove:"הסרת הסינון"};
 const TOPIC = {help:"בקשת עזרה", tech:"תקלה טכנית", question:"שאלה", other:"אחר"};
-const EMERG = [["NavigationMode","מעבר למסלול ניווט"],["NavigationMailMode","מעבר למסלול ניווט ומייל"],["KosherMode","מעבר למסלול כשר"],["release","שחרור המכשיר"]];
+const EMERG = [["NavigationMode","מעבר למסלול ניווט"],["NavigationMailMode","מעבר למסלול ניווט ומייל"],["KosherMode","מעבר למסלול כשר"],["release","שחרור המכשיר"],["usb","פתיחת עדכון בכבל"]];
 const STALE_MS = 3*24*3600*1000;
 
 const $ = id => document.getElementById(id);
@@ -735,6 +744,7 @@ function vGuide(v){
     <h4>חשוב לדעת</h4>
     <ul class="gl"><li>כל קוד עובד <b>פעם אחת</b>, רק במכשיר הזה ורק לבקשה שנבחרה. קוד שדלף לא פותח שום מכשיר אחר.</li>
     <li>בקובץ יש 20 קודים לכל סוג בקשה, והם נצרכים לפי הסדר. הטלפון אומר איזה מספר קוד הוא מצפה לו.</li>
+    <li>צריך לשנות יותר ממסלול? יש בקשה נוספת, "פתיחת עדכון בכבל", שמאפשרת לשנות כל הגדרה דרך כבל למחשב. ראו את הפרק "עדכון בכבל".</li>
     <li>אחרי 5 קודים שגויים המסך ננעל ל-15 דקות.</li>
     <li>מכשיר שהותקן בלי קובץ (מהאתר או מהקישור) מקבל קודי חירום רק אחרי שהתחבר פעם אחת.</li>
     ${rel?"":"<li>קודי שחרור יוצר רק מי שיש לו הרשאת שחרור.</li>"}</ul>`],
@@ -745,6 +755,28 @@ function vGuide(v){
     <li><b>שכחתם סיסמה</b>: במסך הכניסה לוחצים "שכחתי סיסמה" ומקבלים קישור למייל.</li>
     <li><b>מספר הטלפון שלכם</b>: באותו מסך יש מתג "להציג את מספר הטלפון שלי". כשהוא כבוי, במכשירים שאתם מתקינים, באתר ההורדה של הקישור שלכם ובקבצים חדשים מוצג רק השם שלכם. מכשירים קיימים מתעדכנים בחיבור הבא שלהם; קבצים שכבר הורדו נשארים כמו שהם.</li>
     <li><b>ברירת המחדל</b>: ב<a href="#settings">הגדרות</a> ← "ברירת מחדל" קובעים מסלול והגבלות שייכנסו לכל התקנה שלכם.</li></ul>`]]),
+  ["usbupd","עדכון בכבל: כל הגדרה, בלי אינטרנט בטלפון",`
+    <p>כשמכשיר לא מתחבר לאינטרנט (או אף פעם לא התחבר) ורוצים לשנות בו יותר ממסלול: וויפי, הודעות, אפליקציות, כל הגדרה שהיא. קיידרואיד פותח לכמה דקות חיבור בכבל, רק אחרי קוד חד-פעמי מכם, והפאנל עושה את השאר.</p>
+    <h4>מה צריך</h4>
+    <ul class="gl"><li>מחשב עם Chrome או Edge, עם אינטרנט, שבו אתם מחוברים לפאנל.</li><li>כבל USB שמעביר נתונים.</li><li>בטלפון: קיידרואיד 0.9.9.76 ומעלה. במכשיר שעוד לא התחבר אף פעם: הותקן מקובץ שהורד מגרסה 0.9.9.76 ואילך.</li></ul>
+    <h4>שלב אחר שלב</h4>
+    <ol class="gsteps">
+      <li><b>מחברים את הטלפון בכבל למחשב.</b> קודם הכבל: ניתוק הכבל סוגר את החיבור, אז לא מחליפים כבל באמצע.</li>
+      <li><b>בטלפון</b>: קיידרואיד ← תפריט (⋮) ← "עדכון בכבל (מתקין)".
+        <ul class="gl" style="margin:6px 0 0"><li>מכשיר שמופיע בפאנל: מוצג מספר של 8 ספרות.</li><li>מכשיר שלא התחבר אף פעם: מוצגים מספר קובץ ומספר קוד, והבקשה "עדכון בכבל: פתיחה למתקין" כבר מסומנת.</li></ul></li>
+      <li><b>בפאנל, קוד פתיחה</b>:
+        <ul class="gl" style="margin:6px 0 0"><li>מכשיר שמופיע בפאנל: בעמוד המכשיר ← לשונית "סינון והגדרות" ← "עדכון בכבל" ← מקלידים את 8 הספרות ← "צור קוד" (6 ספרות).</li>
+        <li>מכשיר שלא התחבר: <a href="#install">התקנה והורדות</a> ← "קוד חירום למכשיר שלא התחבר" ← מספר הקובץ, הבקשה "פתיחת עדכון בכבל", ומספר הקוד ← "צור קוד" (12 ספרות) ← "המשך לעדכון בכבל".</li></ul></li>
+      <li><b>בטלפון</b>: מקלידים את הקוד. מופיע "החיבור למתקין פתוח" עם שעון של 10 דקות.</li>
+      <li><b>בפאנל</b>: "הקוד הוקלד, המשך" ← "התחבר" ← בוחרים את הטלפון ברשימה. בטלפון מאשרים "לאפשר ניפוי באגים ב-USB?" (מסמנים "אפשר תמיד").</li>
+      <li><b>משנים</b>: הפאנל מציג את ההגדרות שבטלפון כרגע. בוחרים מסלול, הגבלות ואפליקציות להשבתה ולוחצים "החל בטלפון".</li>
+      <li><b>סיום</b>: השינוי מוחל מיד, החיבור בטלפון נסגר וכל ההגנות חוזרות. מכשיר שמופיע בפאנל מתעדכן גם כאן; מכשיר חדש יופיע כשיתחבר לאינטרנט, כבר עם ההגדרות החדשות.</li></ol>
+    <h4>מתי החיבור נסגר</h4>
+    <ul class="gl"><li>מיד כשהפאנל סיים, או כשלוחצים בפאנל "סגור בלי לשנות".</li><li>ברגע שמנתקים את הכבל.</li><li>אחרי 10 דקות לכל היותר, ובהפעלה מחדש של הטלפון.</li><li>אפשר גם לסגור בטלפון: "סגור את החיבור עכשיו".</li></ul>
+    <div class="note warn"><b>חשוב:</b> תנו את קוד הפתיחה רק כשאתם בעצמכם מחוברים לטלפון (לידו, או בשליטה מרחוק על המחשב שאליו הוא מחובר). כל עוד החיבור פתוח, מי שמחובר לטלפון בכבל יכול לשנות בו דברים. אל תקריאו את הקוד בטלפון למשתמש שיושב לבד מול מחשב.</div>
+    <h4>אם משהו לא עובד</h4>
+    <ul class="gl"><li><b>"החיבור בטלפון סגור"</b>: הכבל נותק או שעברו 10 דקות. מבקשים קוד חדש.</li><li><b>"הטלפון לא קיבל את הקוד"</b>: הוקלד קוד אחר מזה שבפאנל. חמישה ניסיונות כאלה סוגרים את החיבור.</li><li><b>הטלפון לא מופיע ברשימה</b>: בחלק מהיצרנים ניפוי באגים עובד רק כשגם "אפשרויות מפתחים" פתוחות. קיידרואיד מנסה לפתוח אותן בעצמו; אם זה לא מצליח בדגם מסוים, דווחו למנהל המערכת.</li><li><b>"הטלפון תפוס"</b>: סוגרים במחשב תוכנות אחרות שעובדות מול טלפונים (adb, Smart Switch).</li></ul>`],
+
   ["faq","שאלות ותקלות נפוצות",`
     <details class="gd"><summary>התקנתי, אבל המכשיר לא מופיע בפאנל</summary><div><p>הוא יופיע אחרי שיתחבר לאינטרנט בפעם הראשונה. עד אז מנהלים אותו בקודי חירום עם מספר הקובץ.</p></div></details>
     <details class="gd"><summary>שיניתי מסלול בפאנל, אבל בטלפון עוד לא השתנה</summary><div><p>השינוי מגיע בחיבור הבא של המכשיר. אם הוא "לא מתחבר", בקשו מהמשתמש להתחבר לאינטרנט, או השתמשו בקוד חירום.</p></div></details>
@@ -1016,7 +1048,9 @@ function vDevice(id){
   const onCount=SETTINGS.filter(([k])=>pol.settings[k]).length;
 
   const body={
-    filter:()=>`${d.status==="pending"?`<div class="note info" style="margin-bottom:14px">כך יוגדר המכשיר כשתאשרו. ${d.legacy?"ההגנה כבר פעילה במכשיר מהתקנה קודמת, והאישור יעביר אותו לניהול שלכם.":"עד האישור, הסינון אינו פעיל במכשיר."}</div>`:""}
+    filter:()=>`${released?"":`<section class="card usbcard"><div class="bd"><div class="swrow"><div><b>עדכון בכבל, בלי אינטרנט בטלפון</b><div class="muted" style="font-size:13.5px">המכשיר לא מתחבר? מחברים אותו בכבל למחשב הזה, וקיידרואיד פותח חיבור זמני בקוד חד-פעמי. אפשר לשנות כל הגדרה, וזה מוחל מיד.</div></div>
+        <button class="btn tonal" id="usbBtn">${icon("pc")}עדכון בכבל</button></div></div></section>`}
+      ${d.status==="pending"?`<div class="note info" style="margin-bottom:14px">כך יוגדר המכשיר כשתאשרו. ${d.legacy?"ההגנה כבר פעילה במכשיר מהתקנה קודמת, והאישור יעביר אותו לניהול שלכם.":"עד האישור, הסינון אינו פעיל במכשיר."}</div>`:""}
       <section class="card"><div class="hd">${icon("shield")}<h2>מסלול</h2></div><div class="bd">
         <div class="modes">${MODES.map(m=>`<label class="mode ${pol.filter_mode===m.v?"on":""}"><input type="radio" name="mode" value="${m.v}" ${pol.filter_mode===m.v?"checked":""}><b>${m.t}</b><span class="muted">${esc(m.d)}</span></label>`).join("")}</div>
       </div></section>
@@ -1086,6 +1120,7 @@ function vDevice(id){
   <div class="dbody">${body[devTab]()}</div>`;
 
   v.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{ devTab=b.dataset.dt; vDevice(id); });
+  if($("usbBtn")) $("usbBtn").onclick=()=>usbWizard({d});
   v.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{ mark().filter_mode=r.value; vDevice(id); });
   v.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{ mark().settings[c.dataset.k]=c.checked; vDevice(id); });
   v.querySelectorAll('[data-app]').forEach(c=>c.onchange=()=>{ const p=mark(); const set=new Set(p.hiddenApps||[]);
@@ -1144,7 +1179,7 @@ function sensBlock(pol,apps){
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
   <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}>${appIcon(a)}<span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
-const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט",track_on:"הפעלת איתור",track_off:"כיבוי איתור",lost_on:"סימון כאבד ונעילה",lost_off:"שחרור מצב אבד"};
+const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט",track_on:"הפעלת איתור",track_off:"כיבוי איתור",lost_on:"סימון כאבד ונעילה",lost_off:"שחרור מצב אבד",usb_open:"פתיחת עדכון בכבל",usb_update:"עדכון בכבל"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
 const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
 
@@ -1325,7 +1360,7 @@ function vInstallers(v){
 // The file also carries the END of a one-way chain per emergency action; the chain STARTS stay here in the panel.
 const RAW = "https://raw.githubusercontent.com/EliyahuHillel/kdroid-updates/main/";
 const CH_N = 20, CH_ROUNDS = 120000, CH_MOD = 1000000000000n;
-const ROUTE_ACTS = ["KosherMode","NavigationMode","NavigationMailMode"];
+const ROUTE_ACTS = ["KosherMode","NavigationMode","NavigationMailMode","usb"]; // "usb": opens the cable update (files from 0.9.9.76)
 const fmt12 = x => (BigInt(x) % CH_MOD).toString().padStart(12,"0");
 const group12 = s => s.replace(/(\d{4})(?=\d)/g,"$1 ");
 async function chainStep(x,sid,act,i){
@@ -1616,6 +1651,135 @@ function bindWeb(v,who){
   };
 }
 
+// ---------------------------------------------------------------- update over a cable (no internet on the phone)
+// The phone opens USB debugging for a few minutes after a one-time code (UsbSession in the app); this browser talks to
+// it over the cable (WebUSB, as the panel install does), reads its settings, applies new ones, and closes again.
+async function usbToken(code){
+  const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("kiyd-usb|"+code)));
+  return [...h.slice(0,16)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+const USB_RX="'com.kdroid.filter/com.kdroid.filter.UsbSession$Rx'";
+async function usbCmd(A,adb,token,cmd,payload){
+  const out=await A.shell(adb,`am broadcast -n ${USB_RX} --es t ${token} --es cmd ${cmd}`+(payload?` --es p '${payload}'`:""));
+  const m=/data="([\s\S]*)"\s*$/.exec(out.trim());
+  if(!m){ if(/Error|Exception|unable/i.test(out)) throw new Error("app: "+out.trim().slice(0,160)); throw new Error("noanswer"); }
+  const j=JSON.parse(m[1]);
+  if(!j.ok) throw new Error(j.err||"refused");
+  return j;
+}
+/**
+ * The wizard. d: the device record when the panel knows it (it then takes the code from the phone's 8-digit number
+ * and saves the result to the server too); or code: a code already made (a device from a file that never went online).
+ */
+function usbWizard({d=null,code=null,fid=""}={}){
+  const dlg=$("dlg"); let A=null, adb=null, tok=null, st=null, pol=null, done=false;
+  const box=()=>$("dlgIn");
+  const head=(n,t)=>`<div class="uwh"><div class="uws">${["קוד פתיחה","חיבור","עדכון","סיום"].map((x,i)=>`<span class="${i<n?"ok":i===n?"on":""}">${i<n?"✓":i+1}</span>`).join('<i></i>')}</div><h3>${t}</h3></div>`;
+  const close=async()=>{ if(adb){ try{ if(tok&&!done) await usbCmd(A,adb,tok,"close"); }catch(e){} try{ A.close(adb); }catch(e){} } dlg.close(); };
+  const fail=(msg,back)=>{ box().insertAdjacentHTML("beforeend",`<div class="note err" style="margin-top:12px">${esc(msg)}</div>`); if(back) back(); };
+  // 1. the code
+  const step1=()=>{
+    if(code){ step1shown(); return; }
+    box().innerHTML=head(0,"עדכון בכבל: קוד פתיחה")+`
+      <p class="muted">אין צורך באינטרנט בטלפון. <b>קודם מחברים את הטלפון בכבל למחשב הזה.</b> אחר כך, בטלפון: קיידרואיד ← תפריט (⋮) ← "עדכון בכבל (מתקין)". מופיע מספר של 8 ספרות.</p>
+      <div class="field"><label class="f" for="uwCh">המספר מהטלפון</label><input id="uwCh" class="num" dir="ltr" inputmode="numeric" placeholder="8 ספרות"></div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn text" id="uwX">ביטול</button><button class="btn fill" id="uwGo">צור קוד</button></div>`;
+    $("uwX").onclick=close;
+    $("uwGo").onclick=async()=>{
+      const ch=$("uwCh").value.replace(/\D/g,""); if(ch.length!==8){ toast("המספר צריך להיות 8 ספרות"); return; }
+      if(!d.secret){ toast("אין למכשיר מפתח"); return; }
+      code=await hmacCode(d.secret,ch,"usb");
+      commit([audit(d._id,"usb_open","")]).catch(()=>{});
+      step1shown();
+    };
+  };
+  const step1shown=()=>{
+    box().innerHTML=head(0,"מקלידים את הקוד בטלפון")+`
+      <p class="muted">בטלפון, בשדה "הקוד מהמתקין", מקלידים:</p>
+      <div class="bigcode num ${code.length>8?"long":""}" dir="ltr">${code.length>8?group12(code):code.slice(0,3)+" "+code.slice(3)}</div>
+      <p class="muted" style="margin-top:12px">הטלפון פותח חיבור ל-10 דקות ומציג "החיבור למתקין פתוח". הקוד עובד פעם אחת, רק בטלפון הזה.</p>
+      <div class="note warn" style="margin-top:10px">תנו את הקוד רק כשאתם בעצמכם מחוברים לטלפון. בזמן שהחיבור פתוח, מי שמחובר לטלפון בכבל יכול לשנות בו דברים.</div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn text" id="uwX">ביטול</button><button class="btn fill" id="uwGo">הקוד הוקלד, המשך</button></div>`;
+    $("uwX").onclick=close; $("uwGo").onclick=step2;
+  };
+  // 2. connect
+  const step2=async()=>{
+    box().innerHTML=head(1,"חיבור לטלפון")+`
+      <ol class="webhow"><li>הטלפון מחובר בכבל למחשב הזה.</li><li>לוחצים "התחבר" ובוחרים את הטלפון ברשימה שהדפדפן פותח.</li><li>בטלפון קופצת הודעה "לאפשר ניפוי באגים ב-USB?": מסמנים "אפשר תמיד" ולוחצים "אישור".</li></ol>
+      ${usbOk()?"":`<div class="note warn">הדפדפן הזה לא יכול להתחבר לטלפון בכבל. צריך Chrome או Edge במחשב.</div>`}
+      <div id="uwMsg" class="muted" style="min-height:22px"></div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn text" id="uwX">ביטול</button><button class="btn fill" id="uwGo" ${usbOk()?"":"disabled"}>התחבר</button></div>`;
+    $("uwX").onclick=close;
+    $("uwGo").onclick=async()=>{
+      const b=$("uwGo"); b.disabled=true; $("uwMsg").textContent="מתחבר…";
+      try{
+        A=await loadAdb(); tok=await usbToken(code);
+        adb=await A.connect(s=>{ if(s==="auth") $("uwMsg").textContent="אשרו בטלפון: \"אפשר תמיד\" ← אישור"; });
+        if(!adb) throw new Error("nodevice");
+        $("uwMsg").textContent="קורא את ההגדרות מהטלפון…";
+        st=await usbCmd(A,adb,tok,"state");
+        pol=JSON.parse(JSON.stringify(st.policy||{filter_mode:"NavigationMode",settings:{}})); pol.settings=pol.settings||{}; pol.hiddenApps=pol.hiddenApps||[];
+        step3();
+      }catch(e){ console.error(e); b.disabled=false; $("uwMsg").textContent="";
+        const m=String(e&&e.message||e);
+        fail(e&&e.busy?"הטלפון תפוס: תוכנה אחרת במחשב מחזיקה אותו (adb, Smart Switch). סגרו אותה, נתקו וחברו ונסו שוב."
+          :/NotFound|No device selected|nodevice/i.test((e&&e.name)+m)?"לא נבחר טלפון. אם הוא לא הופיע ברשימה: ודאו שהקוד הוקלד והטלפון מציג \"החיבור למתקין פתוח\", ונתקו וחברו את הכבל."
+          :/closed/.test(m)?"החיבור בטלפון סגור (הכבל נותק, או שעברו 10 דקות). צריך קוד חדש."
+          :/token/.test(m)?"הטלפון לא קיבל את הקוד הזה. ודאו שהוקלד בדיוק הקוד שמוצג כאן."
+          :/noanswer|app:/.test(m)?"קיידרואיד בטלפון לא ענה. ייתכן שבטלפון גרסה ישנה (צריך 0.9.9.76 ומעלה)."
+          :"החיבור נכשל: "+m.slice(0,120)); }
+    };
+  };
+  // 3. edit and apply
+  const step3=()=>{
+    const apps=st.apps||[], on=new Set(pol.hiddenApps||[]);
+    box().innerHTML=head(2,"מה לשנות בטלפון")+`
+      <div class="muted" style="margin-bottom:10px">${esc(st.name||"")}${st.model?" · "+esc(st.model):""} · גרסה ${esc(st.version||"")}${st.fid?" · קובץ "+esc(st.fid):""} · <span id="uwLeft"></span></div>
+      <div class="modes">${MODES.map(m=>`<label class="mode ${pol.filter_mode===m.v?"on":""}"><input type="radio" name="uwm" value="${m.v}" ${pol.filter_mode===m.v?"checked":""}><b>${m.t}</b></label>`).join("")}</div>
+      <div class="sgroups" style="margin-top:14px">${SET_GROUPS.map(([g,ic,keys])=>`<div class="sgroup"><div class="sgh">${icon(ic)}<span>${g}</span></div><div class="stiles">
+        ${keys.map(k=>{ const t=(SETTINGS.find(x=>x[0]===k)||[k,k])[1]; return `<label class="stile ${pol.settings[k]?"on":""}"><span>${t}</span><span class="toggle"><input type="checkbox" data-uk="${k}" ${pol.settings[k]?"checked":""}><i></i></span></label>`; }).join("")}</div>
+        ${keys.includes("disable_sensible_apps")&&pol.settings.disable_sensible_apps?`<div class="applist" style="margin-top:8px">${apps.map(a=>`<label><input type="checkbox" data-ua="${esc(a.p)}" ${on.has(a.p)?"checked":""}>${appIcon(a)}<span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`:""}</div>`).join("")}</div>
+      <div id="uwMsg" class="muted" style="min-height:22px;margin-top:8px"></div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn text" id="uwX">סגור בלי לשנות</button><button class="btn fill" id="uwGo">החל בטלפון</button></div>`;
+    fillIcons();
+    const tick=()=>{ const el=$("uwLeft"); if(!el) return; const s=Math.max(0,(st._until||(st._until=Date.now()+(st.left||600)*1000))-Date.now());
+      el.textContent="החיבור נסגר בעוד "+Math.floor(s/60000)+":"+String(Math.floor(s/1000)%60).padStart(2,"0"); if(s>0) setTimeout(tick,1000); };
+    tick();
+    box().querySelectorAll("[name=uwm]").forEach(r=>r.onchange=()=>{ pol.filter_mode=r.value; step3(); });
+    box().querySelectorAll("[data-uk]").forEach(c=>c.onchange=()=>{ pol.settings[c.dataset.uk]=c.checked; step3(); });
+    box().querySelectorAll("[data-ua]").forEach(c=>c.onchange=()=>{ const s=new Set(pol.hiddenApps||[]); c.checked?s.add(c.dataset.ua):s.delete(c.dataset.ua); pol.hiddenApps=[...s]; });
+    $("uwX").onclick=close;
+    $("uwGo").onclick=async()=>{
+      const b=$("uwGo"); b.disabled=true; $("uwMsg").textContent="מחיל בטלפון…";
+      try{
+        const dev=d||(st.deviceId?devById(st.deviceId):null);
+        const rev=Math.max(Date.now(),((dev&&dev.rev)||0)+1);
+        const payload={filter_mode:pol.filter_mode,settings:pol.settings,hiddenApps:pol.hiddenApps||[],rev};
+        const b64=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const r=await usbCmd(A,adb,tok,"apply",b64);
+        // the panel knows this device: the server gets the same policy, so the next sync changes nothing
+        if(dev){ try{ const p2={filter_mode:payload.filter_mode,settings:payload.settings,hiddenApps:payload.hiddenApps};
+            await commit([{set:"devices/"+dev._id,data:{status:"active",policy:JSON.stringify(p2),rev,updatedAt:Date.now(),updatedBy:me.uid},mask:["status","policy","rev","updatedAt","updatedBy"]},
+              audit(dev._id,"usb_update",MODE_NAME[payload.filter_mode]||"")]); draft=null; }catch(e){ console.warn("server",e); } }
+        else commit([audit("","usb_update",(fid?"קובץ "+fid+" · ":"")+(MODE_NAME[payload.filter_mode]||""))]).catch(()=>{});
+        try{ await usbCmd(A,adb,tok,"close"); }catch(e){}
+        done=true; try{ A.close(adb); }catch(e){} adb=null;
+        step4(r,!!dev);
+      }catch(e){ console.error(e); b.disabled=false; $("uwMsg").textContent=""; fail(/closed/.test(String(e.message))?"החיבור בטלפון נסגר לפני ההחלה. צריך קוד חדש.":"ההחלה נכשלה: "+String(e.message||e).slice(0,140)); }
+    };
+  };
+  const step4=(r,known)=>{
+    box().innerHTML=head(4,"העדכון הוחל ✓")+`
+      <p>הטלפון עבר ל<b>${esc(MODE_NAME[r.policy&&r.policy.filter_mode]||"")}</b>, עם ${SETTINGS.filter(([k])=>r.policy&&r.policy.settings&&r.policy.settings[k]).length} הגבלות.</p>
+      <p class="muted">החיבור בטלפון נסגר וכל ההגנות חזרו למקומן. אפשר לנתק את הכבל.${known?" גם הפאנל עודכן.":" כשהמכשיר יתחבר לאינטרנט הוא יופיע בפאנל עם ההגדרות האלה."}</p>
+      <div class="row" style="justify-content:flex-end"><button class="btn fill" id="uwX">סיום</button></div>`;
+    $("uwX").onclick=()=>{ dlg.close(); load(); };
+  };
+  dlg.onclose=()=>{ if(adb&&!done){ const a=A,x=adb,t=tok; adb=null; (async()=>{ try{ await usbCmd(a,x,t,"close"); }catch(e){} try{ a.close(x); }catch(e){} })(); } dlg.onclose=null; };
+  dlg.classList.add("wide"); dlg.addEventListener("close",()=>dlg.classList.remove("wide"),{once:true});
+  step1(); dlg.showModal();
+}
+
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
@@ -1692,6 +1856,9 @@ function vInstall(v){
     if(!(k>=1&&k<=CH_N)){ toast("מספר הקוד צריך להיות בין 1 ל-"+CH_N); return; }
     const b=$("ofBtn"); b.disabled=true; b.textContent="מחשב…";
     try{ const c=await offlineCode(fid,act,k); $("ofCode").textContent=group12(c); $("ofOut").hidden=false;
+         if($("ofUsb")) $("ofUsb").remove();
+         if(act==="usb") $("ofOut").insertAdjacentHTML("beforeend",`<button class="btn fill" id="ofUsb" style="width:100%;margin-top:12px">${icon("pc")}המשתמש הקליד, המשך לעדכון בכבל</button><p class="muted" style="font-size:12.5px;margin:8px 0 0">עובד במכשירים שהותקנו מקבצים שהורדו מגרסה 0.9.9.76 ואילך.</p>`),
+         $("ofUsb").onclick=()=>usbWizard({code:c,fid});
          commit([audit("","offline_code",EMERG.find(x=>x[0]===act)[1]+" · קובץ "+fid+" · קוד "+k)]).catch(()=>{}); }
     catch(e){ toast(e.message==="noperm"?"אין לך הרשאה לשחרר מכשירים":e.message==="nofile"?"לא נמצא קובץ עם המספר הזה אצלך":"יצירת הקוד נכשלה"); }
     b.disabled=false; b.textContent="צור קוד";
