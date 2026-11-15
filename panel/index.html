@@ -269,6 +269,34 @@ details.gd summary::after{content:"+";color:var(--muted,#5b6862);font-size:18px;
 details.gd[open] summary::after{content:"−"}
 details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-start:20px;display:grid;gap:4px;margin:0 0 8px}
 @media (max-width:900px){ .guide{grid-template-columns:1fr} .gtoc{position:static;flex-direction:row;flex-wrap:wrap} .gtoc a{font-size:13px;padding:6px 8px} .gcols{grid-template-columns:1fr} .gtable td:first-child{white-space:normal} }
+.locmap{height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--line,#e3e8e5);margin-bottom:10px;direction:ltr}
+.locinfo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.lostcard{border-color:#f0b8b2!important}
+.lostcard>.hd{background:#fdecea}
+.pill.lostpill{background:#b3261e;color:#fff}
+.pill.trackpill{background:#e9f1fd;color:#173f7a}
+.lostmsgs{display:grid;gap:8px;margin-top:12px}
+.lostmsgs .lm{padding:10px 12px;border-radius:12px;background:var(--surface-2,#f1f5f3)}
+.lostmsgs .lm small{color:var(--muted,#5b6862)}
+.gemopt{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line,#e3e8e5);cursor:pointer}
+.gemopt input{margin-top:4px;accent-color:var(--primary,#006c51);width:17px;height:17px}
+.gemopt b{display:block}.gemopt .muted{font-size:13px}
+.pwshow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface-2,#f1f5f3);font-size:16px;letter-spacing:1px}
+.pwshow span{flex:1}
+.webcard{border-color:#bfe3d3}
+.webcard>.hd{background:linear-gradient(90deg,rgba(0,108,81,.08),transparent)}
+.webhow{margin:4px 0 14px;padding-inline-start:20px;display:grid;gap:6px;font-size:14px}
+.btn.big{padding:13px 24px;font-size:16px}
+.webflow{margin-top:14px;padding:14px;border-radius:14px;background:var(--surface-2,#f1f5f3);border:1px solid var(--line,#e3e8e5)}
+.webflow.ok{background:#e6f4ec;border-color:#bfe3d3}.webflow.err{background:#fdecea;border-color:#f3c7c3}
+.wsteps{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px;font-size:14px}
+.wsteps li{display:flex;gap:10px;align-items:center;color:var(--muted,#5b6862)}
+.wsteps li i{width:22px;height:22px;border-radius:50%;border:2px solid #cfd8d3;display:grid;place-items:center;font-style:normal;font-size:12px;flex:none}
+.wsteps li.done{color:inherit}.wsteps li.done i{background:var(--primary,#006c51);border-color:var(--primary,#006c51);color:#fff}
+.wsteps li.now{color:inherit;font-weight:600}.wsteps li.now i{border-color:var(--primary,#006c51);border-top-color:transparent;animation:wspin .9s linear infinite}
+.wsteps li.bad{color:#b3261e;font-weight:600}.wsteps li.bad i{background:#b3261e;border-color:#b3261e;color:#fff}
+@keyframes wspin{to{transform:rotate(360deg)}}
+.swrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.swrow>div{flex:1}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -337,6 +365,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const parse = s => { try { return JSON.parse(s||"null"); } catch(e){ return null; } };
 const ICON = {
+  pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
   book:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zM4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/><path d="M9 7h7M9 11h5"/>',
   shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   chat:'<path d="M4 5h16v11H8l-4 4z"/>', back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
@@ -402,6 +431,8 @@ async function commit(writes){
   typing=false; // a saved form is done; let the page refresh again
 }
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b%62]).join("");
+/** the installer's phone as devices see it: empty when he chose not to show it */
+const shownPhone = i => i && i.hidePhone ? "" : ((i&&i.phone)||"");
 const audit = (deviceId,action,detail) => ({set:"audit/"+newId(),create:true,data:{by:me.uid,byName:me.name,deviceId:deviceId||"",action,detail:detail||"",at:Date.now()}});
 
 // ---------------------------------------------------------------- state
@@ -409,7 +440,7 @@ let me=null;
 let D={devices:[],reports:{},requests:[],messages:[],installers:[],config:{},ownerProfile:null};
 let loaded=false, loading=false, draft=null, pollT=null, typing=false;
 // while an install file is being made, the page is not redrawn (the progress would disappear)
-let fileBusy=false, mkResult=null; // the last file made: its message stays after a refresh
+let fileBusy=false, mkResult=null, mkTrack=false; // the last file made: its message stays after a refresh
 // typing in any form on the page pauses the automatic redraw, so nothing typed is lost
 document.addEventListener("input",e=>{ if(e.target.closest("#view")) typing=true; });
 
@@ -422,7 +453,7 @@ auth.onAuthStateChanged(async u=>{
       const inst=await getDoc("installers/"+u.uid);
       if(!inst||inst.active!==true){ $("loginErr").textContent="החשבון אינו פעיל. פנו למנהל המערכת."; await auth.signOut(); return; }
       me={uid:u.uid,email:u.email,role:"installer",name:inst.name,phone:inst.phone,code:inst.code,defaultProfile:parse(inst.defaultProfile),
-          canRelease:inst.canRelease!==false,canDelete:inst.canDelete===true};
+          canRelease:inst.canRelease!==false,canDelete:inst.canDelete===true,hidePhone:inst.hidePhone===true,firstLoginAt:inst.firstLoginAt||0};
     }
   }catch(e){ $("loginErr").textContent="לא הצלחתי להתחבר לשרת. נסו שוב."; return; }
   $("loginView").hidden=true; $("appView").hidden=false;
@@ -430,12 +461,32 @@ auth.onAuthStateChanged(async u=>{
   $("whoAv").textContent=(me.role==="owner"?"מ":String(me.name||"?").trim().charAt(0));
   if(!location.hash) history.replaceState(null,"","#overview");
   render(); await load(); pollT=setInterval(()=>{ if(!draft) load(); },15000);
+  if(me.role==="installer"&&!me.firstLoginAt){
+    me.firstLoginAt=Date.now();
+    commit([{set:"installers/"+me.uid,data:{firstLoginAt:me.firstLoginAt},mask:["firstLoginAt"]}]).catch(()=>{});
+    welcome();
+  }
 });
+/** an installer's first login: where things are, and the option to change the password right away */
+function welcome(){
+  const dlg=$("dlg");
+  $("dlgIn").innerHTML=`<h3>ברוכים הבאים, ${esc(me.name)}</h3>
+    <p class="muted">זה האזור האישי שלכם: המכשירים שלכם, הקישור האישי, קובצי התקנה והתקנה ישירה מהמחשב. מדריך מלא נמצא בתפריט, תחת "מדריך".</p>
+    <p class="muted">רוצים להחליף עכשיו את הסיסמה שקבעתם מהמייל?</p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">אחר כך</button><button class="btn tonal" id="dlgGuide">למדריך</button><button class="btn fill" id="dlgOk">החלפת סיסמה</button></div>`;
+  $("dlgNo").onclick=()=>dlg.close();
+  $("dlgGuide").onclick=()=>{ dlg.close(); location.hash="#guide"; };
+  $("dlgOk").onclick=()=>{ dlg.close(); setTab="account"; location.hash="#settings"; render(); };
+  dlg.showModal();
+}
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
-  try{ await auth.signInWithEmailAndPassword($("lEmail").value.trim(),$("lPass").value); }
+  try{ const r=await auth.signInWithEmailAndPassword($("lEmail").value.trim(),$("lPass").value); rememberPw(r.user.uid,$("lPass").value); }
   catch(err){ $("loginErr").textContent="הכניסה נכשלה. בדקו מייל וסיסמה."; }
 });
+/** the current password, kept only in this browser (never on the server) so the installer can look at it in settings */
+function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescape(encodeURIComponent(pw)))); }catch(e){} }
+function savedPw(uid){ try{ const v=localStorage.getItem("kd.pw."+uid); return v?decodeURIComponent(escape(atob(v))):""; }catch(e){ return ""; } }
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
   try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
@@ -584,12 +635,23 @@ function vGuide(v){
 
   ["ways","דרכי ההתקנה ומתי להשתמש בכל אחת",`
     <table class="gtable head"><tr><th>דרך</th><th>למי זה מתאים</th><th>אינטרנט</th></tr>
+    <tr><td><b>מהפאנל, בכבל</b><small>"התקנה והורדות" ← התקן</small></td><td>אתם ליד מחשב עם Chrome או Edge: מחברים את הטלפון בכבל, לוחצים "התקן", וזהו. בלי להוריד קובץ. הדרך הכי מהירה.</td><td>במחשב, בזמן ההתקנה. בטלפון לא צריך.</td></tr>
     <tr><td><b>קישור אישי</b><small>מ"התקנה והורדות"</small></td><td>שולחים ללקוח, והוא מתקין לבד מהאתר: מהדפדפן במחשב, קובץ לטלפון, או תוכנה למחשב. המכשיר נרשם אצלכם עם ברירת המחדל שלכם.</td><td>בזמן ההורדה. בנעילה: לא חובה, חוץ ממקרה שהמלאי הציבורי נגמר.</td></tr>
     <tr><td><b>קובץ לטלפון</b><small>APK מהפאנל</small></td><td>מתקינים מהטלפון עצמו, בלי מחשב: במסכי רכב ובקופסאות (מולטימדיה), בניפוי באגים אלחוטי, או ברוט.</td><td>לא צריך בכלל</td></tr>
     <tr><td><b>תוכנה למחשב</b><small>EXE מהפאנל</small></td><td>טלפונים רגילים, דרך כבל USB. ההדרכה בתוך התוכנה, לפי יצרן הטלפון.</td><td>לא צריך. אם יש, היא מתקינה את הגרסה העדכנית.</td></tr></table>
     <h4>חד-פעמי או קבוע?</h4>
     <div class="gcols"><div class="card gc"><h5>נמחק בסוף ההתקנה</h5><p>לשליחה ללקוח או להתקנה אחת. אחרי התקנה מוצלחת הקובץ נמחק מהטלפון או מהמחשב, ולא נשאר אצל הלקוח כלום חוץ מהאפליקציה.</p></div>
     <div class="card gc"><h5>קבוע</h5><p>נשאר אצלכם, ואפשר להתקין ממנו מכשיר אחרי מכשיר. התוכנה למחשב מורידה לבד את הגרסה החדשה ביותר כשיש אינטרנט, וזוכרת אותה גם להתקנה הבאה בלי אינטרנט.</p></div></div>`],
+
+  ["panelusb","התקנה ישירה מהפאנל, בכבל",`
+    <p>ב<a href="#install">התקנה והורדות</a> יש כרטיס "התקנה מכאן, בכבל למחשב". הפאנל עושה בעצמו את כל מה שהתוכנה למחשב עושה, בלי להוריד כלום:</p>
+    <ol class="gsteps"><li><b>בטלפון</b>: מדליקים "ניפוי באגים ב-USB" (הגדרות ← אודות הטלפון ← 7 הקשות על "מספר Build", ואז אפשרויות מפתחים).</li>
+      <li><b>מחברים בכבל</b> למחשב שבו פתוח הפאנל, ופותחים את מסך הטלפון.</li>
+      <li><b>לוחצים "התקן בטלפון המחובר"</b>, בוחרים את הטלפון ברשימה שהדפדפן פותח, ומאשרים בטלפון "אפשר תמיד מהמחשב הזה".</li>
+      <li><b>מחכים</b> לסימני ה-✓: קובץ אישי נוצר (עם קודי חירום משלו), מועתק, מותקן, וניהול המכשיר מופעל. בסוף קיידרואיד נפתח בטלפון.</li>
+      <li><b>ממשיכים בטלפון</b>: פרטים, מסלול ונעילה.</li></ol>
+    <div class="note info">עובד במחשב, ב-Chrome או ב-Edge. בטלפון או בדפדפן אחר הכפתור לא פעיל. כל התקנה כזו מופיעה ב"קבצים שהורדו" כ"התקנה מהפאנל", עם מספר קובץ לקודי חירום.</div>
+    <p class="muted">אם הדפדפן לא מצליח להתחבר (בעיקר במחשבים עם מנהל התקן של סמסונג), התוכנה למחשב עובדת עם כל מנהל התקן.</p>`],
 
   ["files","מה יש בתוך קובץ התקנה",`
     <ul class="gl"><li><b>הפרטים שלכם</b>: שם, טלפון וקוד מתקין. המכשיר נרשם אצלכם כשהוא מתחבר.</li>
@@ -642,6 +704,12 @@ function vGuide(v){
     <li>מכשיר שהותקן בלי קובץ (מהאתר או מהקישור) מקבל קודי חירום רק אחרי שהתחבר פעם אחת.</li>
     ${rel?"":"<li>קודי שחרור יוצר רק מי שיש לו הרשאת שחרור.</li>"}</ul>`],
 
+  ...(own?[]:[["account","החשבון שלכם",`
+    <ul class="gl"><li><b>כניסה ראשונה</b>: מנהל המערכת יוצר לכם חשבון, ומגיע אליכם מייל עם קישור לקביעת סיסמה. קובעים סיסמה ונכנסים איתה לפאנל. לא הגיע? בדקו בספאם, או בקשו ממנהל המערכת לשלוח שוב.</li>
+    <li><b>הסיסמה שלכם</b>: ב<a href="#settings">הגדרות</a> ← "חשבון וסיסמה" אפשר לראות את הסיסמה הנוכחית (היא שמורה רק בדפדפן שבו נכנסתם, לא בשרת). כדי להחליף, מקלידים את הנוכחית ואת החדשה פעמיים.</li>
+    <li><b>שכחתם סיסמה</b>: במסך הכניסה לוחצים "שכחתי סיסמה" ומקבלים קישור למייל.</li>
+    <li><b>מספר הטלפון שלכם</b>: באותו מסך יש מתג "להציג את מספר הטלפון שלי". כשהוא כבוי, במכשירים שאתם מתקינים, באתר ההורדה של הקישור שלכם ובקבצים חדשים מוצג רק השם שלכם. מכשירים קיימים מתעדכנים בחיבור הבא שלהם; קבצים שכבר הורדו נשארים כמו שהם.</li>
+    <li><b>ברירת המחדל</b>: ב<a href="#settings">הגדרות</a> ← "ברירת מחדל" קובעים מסלול והגבלות שייכנסו לכל התקנה שלכם.</li></ul>`]]),
   ["faq","שאלות ותקלות נפוצות",`
     <details class="gd"><summary>התקנתי, אבל המכשיר לא מופיע בפאנל</summary><div><p>הוא יופיע אחרי שיתחבר לאינטרנט בפעם הראשונה. עד אז מנהלים אותו בקודי חירום עם מספר הקובץ.</p></div></details>
     <details class="gd"><summary>שיניתי מסלול בפאנל, אבל בטלפון עוד לא השתנה</summary><div><p>השינוי מגיע בחיבור הבא של המכשיר. אם הוא "לא מתחבר", בקשו מהמשתמש להתחבר לאינטרנט, או השתמשו בקוד חירום.</p></div></details>
@@ -651,7 +719,9 @@ function vGuide(v){
     <details class="gd"><summary>המשתמש רוצה להסיר את הסינון</summary><div><p>הוא שולח "בקשת הסרה" מהאפליקציה. ${rel?"אם מאשרים, משחררים מעמוד המכשיר, או בקוד חירום אם אין לו אינטרנט.":"השחרור נעשה דרך מנהל המערכת."} אין התחייבות לשחרר.</p></div></details>`],
   ];
   if(own) S.push(["owner","למנהל המערכת",`
-    <ul class="gl"><li><b>מתקינים</b>: ב<a href="#installers">מתקינים</a> מוסיפים מתקין, נותנים או לוקחים הרשאת שחרור ומחיקה, ומעבירים מכשירים בין מתקינים.</li>
+    <ul class="gl"><li><b>מתקין חדש</b>: ממלאים שם, טלפון ומייל, בלי סיסמה. המתקין מקבל מ-Firebase מייל עם קישור לקביעת סיסמה. אם לא הגיע, יש כפתור "שלח שוב מייל סיסמה" ליד שמו. את נוסח המייל אפשר לערוך ב-Firebase: Authentication ← Templates.</li>
+    <li><b>מכשירי גמ"ח</b>: בקובצי התקנה שלך (וגם בהתקנה מהפאנל) יש אפשרות "קובץ גמ"ח: עם איתור מיקום". בנעילה מוצג לשואל שהמיקום נשלח אליך. בעמוד המכשיר רואים מפה, ואפשר לסמן "אבד": הטלפון ננעל על מסך עם ההודעות שלך, כפתור התקשרות אליך ומספרי חירום, עד שתשחרר. אפשר גם להפעיל איתור במכשיר קיים מעמוד המכשיר.</li>
+    <li><b>מתקינים</b>: ב<a href="#installers">מתקינים</a> מוסיפים מתקין, נותנים או לוקחים הרשאת שחרור ומחיקה, ומעבירים מכשירים בין מתקינים.</li>
     <li><b>מתגים</b>: בהגדרות ← מתגים אפשר לעצור כל אפשרות: האתר הציבורי וכל דרך הורדה בו, קישורים אישיים, קובצי התקנה ופניות.</li>
     <li><b>מלאי ההורדה הציבורית</b>: כל הורדה מהאתר מקבלת סט קודים ייחודי מתוך מלאי של 1000. הפאנל שלך ממלא אותו כשהוא פתוח, ותופיע התראה כשהוא יורד מתחת ל-100.</li>
     <li><b>מפתחות שחרור</b>: מתקין בלי הרשאת שחרור מקבל מפתחות ממאגר שהפאנל שלך מחזיק. אם הוא מקבל "אין מפתחות פנויים", פשוט היכנס לפאנל.</li></ul>`]);
@@ -761,7 +831,7 @@ function vDevices(v){
     }).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1)||(b.createdAt||0)-(a.createdAt||0));
     $("devRows").innerHTML=rows.map(d=>{const st=stateOf(d._id)||{}, pol=parse(d.policy)||{}, iss=issuesOf(d._id), mode=pol.filter_mode||st.filter_mode;
       return `<tr class="click" data-go="${encodeURIComponent(d._id)}">
-      <td class="nm"><div class="who2"><span class="av2">${esc(initialsOf(d.name))}</span><span><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}
+      <td class="nm"><div class="who2"><span class="av2">${esc(initialsOf(d.name))}</span><span><b>${esc(d.name)}</b>${isReturning(d)?' <span class="pill wait" title="המכשיר הזה כבר היה רשום במערכת בעבר">חוזר</span>':""}${me.role==="owner"&&isLost(d)?' <span class="pill lostpill">אבד</span>':me.role==="owner"&&d.track?' <span class="pill trackpill" title="איתור מיקום פעיל">מיקום</span>':""}
         ${modelOf(d)?`<span class="sub" dir="auto">${esc(modelOf(d))}</span>`:""}</span></div></td>
       <td class="num" dir="ltr" style="text-align:right" data-l="טלפון">${esc(d.phone)}</td>${me.role==="owner"?`<td data-l="מתקין">${esc(installerLabel(d.installerId))}</td>`:""}
       <td data-l="מצב">${pill(statusOf(d))}${iss.length?' <span class="pill pending" title="'+esc(iss.map(issueText).join("\n"))+'">⚠ '+(iss.length===1?'בעיה אחת':iss.length+' בעיות')+'</span>':""}</td>
@@ -791,6 +861,85 @@ async function deleteDevices(list){
   }
 }
 const initialsOf = n => { const w=String(n||"?").trim().split(/\s+/); return (w[0]||"?").charAt(0)+(w[1]?w[1].charAt(0):""); };
+
+// ---------------------------------------------------------------- gemach (owner only): location and "lost"
+const parseLost = d => { try{ return JSON.parse(d.lost||"{}")||{}; }catch(e){ return {}; } };
+const isLost = d => !!(d.track && parseLost(d).on);
+function gemachCard(d){
+  if(me.role!=="owner"||d.status==="released") return "";
+  const L=parseLost(d), lost=!!(d.track&&L.on);
+  if(!d.track) return `<section class="card" id="gemCard"><div class="hd">${icon("pin")}<h2>מכשיר גמ"ח: מיקום ואבד</h2></div><div class="bd">
+    <p class="muted" style="margin-top:0">למכשירים של הגמ"ח בלבד: המכשיר שולח את המיקום שלו כל 30 דקות, ואם הוא אובד אפשר לנעול אותו ולשלוח אליו הודעות. רק אתה רואה את זה.</p>
+    <button class="btn tonal" id="trackOn">${icon("pin")}הפעל איתור במכשיר הזה</button></div></section>`;
+  return `<section class="card ${lost?"lostcard":""}" id="gemCard"><div class="hd">${icon("pin")}<h2>${lost?"המכשיר במצב אבד":"מיקום המכשיר"}</h2>
+      ${lost?'<span class="pill lostpill">אבד</span>':'<span class="pill active">איתור פעיל</span>'}</div><div class="bd">
+    <div id="locBox"><div class="empty">טוען מיקום…</div></div>
+    ${lost?`<div class="lostmsgs">${(L.msgs||[]).slice().reverse().map(m=>`<div class="lm"><div>${esc(m.t)}</div><small>${when(m.at)}</small></div>`).join("")||'<div class="muted">עוד לא נשלחו הודעות.</div>'}</div>
+      <div class="field" style="margin-top:12px"><label class="f" for="lostMsg">הודעה חדשה למסך הטלפון</label><textarea id="lostMsg" rows="2" maxlength="300" placeholder="למשל: מי שמצא, נא להתקשר. יש פרס למוצא."></textarea></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn fill" id="lostSend">${icon("chat")}שלח הודעה</button><span style="flex:1"></span><button class="btn out" id="lostOff">נמצא: שחרר את הנעילה</button></div>
+      <p class="muted" style="margin:10px 0 0;font-size:13px">הנעילה וההודעות מגיעות לטלפון בחיבור הבא שלו (עד 15 דקות). בזמן מצב אבד הטלפון בודק כל דקה ושולח מיקום כל 2 דקות.</p>`
+    :`<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn danger fill" id="lostOn">${icon("alert")}סמן כאבד ונעל</button><span style="flex:1"></span><button class="btn text sm" id="trackOff">כבה איתור</button></div>`}
+  </div></section>`;
+}
+let leafletP=null;
+function loadLeaflet(){
+  return leafletP||(leafletP=new Promise((ok,no)=>{
+    const l=document.createElement("link"); l.rel="stylesheet"; l.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(l);
+    const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"; s.onload=()=>ok(window.L); s.onerror=no; document.head.appendChild(s); }));
+}
+const LOC_STATE={noperm:"אין למכשיר הרשאת מיקום. אפשר לתת אותה בחיבור למחשב (תוכנת ההתקנה) או בהתקנה מחדש מקובץ גמ\"ח.",off:"המיקום כבוי במכשיר ולא הצלחתי להדליק אותו.",nofix:"המכשיר לא הצליח לקבל מיקום בבדיקה האחרונה (אולי בתוך מבנה)."};
+async function fillLocation(d){
+  const box=$("locBox"); if(!box) return;
+  let loc=null; try{ loc=await getDoc("locations/"+d._id); }catch(e){}
+  if(!$("locBox")) return;
+  if(!loc){ box.innerHTML='<div class="note info">עוד לא התקבל מיקום. המכשיר ישלח אותו בחיבור הבא שלו (עד 15 דקות).</div>'; return; }
+  const hist=(()=>{ try{ return JSON.parse(loc.hist||"[]"); }catch(e){ return []; } })();
+  const has=loc.lat!=null&&loc.lng!=null;
+  box.innerHTML=`${loc.state&&loc.state!=="ok"&&LOC_STATE[loc.state]?`<div class="note warn" style="margin-bottom:10px">${esc(LOC_STATE[loc.state])}</div>`:""}
+    ${has?`<div id="map" class="locmap"></div>
+    <div class="locinfo"><span><b>${ago(loc.at)}</b> · דיוק ${loc.acc||"?"} מ'${loc.battery>=0?` · סוללה ${loc.battery}%`:""}</span>
+      <a class="btn tonal sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}">${icon("link")}פתח בגוגל מפות</a></div>
+    <div class="muted" style="font-size:12.5px">נבדק לאחרונה ${ago(loc.checkedAt)} · ${hist.length} נקודות אחרונות במפה</div>`:'<div class="muted">אין עדיין נקודת מיקום.</div>'}`;
+  if(!has) return;
+  try{
+    const L=await loadLeaflet(); if(!$("map")) return;
+    const m=L.map("map",{attributionControl:true}).setView([loc.lat,loc.lng],15);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);
+    const pts=hist.map(h=>[h[0],h[1]]);
+    if(pts.length>1) L.polyline(pts,{color:"#006c51",weight:3,opacity:.55}).addTo(m);
+    hist.slice(0,-1).forEach(h=>L.circleMarker([h[0],h[1]],{radius:3,color:"#006c51",weight:1,fillOpacity:.5}).addTo(m).bindTooltip(when(h[3])));
+    L.circle([loc.lat,loc.lng],{radius:Math.max(10,loc.acc||10),color:"#b3261e",weight:1,fillOpacity:.12}).addTo(m);
+    L.circleMarker([loc.lat,loc.lng],{radius:8,color:"#fff",weight:3,fillColor:"#b3261e",fillOpacity:1}).addTo(m).bindTooltip("עכשיו: "+when(loc.at));
+  }catch(e){ const mp=$("map"); if(mp) mp.outerHTML='<div class="note info">לא הצלחתי לטעון את המפה. אפשר לפתוח בגוגל מפות.</div>'; }
+}
+function bindGemach(d){
+  const id=d._id, ownName=D.config.ownerName||"", ownPhone=D.config.ownerPhone||"";
+  const setLost=async L=>{ await commit([{set:"devices/"+id,data:{lost:JSON.stringify(L)},mask:["lost"]},audit(id,L.on?"lost_on":"lost_off",L.on?"":"")]); load(); };
+  if($("trackOn")) $("trackOn").onclick=()=>confirmDlg("הפעלת איתור במכשיר","המכשיר ישלח את המיקום שלו כל 30 דקות, ותוכל לסמן אותו כאבד. מכשיר שלא הותקן מקובץ גמ\"ח לא הציג למשתמש הסבר על כך בנעילה: הפעל רק במכשיר של הגמ\"ח, ויידע את השואל.","הפעל איתור",async()=>{
+    await commit([{set:"devices/"+id,data:{track:true},mask:["track"]},audit(id,"track_on","")]); load(); });
+  if($("trackOff")) $("trackOff").onclick=()=>confirmDlg("כיבוי האיתור","המכשיר יפסיק לשלוח את המיקום שלו.","כבה",async()=>{
+    await commit([{set:"devices/"+id,data:{track:false,lost:""},mask:["track","lost"]},audit(id,"track_off","")]); load(); });
+  if($("lostOn")) $("lostOn").onclick=()=>{
+    const dlg=$("dlg");
+    $("dlgIn").innerHTML=`<h3>סימון המכשיר כאבד</h3><p class="muted">הטלפון יינעל על מסך אחד: ההודעות שלך, כפתור התקשרות אליך, ומספרי חירום. שום דבר אחר לא ייפתח עד שתשחרר.</p>
+      <div class="field"><label class="f" for="lN">שם שיוצג</label><input id="lN" type="text" value="${esc(ownName)}"></div>
+      <div class="field"><label class="f" for="lP">טלפון להתקשרות</label><input id="lP" type="tel" dir="ltr" class="num" value="${esc(ownPhone)}"></div>
+      <div class="field"><label class="f" for="lM">הודעה על המסך</label><textarea id="lM" rows="2" maxlength="300">מכשיר זה שייך לגמ"ח. מי שמצא, נא להתקשר ולהחזיר. תודה!</textarea></div>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn danger fill" id="dlgOk">נעל את הטלפון</button></div>`;
+    $("dlgNo").onclick=()=>dlg.close();
+    $("dlgOk").onclick=async()=>{ $("dlgOk").disabled=true;
+      const t=$("lM").value.trim();
+      try{ await setLost({on:true,name:$("lN").value.trim(),phone:$("lP").value.trim(),msgs:t?[{t,at:Date.now()}]:[],at:Date.now()}); dlg.close(); toast("המכשיר יינעל בחיבור הבא שלו"); }
+      catch(e){ toast("הפעולה נכשלה"); $("dlgOk").disabled=false; } };
+    dlg.showModal();
+  };
+  if($("lostSend")) $("lostSend").onclick=async()=>{ const t=$("lostMsg").value.trim(); if(!t) return;
+    const L=parseLost(d); L.msgs=(L.msgs||[]).concat([{t,at:Date.now()}]).slice(-20);
+    $("lostSend").disabled=true; try{ await setLost(L); toast("ההודעה תופיע בטלפון תוך דקה"); }catch(e){ toast("השליחה נכשלה"); $("lostSend").disabled=false; } };
+  if($("lostOff")) $("lostOff").onclick=()=>confirmDlg("שחרור הנעילה","הטלפון יחזור לעבוד כרגיל בחיבור הבא שלו (תוך דקה). האיתור נשאר פעיל.","שחרר",async()=>{
+    const L=parseLost(d); L.on=false; L.msgs=[]; await setLost(L); });
+  if(d.track) fillLocation(d);
+}
 
 // ---------------------------------------------------------------- device page
 function vDevice(id){
@@ -851,6 +1000,7 @@ function vDevice(id){
       </dl>
 
       </div></section>
+      ${gemachCard(d)}
       <section class="card"><div class="hd"><h2>פעולות</h2></div><div class="acts">
         ${me.role==="owner"?`<div class="act"><div class="main"><b>העברה למתקין אחר</b><span class="muted">המכשיר, הבקשות והדיווחים עוברים אליו</span>
           <div class="row" style="margin-top:8px"><select id="reassign" style="flex:1"><option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
@@ -903,6 +1053,7 @@ function vDevice(id){
   if($("deleteBtn")) $("deleteBtn").onclick=()=>confirmDlg("מחיקת המכשיר מהמערכת","המכשיר יימחק מהפאנל. אם הוא עדיין מותקן, ההגנה בו תמשיך לפעול כמו שהיא, אבל לא תוכלו לשלוט בו מרחוק.","מחק",async()=>{
     await deleteDevices([d]); draft=null; location.hash="#devices"; load(); });
   fillIcons();
+  if(me.role==="owner") bindGemach(d);
   if(me.role==="owner") query("audit","deviceId",id).then(list=>{ const el=$("auditList"); if(!el) return;
     list.sort((a,b)=>b.at-a.at); el.innerHTML=list.slice(0,30).map(a=>`<div class="item"><div class="main"><div class="t">${esc(auditText(a))}</div><div class="muted">${esc(a.byName||"")} · ${when(a.at)}</div></div></div>`).join("")||'<div class="empty">אין שינויים עדיין</div>'; }).catch(()=>{});
 }
@@ -931,7 +1082,7 @@ function sensBlock(pol,apps){
   return `<div class="note warn" style="margin-top:6px">השבתת אפליקציות מערכת עשויה לגרום לתקלות במכשיר. לא מומלץ להוסיף אפליקציות מעבר לרשימה שנבחרה מראש.</div>
   <div class="applist">${apps.map(a=>`<label><input type="checkbox" data-app="${esc(a.p)}" ${on.has(a.p)?"checked":""}>${appIcon(a)}<span>${esc(a.l)}<small>${esc(a.p)}</small></span></label>`).join("")}</div>`;
 }
-const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט"};
+const AUDIT={msg_blocked:"חסימת פניות",msg_unblocked:"ביטול חסימת פניות",policy_saved:"עדכון מסלול והגדרות",activated:"הפעלת הסינון",released:"שחרור המכשיר",request_rejected:"דחיית בקשה",emergency_code:"יצירת קוד חירום",reassigned:"העברה למתקין",deleted:"מחיקה",permission:"שינוי הרשאת מתקין",install_file:"הורדת קובץ התקנה",offline_code:"קוד חירום בלי אינטרנט",track_on:"הפעלת איתור",track_off:"כיבוי איתור",lost_on:"סימון כאבד ונעילה",lost_off:"שחרור מצב אבד"};
 const auditText = a => (AUDIT[a.action]||a.action)+(a.detail?": "+a.detail:"");
 const policySummary = p => (MODE_NAME[p.filter_mode]||"")+" · "+SETTINGS.filter(([k])=>p.settings[k]).length+" הגבלות";
 
@@ -943,7 +1094,7 @@ async function savePolicy(d,pol,openReq){
   const inst = d.installerId==="owner" ? {name:D.config.ownerName||"",phone:D.config.ownerPhone||""}
              : (me.role==="installer" ? {name:me.name,phone:me.phone} : (D.installers.find(i=>i._id===d.installerId)||{}));
   const activating = d.status!=="active";
-  const w=[{set:"devices/"+d._id,data:{status:"active",policy:JSON.stringify(payload),rev,installerName:inst.name||"",installerPhone:inst.phone||"",updatedAt:Date.now(),updatedBy:me.uid},
+  const w=[{set:"devices/"+d._id,data:{status:"active",policy:JSON.stringify(payload),rev,installerName:inst.name||"",installerPhone:(d.installerId==="owner"?inst.phone||"":shownPhone(inst)),updatedAt:Date.now(),updatedBy:me.uid},
             mask:["status","policy","rev","installerName","installerPhone","updatedAt","updatedBy"]},
            audit(d._id,activating?"activated":"policy_saved",policySummary(pol))];
   if(openReq&&openReq.type!=="remove") w.push({set:"requests/"+openReq._id,data:{status:"approved",handledBy:me.uid,handledAt:Date.now()},mask:["status","handledBy","handledAt"]});
@@ -969,7 +1120,7 @@ async function hmacCode(secret,ch,act){
 /** Moves a device to another installer (owner only). The device's report and open requests move with it. */
 async function reassign(d,to){
   const inst=D.installers.find(i=>i._id===to);
-  const w=[{set:"devices/"+d._id,data:{installerId:to,installerName:inst?inst.name:(D.config.ownerName||""),installerPhone:inst?inst.phone:(D.config.ownerPhone||"")},mask:["installerId","installerName","installerPhone"]}];
+  const w=[{set:"devices/"+d._id,data:{installerId:to,installerName:inst?inst.name:(D.config.ownerName||""),installerPhone:inst?shownPhone(inst):(D.config.ownerPhone||"")},mask:["installerId","installerName","installerPhone"]}];
   if(D.reports[d._id]) w.push({set:"reports/"+d._id,data:{installerId:to},mask:["installerId"],exists:true});
   D.requests.filter(r=>r.deviceId===d._id&&r.status==="open").forEach(r=>w.push({set:"requests/"+r._id,data:{installerId:to},mask:["installerId"]}));
   w.push(audit(d._id,"reassigned","אל "+installerLabel(to)));
@@ -1042,7 +1193,7 @@ function vInstallers(v){
         <div class="sw"><span>יכול לשחרר מכשירים</span><label class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""} aria-label="יכול לשחרר מכשירים"><i></i></label></div>
         <div class="sw"><span>יכול למחוק מכשירים מהמערכת</span><label class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""} aria-label="יכול למחוק מכשירים"><i></i></label></div>
         <div class="row"><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק קישור אישי</button>
-          <button class="btn text sm" data-reset="${esc(i.email)}">איפוס סיסמה</button>
+          <button class="btn text sm" data-reset="${esc(i.email)}">שלח שוב מייל סיסמה</button>
           <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת מתקין":"הפעל מתקין"}</button></div>
       </div>`}
       ${open?`<div class="instdevs">
@@ -1063,12 +1214,13 @@ function vInstallers(v){
       <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
       <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
       <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
-      <div class="field"><label class="f" for="niPass">סיסמה ראשונית *</label><input id="niPass" type="text" dir="ltr" minlength="8" required>
-        <div class="muted" style="margin-top:4px">לפחות 8 תווים. המתקין יוכל להחליף אותה בהגדרות.</div></div>
+      <div class="note info" style="margin-bottom:12px">אין צורך בסיסמה: המתקין יקבל למייל קישור לקביעת סיסמה, וייכנס איתה לפאנל. אם המייל לא הגיע, בדקו בספאם או לחצו "שלח שוב" ליד שמו.</div>
       <button class="btn fill" type="submit" style="width:100%">צור מתקין</button><p class="err" id="niErr"></p></form></section></div>`;
   $("newInst").onsubmit=async e=>{
     e.preventDefault(); $("niErr").textContent="";
-    const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase(), pw=$("niPass").value;
+    const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase();
+    // a long random password nobody sees; the installer sets his own from the e-mail
+    const pw=Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>"abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b%56]).join("");
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
     try{
       const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
@@ -1078,7 +1230,8 @@ function vInstallers(v){
       if(!code) throw new Error("code");
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
-      toast("המתקין נוצר. קוד המתקין: "+code); load();
+      let mailed=true; try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
+      toast(mailed?"המתקין נוצר (קוד "+code+"). נשלח אליו מייל לקביעת סיסמה.":"המתקין נוצר (קוד "+code+"), אבל המייל לא נשלח. לחצו \"שלח שוב\" ליד שמו."); load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
   v.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ const id=b.dataset.open; instOpen.has(id)?instOpen.delete(id):instOpen.add(id); vInstallers(v); });
@@ -1098,10 +1251,10 @@ function vInstallers(v){
   v.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async()=>{
     const i=D.installers.find(x=>x._id===b.dataset.toggle), on=!i.active;
     const w=[{set:"installers/"+i._id,data:{active:on},mask:["active"]},
-      on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:i.phone,profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
+      on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:shownPhone(i),profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
-  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין קישור לאיפוס סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
 }
 
 // ---------------------------------------------------------------- install files (personal installer per installer)
@@ -1182,13 +1335,14 @@ function saveBlob(blob,name){ const a=document.createElement("a"); a.href=URL.cr
 
 /** who a new file is for: me, or (owner) one of the installers */
 function fileTarget(sel){
-  if(me.role==="installer") return {installerId:me.uid,code:me.code,iName:me.name,iPhone:me.phone,profile:me.defaultProfile||null};
+  if(me.role==="installer") return {installerId:me.uid,code:me.code,iName:me.name,iPhone:shownPhone(me),profile:me.defaultProfile||null};
   if(!sel||sel==="owner") return {installerId:"owner",code:"",iName:D.config.ownerName||"מוקד קיידרואיד",iPhone:D.config.ownerPhone||"",profile:D.ownerProfile||null};
   const i=D.installers.find(x=>x._id===sel)||{};
-  return {installerId:i._id,code:i.code||"",iName:i.name||"",iPhone:i.phone||"",profile:parse(i.defaultProfile)||null};
+  return {installerId:i._id,code:i.code||"",iName:i.name||"",iPhone:shownPhone(i),profile:parse(i.defaultProfile)||null};
 }
 
-async function createFile(kind,target,status,keep){
+async function createFile(kind,target,status,keep,track){
+  track = !!track && me.role==="owner" && target.installerId==="owner";
   status("מכין מפתחות לקודי חירום…",1);
   let made=null;
   for(let t=0;t<4&&!made;t++){
@@ -1212,20 +1366,21 @@ async function createFile(kind,target,status,keep){
     try{
       await commit([...claim,
         {set:"installFiles/"+fid,create:true,data:{installerId:target.installerId,kind,createdAt:Date.now(),by:me.uid,seeds:JSON.stringify(seeds),releaseId:r._id}},
-        audit("","install_file",(kind==="pc"?"קובץ למחשב ":"קובץ לטלפון ")+fid+(me.role==="owner"?" · "+target.iName:""))]);
+        audit("","install_file",(kind==="pc"?"קובץ למחשב ":kind==="web"?"התקנה מהפאנל ":"קובץ לטלפון ")+fid+(me.role==="owner"?" · "+target.iName:""))]);
       made={fid,rid:r._id,tips};
     }catch(e){ console.warn("claim retry",e); }
   }
   if(!made) throw new Error("claim");
   const api=await fetch("../api.json?t="+Date.now()).then(r=>r.json()).catch(()=>fetch(RAW+"api.json?t="+Date.now()).then(r=>r.json())).catch(()=>({}));
   const payload=JSON.stringify({v:1,kind,fid:made.fid,rid:made.rid,installerId:target.installerId,code:target.code,
-    iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,keep:!!keep,createdAt:Date.now()});
+    iName:target.iName,iPhone:target.iPhone,profile:target.profile,n:CH_N,tips:made.tips,keep:!!keep,createdAt:Date.now(),...(track?{track:true}:{})});
   status("מוריד את הגרסה העדכנית"+(api.version?" ("+api.version+")":"")+"…",0);
   const apk=injectApk(await fetchFile("kdroid.bin",p=>status(null,p)),payload);
+  if(kind==="web") return {fid:made.fid,apk};
   if(kind==="phone"){ saveBlob(apk,(keep?"kiydroid-installer-":"kiydroid-setup-")+made.fid+".apk"); return made.fid; }
   status("מכין את תוכנת ההתקנה למחשב…",94);
   const base=(keep?"Kiydroid-Installer-Permanent-":"Kiydroid-Setup-")+made.fid;
-  saveBlob(await pcSetup(apk,{fid:made.fid,version:api.version||"",installer:target.iName,phone:target.iPhone||"",keep:!!keep,kind:"pc"},p=>status(null,94+Math.round(p*0.05))),base+".exe");
+  saveBlob(await pcSetup(apk,{fid:made.fid,version:api.version||"",installer:target.iName,phone:target.iPhone||"",keep:!!keep,kind:"pc",track},p=>status(null,94+Math.round(p*0.05))),base+".exe");
   return made.fid;
 }
 
@@ -1306,11 +1461,105 @@ function showStock(){
 }
 
 let myFiles=null, mkType="phone", mkKeep=false;
+// ---------------------------------------------------------------- install from this panel, phone on a USB cable (WebUSB)
+// Same steps as the site's "install from the browser" and the PC installer: a personal app (with this installer's
+// details and offline codes) is made right here, copied to the phone, installed, and device management turned on.
+const ACTIVATE_SH=[
+  "A=$(cmd package query-services -a android.accounts.AccountAuthenticator | grep packageName | cut -d '=' -f 2 | tr -d '\\r' | sort -u | grep -viE 'bluetooth|telecom|telephony|dialer|contacts|phonebook|calendar|carservice|car.')",
+  "echo \"$A\" | sed 's/^/pm disable-user --user 0 /' | sh","sleep 3",
+  "dpm set-device-owner com.kdroid.filter/.listener.AdminListener",
+  "appops set com.kdroid.filter ACTIVATE_VPN allow","pm grant com.kdroid.filter android.permission.POST_NOTIFICATIONS",
+  "appops set com.kdroid.filter SYSTEM_ALERT_WINDOW allow","appops set com.kdroid.filter GET_USAGE_STATS allow",
+  "echo \"$A\" | sed 's/^/pm enable /' | sh","pm enable com.google.android.gms","pm enable com.google.android.gsf","pm enable com.android.vending"].join("\n")+"\n";
+const GEMACH_SH=["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","ACCESS_BACKGROUND_LOCATION","CALL_PHONE"].map(p=>"pm grant com.kdroid.filter android.permission."+p).join("\n")+"\n";
+let adbP=null;
+function loadAdb(){ return adbP||(adbP=new Promise((ok,no)=>{ if(window.KiyAdb) return ok(window.KiyAdb); const s=document.createElement("script"); s.src="../download/webadb.js"; s.onload=()=>ok(window.KiyAdb); s.onerror=no; document.head.appendChild(s); })); }
+const usbOk = () => !!navigator.usb && window.isSecureContext;
+const WEB_STEPS=[["connect","חיבור לטלפון"],["auth","אישור בטלפון"],["prep","הכנת קובץ אישי"],["push","העתקה לטלפון"],["install","התקנה"],["activate","הפעלת ניהול מכשיר"],["open","פתיחת קיידרואיד"]];
+let webBusy=false;
+function webCard(who){
+  const own=me.role==="owner", t=fileTarget(who);
+  return `<section class="card webcard"><div class="hd">${icon("pc")}<h2>התקנה מכאן, בכבל למחשב</h2><span class="pill active">הכי מהיר</span></div><div class="bd">
+    <p class="muted" style="margin-top:0">מחברים את הטלפון בכבל USB למחשב הזה ולוחצים "התקן". בלי להוריד שום קובץ ובלי להתקין תוכנה: הכל קורה מהדפדפן, והמכשיר נרשם אצל${own&&t.installerId!=="owner"?" "+esc(t.iName):"ך"}${own?"":", עם ברירת המחדל שלך וקודי חירום משלו"}.</p>
+    <ol class="webhow"><li><b>בטלפון</b>: הגדרות ← אודות הטלפון ← 7 הקשות על "מספר Build", ואז באפשרויות מפתחים: "ניפוי באגים ב-USB".</li>
+      <li><b>מחברים בכבל</b> שמעביר נתונים, ופותחים את מסך הטלפון.</li>
+      <li><b>לוחצים "התקן"</b>, בוחרים את הטלפון ברשימה שהדפדפן פותח, ומאשרים בטלפון "אפשר תמיד מהמחשב הזה".</li></ol>
+    ${usbOk()?"":`<div class="note warn">הדפדפן הזה לא יכול להתחבר לטלפון בכבל. פתחו את הפאנל במחשב, ב-Chrome או ב-Edge.</div>`}
+    <button class="btn fill big" id="webGo" ${usbOk()?"":"disabled"}>${icon("phone")}התקן בטלפון המחובר</button>
+    <div class="webflow" id="webFlow" hidden><div class="mkrow"><b id="webT"></b><span id="webP" class="num"></span></div><div class="mkbar"><i id="webB"></i></div>
+      <ol class="wsteps" id="webSteps"></ol><div class="muted" id="webS" style="font-size:13.5px;margin-top:8px"></div></div>
+    <details class="gd" style="margin-top:12px"><summary>זה לא עובד?</summary><div><ul class="gl">
+      <li><b>"הטלפון תפוס" / לא מתחבר</b>: תוכנה אחרת במחשב מחזיקה את הטלפון (adb, Samsung Smart Switch, Mi PC Suite). סגרו אותה, נתקו וחברו את הכבל.</li>
+      <li><b>הטלפון לא מופיע ברשימה</b>: בדקו את ניפוי הבאגים ואת הכבל. בחלק מהטלפונים (בעיקר סמסונג) Windows צריך מנהל התקן של היצרן: אז השתמשו ב"קובץ למחשב" שלמטה, שעובד עם כל מנהל התקן.</li>
+      <li><b>יש חשבונות בטלפון</b>: מסירים זמנית בהגדרות ← חשבונות, מתקינים, ומחזירים.</li></ul></div></details>
+  </div></section>`;
+}
+function bindWeb(v,who){
+  const go=$("webGo"); if(!go) return;
+  const steps=(cur,bad)=>{ const i=WEB_STEPS.findIndex(x=>x[0]===cur);
+    $("webSteps").innerHTML=WEB_STEPS.map(([k,t],j)=>`<li class="${j<i?"done":j===i?(bad?"bad":"now"):""}"><i>${j<i?"✓":j===i&&bad?"!":""}</i><span>${t}</span></li>`).join(""); };
+  const show=(title,sub,pct,cls)=>{ const f=$("webFlow"); if(!f) return; f.hidden=false; f.className="webflow"+(cls?" "+cls:""); $("webT").textContent=title; $("webS").textContent=sub||"";
+    if(pct!=null){ $("webB").style.width=pct+"%"; $("webP").textContent=pct+"%"; } };
+  go.onclick=async()=>{
+    if(webBusy) return; webBusy=true; fileBusy=true; go.disabled=true;
+    let adb=null, cur="connect";
+    const step=k=>{ cur=k; steps(k); };
+    const fail=(t,s)=>{ steps(cur,true); show(t,s,null,"err"); };
+    try{
+      const A=await loadAdb();
+      step("connect"); show("מתחבר לטלפון","בחרו את הטלפון ברשימה שהדפדפן פותח.",3);
+      try{ adb=await A.connect(s=>{ if(s==="auth"){ step("auth"); show("אשרו בטלפון","בטלפון מופיעה הודעה \"לאפשר ניפוי באגים?\". סמנו \"אפשר תמיד מהמחשב הזה\" ולחצו \"אישור\".",8); } }); }
+      catch(e){
+        if(e&&e.busy) return fail("הטלפון תפוס","תוכנה אחרת במחשב מחזיקה את הטלפון (adb.exe, Smart Switch, Mi PC Suite). סגרו אותה (במנהל המשימות: Ctrl+Shift+Esc), נתקו וחברו את הכבל ונסו שוב. אם זה חוזר, השתמשו בקובץ למחשב.");
+        if(e&&/NotFound|No device selected/i.test(e.name+e.message)) return fail("לא נבחר טלפון","אם הטלפון לא הופיע ברשימה: בדקו שניפוי באגים ב-USB פעיל ושהכבל מעביר נתונים.");
+        throw e;
+      }
+      if(!adb) return fail("לא נבחר טלפון","לחצו שוב \"התקן\" ובחרו את הטלפון.");
+      step("prep"); show("מכין קובץ אישי","קודי חירום, הפרטים שלך והגרסה העדכנית.",12);
+      const track=!!($("mkTrack")&&$("mkTrack").checked);
+      const r=await createFile("web",fileTarget(who),(msg,pct)=>{ if(pct!=null) show("מכין קובץ אישי",msg||"",12+Math.round(Math.min(100,pct)*0.4)); },false,track);
+      const bytes=new Uint8Array(await r.apk.arrayBuffer());
+      step("push"); await A.push(adb,"/data/local/tmp/kiydroid.apk",bytes,p=>show("מעתיק לטלפון…","",52+Math.round(p*.28)));
+      step("install"); show("מתקין…","",82);
+      const ins=await A.shell(adb,"pm install -r -g /data/local/tmp/kiydroid.apk");
+      await A.shell(adb,"rm -f /data/local/tmp/kiydroid.apk");
+      if(!/Success/.test(ins)){
+        if(/UPDATE_INCOMPATIBLE|SIGNATURES/.test(ins)) return fail("בטלפון יש גרסה אחרת של קיידרואיד","היא חתומה אחרת וצריך להסיר אותה קודם. אם ההסרה חסומה, שחררו את המכשיר ואז הסירו.");
+        if(/VERSION_DOWNGRADE/.test(ins)) return fail("בטלפון מותקנת גרסה חדשה יותר","אין צורך להתקין. פתחו את קיידרואיד בטלפון.");
+        if(/INSUFFICIENT_STORAGE/.test(ins)) return fail("אין מספיק מקום בטלפון","פנו מקום ונסו שוב.");
+        if(/USER_RESTRICTED|ABORTED/.test(ins)) return fail("הטלפון חסם את ההתקנה","בשיאומי: באפשרויות מפתחים הפעילו גם \"התקנה דרך USB\". בטלפונים אחרים: אשרו את בקשת ההתקנה בטלפון ונסו שוב.");
+        return fail("ההתקנה נכשלה",ins.trim().slice(0,200));
+      }
+      step("activate"); show("מפעיל ניהול מכשיר…","כמה שניות.",88);
+      const ownerNow=async()=>{ let o=await A.shell(adb,"dpm list-owners");
+        if(/(\d+ owners?:|no owners)/i.test(o)) return /com\.kdroid\.filter.*DeviceOwner/.test(o);
+        o=await A.shell(adb,"dumpsys device_policy"); return /Device Owner:\s*\r?\n\s*admin=ComponentInfo\{com\.kdroid\.filter\//.test(o); };
+      if(!(await ownerNow())){
+        await A.push(adb,"/data/local/tmp/kd-activate.sh",new TextEncoder().encode(ACTIVATE_SH+(track?GEMACH_SH:"")));
+        const out=await A.shell(adb,"sh /data/local/tmp/kd-activate.sh 2>&1; rm -f /data/local/tmp/kd-activate.sh");
+        if(!(await ownerNow())){
+          if(/already some accounts|accounts on the device/i.test(out)) return fail("יש בטלפון חשבונות שמונעים הפעלה","הסירו אותם זמנית (הגדרות ← חשבונות), לחצו שוב \"התקן\", ואחר כך החזירו. האפליקציה כבר מותקנת.");
+          if(/several users|already provisioned|is already set|device owner is already/i.test(out)) return fail("לא ניתן להפעיל ניהול מכשיר","בטלפון יש משתמש נוסף, פרופיל עבודה, או אפליקציית ניהול אחרת.");
+          return fail("הפעלת ניהול המכשיר נכשלה",out.trim().slice(0,240));
+        }
+      } else if(track) await A.shell(adb,GEMACH_SH.replace(/\n/g," ; "));
+      step("open"); show("פותח את קיידרואיד…","",96);
+      await A.shell(adb,"am start -n com.kdroid.filter/.MainActivity");
+      $("webSteps").querySelectorAll("li").forEach(li=>{ li.className="done"; li.querySelector("i").textContent="✓"; });
+      show("ההתקנה הושלמה ✓","קובץ "+r.fid+". המשיכו בטלפון: פרטים, מסלול ונעילה. אפשר לנתק את הכבל. המכשיר יופיע ברשימה כשיתחבר לאינטרנט.",100,"ok");
+      myFiles=null; listFiles();
+    }catch(e){ console.error(e); fail(e&&e.message==="nopool"?"אין כרגע מפתחות שחרור פנויים":"משהו השתבש",
+      e&&e.message==="nopool"?"בקשו ממנהל המערכת להיכנס לפאנל, והם ייווצרו מעצמם.":(e&&e.message?e.message:String(e)).slice(0,200)+". נתקו וחברו את הכבל ונסו שוב."); }
+    finally{ if(adb) try{ (await loadAdb()).close(adb); }catch(e){} webBusy=false; fileBusy=false; const g=$("webGo"); if(g) g.disabled=!usbOk(); }
+  };
+}
+
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
   const filesOff = !own && (D.config.features||{}).installerFiles===false;
   v.innerHTML=`<div class="split"><div class="grid">
+    ${filesOff?"":webCard(who)}
     ${linkCard()}
     <section class="card" ${filesOff?"hidden":""}><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd">
       ${own?`<div class="field"><label class="f" for="ftWho">הקובץ בשביל</label><select id="ftWho">
@@ -1330,6 +1579,7 @@ function vInstall(v){
           <button type="button" role="radio" class="${mkKeep?"":"on"}" aria-checked="${!mkKeep}" data-keep2="0">נמחק בסוף ההתקנה</button>
           <button type="button" role="radio" class="${mkKeep?"on":""}" aria-checked="${mkKeep}" data-keep2="1">קבוע</button>
         </div>
+        ${me.role==="owner"&&(who||"owner")==="owner"?`<label class="gemopt"><input type="checkbox" id="mkTrack" ${mkTrack?"checked":""}><span><b>קובץ גמ"ח: עם איתור מיקום</b><span class="muted">למכשירים של הגמ"ח בלבד. בנעילה מוצג לשואל שהמיקום נשלח אליך, ואם המכשיר יאבד תוכל לנעול אותו מהפאנל.</span></span></label>`:""}
         <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש."+(mkType==="pc"?" כשיש אינטרנט הוא מוריד לבד את הגרסה החדשה ביותר.":""):"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
         <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
       </div>
@@ -1350,6 +1600,8 @@ function vInstall(v){
       <div id="ofOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode long num" id="ofCode" dir="ltr"></div></div>
     </div></section>
   </div></div>`;
+  if($("mkTrack")) $("mkTrack").onchange=e=>{ mkTrack=e.target.checked; };
+  bindWeb(v,who);
   if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
   const st=$("mkStatus");
   // overall progress: keys 0-4%, the app download 4-92%, packing 92-100%; elements looked up each time (never stale)
@@ -1364,7 +1616,7 @@ function vInstall(v){
     b.disabled=true; fileBusy=true; status.t=0;
     mkResult=null;
     const done=(cls,text)=>{ mkResult=[cls,text]; const box=$("mkStatus"); if(!box) return; box.hidden=false; box.className="note "+cls; box.textContent=text; };
-    try{ const keep=mkKeep, kind=mkType, fid=await createFile(kind,fileTarget(who),status,keep);
+    try{ const keep=mkKeep, kind=mkType, fid=await createFile(kind,fileTarget(who),status,keep,!!($("mkTrack")&&$("mkTrack").checked));
          status(null,100);
          done("ok","הקובץ מוכן ונשמר בהורדות ✓ מספר הקובץ "+fid+(keep?" (קבוע)":" (נמחק בסוף ההתקנה)")+"."+(kind==="pc"?" אם הדפדפן שואל אם לשמור, בחרו \"שמור\".":""));
          myFiles=null; listFiles(); }
@@ -1388,7 +1640,7 @@ async function listFiles(){
   const el=$("fileList"); if(!el) return;
   try{
     if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).filter(f=>f.kind!=="public").sort((a,b)=>b.createdAt-a.createdAt);
-    el.innerHTML=myFiles.slice(0,40).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
+    el.innerHTML=myFiles.slice(0,40).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":f.kind==="web"?"התקנה מהפאנל":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
       <div class="muted">${when(f.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(f.installerId)):""}</div></div></div>`).join("")||'<div class="empty">עוד לא הורדו קבצים</div>';
   }catch(e){ el.innerHTML='<div class="empty">לא הצלחתי לטעון</div>'; }
 }
@@ -1409,7 +1661,7 @@ const FEATURES=[
 let setTab="profile";
 function vSettings(v){
   const own=me.role==="owner", p=defaultProfile();
-  const tabs=[["profile","ברירת מחדל"]].concat(own?[["centre","פרטי המוקד"],["switches","מתגים"]]:[["me","הפרטים שלי"]]).concat([["account","חשבון"]]);
+  const tabs=[["profile","ברירת מחדל"]].concat(own?[["centre","פרטי המוקד"],["switches","מתגים"]]:[["me","הפרטים שלי"]]).concat([["account",own?"חשבון":"חשבון וסיסמה"]]);
   if(!tabs.some(t=>t[0]===setTab)) setTab="profile";
   const f=D.config.features||{}, isOn=k=>k==="messages"?D.config.messagesOff!==true:f[k]!==false;
   const body={
@@ -1429,8 +1681,19 @@ function vSettings(v){
       <div class="note info">כשמתג כבוי, האפשרות נעלמת מהאתר או מהפאנל, וגם השרת עצמו חוסם אותה, כך שאי אפשר לעקוף אותה.</div></div>`,
     me:`<section class="card"><div class="hd"><h2>הפרטים שלי</h2></div><div class="bd"><dl class="kv"><dt>שם</dt><dd>${esc(me.name)}</dd><dt>טלפון</dt><dd dir="ltr" style="text-align:right">${esc(me.phone)}</dd><dt>קוד מתקין</dt><dd><b class="num" style="letter-spacing:2px">${esc(me.code)}</b></dd>
       <dt>שחרור מכשירים</dt><dd>${me.canRelease?"מותר":"רק דרך מנהל המערכת"}</dd><dt>מחיקת מכשירים</dt><dd>${me.canDelete?"מותר":"רק דרך מנהל המערכת"}</dd></dl></div></section>`,
-    account:`<section class="card"><div class="hd"><h2>החלפת סיסמה</h2></div><form class="bd" id="pwForm">
-      <div class="field"><label class="f" for="np">סיסמה חדשה</label><input id="np" type="password" dir="ltr" minlength="8" autocomplete="new-password" required></div>
+    account:`${me.role==="installer"?`<section class="card"><div class="hd">${icon("phone")}<h2>הטלפון שלי במכשירים</h2></div><div class="bd">
+      <div class="swrow"><div><b>להציג את מספר הטלפון שלי</b><div class="muted" style="font-size:13.5px">במכשירים שאתם מתקינים, במסך "פרטי המתקין", באתר ההורדה של הקישור שלכם, ובקבצים חדשים. כשכבוי מוצג רק השם.</div></div>
+        <label class="toggle"><input type="checkbox" id="showPhone" ${me.hidePhone?"":"checked"} aria-label="הצג את מספר הטלפון שלי"><i></i></label></div>
+      <p class="muted" style="margin:10px 0 0;font-size:13px">השינוי מגיע למכשירים שכבר הותקנו בחיבור הבא שלהם. קבצים שכבר הורדו נשארים כמו שהם.</p></div></section>`:""}
+    <section class="card"><div class="hd">${icon("key")}<h2>הסיסמה שלי</h2></div><form class="bd" id="pwForm" autocomplete="off">
+      <div class="field"><label class="f">הסיסמה הנוכחית</label>
+        ${savedPw(me.uid)?`<div class="pwshow"><span id="pwCur" class="num" dir="ltr">••••••••</span><button type="button" class="btn text sm" id="pwEye">הצג</button></div>
+          <div class="muted" style="font-size:12.5px;margin-top:4px">שמורה רק בדפדפן הזה, ולא בשרת.</div>`
+          :`<div class="muted" style="font-size:13px">הסיסמה נשמרת רק בדפדפן שבו נכנסים, ולא בשרת. היא תופיע כאן אחרי הכניסה הבאה מהדפדפן הזה.</div>`}</div>
+      <div class="field"><label class="f" for="op">כדי להחליף, הקלידו את הסיסמה הנוכחית</label><input id="op" type="password" dir="ltr" autocomplete="current-password" required></div>
+      <div class="field"><label class="f" for="np">סיסמה חדשה</label><input id="np" type="password" dir="ltr" minlength="8" autocomplete="new-password" required>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">לפחות 8 תווים.</div></div>
+      <div class="field"><label class="f" for="np2">הסיסמה החדשה שוב</label><input id="np2" type="password" dir="ltr" minlength="8" autocomplete="new-password" required></div>
       <button class="btn tonal" type="submit">החלף סיסמה</button><p class="err" id="pwErr"></p></form></section>`};
   v.innerHTML=`<div class="subtabs" role="tablist">${tabs.map(([k,t])=>`<button role="tab" class="${k===setTab?"on":""}" aria-selected="${k===setTab}" data-st="${k}">${t}</button>`).join("")}</div>
     <div style="max-width:760px">${body[setTab]}</div>`;
@@ -1455,9 +1718,28 @@ function vSettings(v){
       toast(onNow?"הופעל":"כובה");
     }catch(e){ c.checked=!onNow; toast("השינוי נכשל"); }
   });
+  if($("pwEye")) $("pwEye").onclick=()=>{ const c=$("pwCur"), on=$("pwEye").textContent==="הצג"; c.textContent=on?savedPw(me.uid):"••••••••"; $("pwEye").textContent=on?"הסתר":"הצג"; };
   if($("pwForm")) $("pwForm").onsubmit=async e=>{ e.preventDefault(); $("pwErr").textContent="";
-    try{ await auth.currentUser.updatePassword($("np").value); toast("הסיסמה הוחלפה"); e.target.reset(); }
-    catch(err){ $("pwErr").textContent=err.code==="auth/requires-recent-login"?"מטעמי אבטחה, צאו והיכנסו שוב ואז נסו שוב.":"ההחלפה נכשלה."; } };
+    const op=$("op").value, np=$("np").value;
+    if(np!==$("np2").value){ $("pwErr").textContent="הסיסמה החדשה לא זהה בשתי השורות."; return; }
+    if(np===op){ $("pwErr").textContent="הסיסמה החדשה זהה לנוכחית."; return; }
+    const b=e.target.querySelector("button[type=submit]"); b.disabled=true;
+    try{
+      const u=auth.currentUser;
+      await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,op));
+      await u.updatePassword(np); rememberPw(me.uid,np);
+      toast("הסיסמה הוחלפה"); vSettings(v);
+    }catch(err){ $("pwErr").textContent=/wrong-password|invalid-credential|invalid-login/.test(err.code||"")?"הסיסמה הנוכחית שגויה.":err.code==="auth/weak-password"?"הסיסמה החדשה חלשה מדי.":err.code==="auth/too-many-requests"?"יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.":"ההחלפה נכשלה."; b.disabled=false; } };
+  if($("showPhone")) $("showPhone").onchange=async e=>{
+    const hide=!e.target.checked, ph=hide?"":me.phone;
+    try{
+      const w=[{set:"installers/"+me.uid,data:{hidePhone:hide},mask:["hidePhone"]},
+               {set:"installerCodes/"+me.code,data:{phone:ph},mask:["phone"],exists:true}];
+      D.devices.filter(d=>d.installerId===me.uid&&d.status!=="released").forEach(d=>w.push({set:"devices/"+d._id,data:{installerPhone:ph},mask:["installerPhone"]}));
+      for(let i=0;i<w.length;i+=400) await commit(w.slice(i,i+400));
+      me.hidePhone=hide; toast(hide?"המספר שלך לא יוצג במכשירים":"המספר שלך יוצג במכשירים");
+    }catch(err){ e.target.checked=!e.target.checked; toast("השינוי נכשל"); }
+  };
 }
 
 // ---------------------------------------------------------------- dialog
