@@ -868,11 +868,14 @@ const isLost = d => !!(d.track && parseLost(d).on);
 function gemachCard(d){
   if(me.role!=="owner"||d.status==="released") return "";
   const L=parseLost(d), lost=!!(d.track&&L.on);
-  if(!d.track) return `<section class="card" id="gemCard"><div class="hd">${icon("pin")}<h2>מכשיר גמ"ח: מיקום ואבד</h2></div><div class="bd">
+  // location and "lost" exist from 0.9.9.75 on; an older app on the phone ignores them
+  const ver=String((stateOf(d._id)||{}).appVersion||d.appVersion||""), vp=ver.split(".").map(Number), old=ver&&(vp[0]*1e6+vp[1]*1e4+vp[2]*100+(vp[3]||0))<(0*1e6+9*1e4+9*100+75);
+  const oldNote = old ? `<div class="note warn" style="margin-bottom:12px"><b>בטלפון מותקנת גרסה ${esc(ver)}, שעוד לא תומכת באיתור ובמצב אבד.</b> הוא לא ישלח מיקום ולא יינעל עד שיעודכן לגרסה 0.9.9.75 ומעלה (העדכון נעשה בטלפון עצמו, או בהתקנה מחדש בכבל).</div>` : "";
+  if(!d.track) return `<section class="card" id="gemCard"><div class="hd">${icon("pin")}<h2>מכשיר גמ"ח: מיקום ואבד</h2></div><div class="bd">${oldNote}
     <p class="muted" style="margin-top:0">למכשירים של הגמ"ח בלבד: המכשיר שולח את המיקום שלו כל 30 דקות, ואם הוא אובד אפשר לנעול אותו ולשלוח אליו הודעות. רק אתה רואה את זה.</p>
     <button class="btn tonal" id="trackOn">${icon("pin")}הפעל איתור במכשיר הזה</button></div></section>`;
   return `<section class="card ${lost?"lostcard":""}" id="gemCard"><div class="hd">${icon("pin")}<h2>${lost?"המכשיר במצב אבד":"מיקום המכשיר"}</h2>
-      ${lost?'<span class="pill lostpill">אבד</span>':'<span class="pill active">איתור פעיל</span>'}</div><div class="bd">
+      ${lost?'<span class="pill lostpill">אבד</span>':'<span class="pill active">איתור פעיל</span>'}</div><div class="bd">${oldNote}
     <div id="locBox"><div class="empty">טוען מיקום…</div></div>
     ${lost?`<div class="lostmsgs">${(L.msgs||[]).slice().reverse().map(m=>`<div class="lm"><div>${esc(m.t)}</div><small>${when(m.at)}</small></div>`).join("")||'<div class="muted">עוד לא נשלחו הודעות.</div>'}</div>
       <div class="field" style="margin-top:12px"><label class="f" for="lostMsg">הודעה חדשה למסך הטלפון</label><textarea id="lostMsg" rows="2" maxlength="300" placeholder="למשל: מי שמצא, נא להתקשר. יש פרס למוצא."></textarea></div>
