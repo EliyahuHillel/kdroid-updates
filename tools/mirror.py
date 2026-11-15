@@ -43,6 +43,14 @@ def get(url, binary=False, tries=3):
     raise last
 
 
+def play_page(pkg):
+    try:
+        return get(f"https://play.google.com/store/apps/details?id={pkg}&hl=en&gl=IL")
+    except Exception as e:
+        log("play: page failed", e)
+        return None
+
+
 def play_version(pkg):
     """The version Google Play shows (None when the page does not say)."""
     try:
@@ -65,7 +73,9 @@ def cert_sha1(apk):
     if out.returncode != 0:
         raise ValueError("signature does not verify: " + (out.stderr or out.stdout)[-300:])
     # "Signer #1 certificate SHA-1 digest: ..." or, for apps with key rotation, "Signer (minSdkVersion=..) certificate ..."
-    found = [d.lstrip("0") for d in re.findall(r"certificate SHA-1 digest: ([0-9a-f]+)", out.stdout)]
+    # Kiydroid writes each byte without its leading zero ("07" -> "7"), so compare in that form
+    found = ["".join(format(int(d[i:i + 2], 16), "x") for i in range(0, len(d), 2))
+             for d in re.findall(r"certificate SHA-1 digest: ([0-9a-f]+)", out.stdout)]
     if not found:
         raise ValueError("no signer in: " + out.stdout[:400])
     return found
@@ -83,8 +93,8 @@ def badging(apk):
 def mirror(pkg, spec):
     meta_path = os.path.join("apps", pkg + ".json")
     current = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
-    play = play_version(pkg)
-    log(pkg, "play version:", play, "| ours:", current.get("versionName"))
+    page = play_page(pkg)
+    log(pkg, "| ours:", current.get("versionName"))
 
     work = tempfile.mkdtemp()
     xapk = os.path.join(work, "app.xapk")
@@ -105,7 +115,7 @@ def mirror(pkg, spec):
     base, splits = None, []
     for a in apks:
         certs = cert_sha1(a)
-        if spec["cert_sha1"].lstrip("0") not in certs:
+        if spec["cert_sha1"] not in certs:
             raise ValueError(os.path.basename(a) + ": not signed with the app's certificate (found " + ",".join(certs) + ")")
         b = badging(a)
         if b["pkg"] != pkg:
@@ -129,9 +139,11 @@ def mirror(pkg, spec):
 
     if re.search(r"(beta|alpha|rc|preview)", b["name"], re.I):
         raise ValueError("beta build " + b["name"])
-    if play and play != b["name"]:
-        log(f"skip: Google Play has {play}, the download is {b['name']} (waiting until they match)")
+    # the same version Google Play offers now: its page data carries the version string
+    if page is not None and f'"{b["name"]}"' not in page:
+        log(f"skip: {b['name']} is not the version on Google Play right now (beta, or Play not updated yet); waiting")
         return False
+    play = b["name"] if page is not None else None
     if current.get("versionCode", 0) >= b["code"]:
         log("already published")
         return False
