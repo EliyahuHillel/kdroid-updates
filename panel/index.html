@@ -1019,6 +1019,20 @@ const SET_GROUPS=[
   ["העברת קבצים ואחסון","download",["bluetooth_sharing_block","usb_sharing_block","external_storage_block"]],
   ["השבתת אפליקציות","alert",["disable_sensible_apps"]]];
 let devTab="filter", devTabId=null;
+// how the store apps we keep a verified copy of are installed on this phone (reported from 0.9.9.78)
+const MANAGED_NAME={"com.unicell.pangoandroid":"פנגו"};
+function managedCard(st){
+  const ma=st&&st.managedApps; if(!ma) return "";
+  const rows=Object.keys(ma).filter(k=>!k.startsWith("_")).map(k=>{ const a=ma[k]||{}, sp=a.splits||[];
+    const store=String(a.store||""), ours=/ ours /.test(" "+store.split(" ").slice(1).join(" ")+" ")||/^\d+ ours/.test(store);
+    const hasAbi=sp.some(x=>/arm|x86/.test(x)), hasDpi=sp.some(x=>/dpi$/.test(x));
+    const ok=hasAbi&&hasDpi;
+    return `<dt>${esc(MANAGED_NAME[k]||k)}</dt><dd>${esc(a.v||"")} · ${ok?'<span class="pill active">שלמה</span>':'<span class="pill pending">חסרים חלקים</span>'}
+      <div class="muted" style="font-size:12.5px">חלקים: ${sp.length?esc(sp.join(", ")):"רק הקובץ הראשי"} · הותקנה ע״י: ${esc(a.by||"?")}</div>
+      <div class="muted" style="font-size:12.5px">בחנות בפעם האחרונה: ${store?esc(store.replace(/^\d+ /,"").replace("ours","מהעותק הבדוק").replace("fallback:","מקור רגיל:"))+" · "+when(Number(store.split(" ")[0])):"עוד לא הותקנה מהחנות מאז העדכון"}</div></dd>`; }).join("");
+  return `<section class="card"><div class="hd">${icon("download")}<h2>אפליקציות מהעותק הבדוק</h2></div><div class="bd"><dl class="kv">${rows}
+    <dt>מעבד ומסך</dt><dd class="num" dir="ltr" style="text-align:right">${esc((ma._abis||[]).join(", "))} · ${esc(ma._dpi||"")}dpi</dd></dl></div></section>`;
+}
 function vDevice(id){
   const v=$("view"), d=devById(id);
   if(!d){ v.innerHTML='<a class="back" href="#devices">'+icon("back")+' חזרה למכשירים</a><div class="empty">המכשיר לא נמצא</div>'; return; }
@@ -1073,7 +1087,7 @@ function vDevice(id){
         ${d.lockedAt?`<dt>ננעל בהתקנה</dt><dd>${when(d.lockedAt)}</dd>`:""}
         ${d.fid?`<dt>הותקן מקובץ</dt><dd class="num">${esc(d.fid)}</dd>`:""}
         <dt>נראה לאחרונה</dt><dd>${ago(lastSeen(id))}</dd>
-      </dl></div></section>`,
+      </dl></div></section>${managedCard(st)}`,
     emergency:()=>`<section class="card narrow"><div class="hd">${icon("key")}<h2>קוד חירום</h2></div><div class="bd">
         <p class="muted" style="margin-top:0">כשאין למכשיר אינטרנט: המשתמש פותח בקיידרואיד "קוד חירום" ומקריא לכם את המספר שמופיע אצלו. הקוד שתקבלו כאן עובד פעם אחת, רק במכשיר הזה.</p>
         <div class="field"><label class="f" for="chal">המספר מהמכשיר</label><input type="text" id="chal" inputmode="numeric" dir="ltr" placeholder="8 ספרות" class="num"></div>
