@@ -1,17 +1,34 @@
 {
  "package": "com.unicell.pangoandroid",
  "title": "Pango",
- "versionName": "13.2105",
- "versionCode": 132105,
- "url": "https://github.com/EliyahuHillel/kdroid-updates/releases/download/app-com.unicell.pangoandroid-132105/pangoandroid-132105.apks",
- "size": 50123240,
- "sha256": "7db897c6059378c6c988104feca56cfd2fa431101087a4ab0af568bc14b59ee6",
+ "versionName": "13.0607",
+ "versionCode": 130607,
+ "url": "https://github.com/EliyahuHillel/kdroid-updates/releases/download/app-com.unicell.pangoandroid-130607/pangoandroid-130607.apks",
+ "size": 53523063,
+ "sha256": "ca228c06a05d8173e669f4b949c12f54fa77636fb105ea4221d0cd39d32db31c",
  "parts": [
   "base",
+  "config.ar",
   "config.arm64_v8a",
+  "config.de",
   "config.en",
-  "config.hdpi"
+  "config.es",
+  "config.fr",
+  "config.hi",
+  "config.in",
+  "config.it",
+  "config.ja",
+  "config.ko",
+  "config.my",
+  "config.pt",
+  "config.ru",
+  "config.th",
+  "config.tr",
+  "config.vi",
+  "config.xhdpi",
+  "config.zh"
  ],
- "playVersion": "13.2105",
- "publishedAt": 1794782768165
+ "playVersion": null,
+ "publishedAt": 1794864497611,
+ "older": true
 }
