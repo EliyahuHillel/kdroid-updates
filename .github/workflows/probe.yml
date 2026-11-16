@@ -1,0 +1,19 @@
+name: Probe Pango versions
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/probe.py", ".github/workflows/probe.yml"]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/probe.py
+      - run: |
+          git config user.name "kiydroid-bot"; git config user.email "kiydroid-bot@users.noreply.github.com"
+          git add apps/_probe.json; git commit -m "Probe: Pango versions" || true
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done
