@@ -30,5 +30,20 @@
  ],
  "playVersion": null,
  "publishedAt": 1794864497611,
- "older": true
+ "older": true,
+ "variants": [
+  {
+   "versionName": "13.0609",
+   "versionCode": 130609,
+   "url": "https://github.com/EliyahuHillel/kdroid-updates/releases/download/app-com.unicell.pangoandroid-130609/pangoandroid-130609.apks",
+   "size": 83181354,
+   "sha256": "0f90012a5f6bd1892f59b389133820ab16162d869e6af47089da59a731e4ae5e",
+   "parts": [
+    "base",
+    "config.armeabi_v7a",
+    "config.en",
+    "config.mdpi"
+   ]
+  }
+ ]
 }
