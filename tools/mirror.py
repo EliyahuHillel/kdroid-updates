@@ -17,6 +17,10 @@ APPS = {
         "title": "Pango",
         # SHA-1 of Pango's signing certificate (the same value Kiydroid's route check uses)
         "cert_sha1": "8e5a73f88599331ad34b99beaaf312179e29c7b",
+        # newer versions carry Google Play's license check ("pairip"), which closes Pango on phones without the
+        # Play Store; while the latest has it, the store gets this version, the newest without it (checked by
+        # tools/probe.py). A newer version without the check is taken automatically.
+        "fallback_code": 130607,
     },
 }
 UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
@@ -90,6 +94,35 @@ def badging(apk):
     return {"pkg": m.group(1), "code": int(m.group(2)), "name": m.group(3), "split": split.group(1) if split else None}
 
 
+def has_pairip(apk):
+    with zipfile.ZipFile(apk) as z:
+        for n in z.namelist():
+            if n.endswith(".dex") or n == "AndroidManifest.xml":
+                d = z.read(n)
+                if b"com/pairip" in d or b"com.pairip" in d or "com.pairip".encode("utf-16-le") in d:
+                    return True
+    return False
+
+
+def pick(pkg, spec, latest, work):
+    """the latest version, unless it carries the Play license check: then the fallback version"""
+    if latest[:2] != b"PK" or not spec.get("fallback_code"):
+        return latest, False
+    try:
+        with zipfile.ZipFile(__import__("io").BytesIO(latest)) as z:
+            apks = [n for n in z.namelist() if n.endswith(".apk")]
+            b = next((n for n in apks if n in (pkg + ".apk", "base.apk")), None)
+            if b:
+                tmp = os.path.join(work, "latest_base.apk"); open(tmp, "wb").write(z.read(b))
+                if not has_pairip(tmp):
+                    log("latest has no Play license check: taking it")
+                    return latest, False
+    except Exception as e:
+        log("latest check failed", e)
+    log("latest carries the Play license check: taking", spec["fallback_code"])
+    return get(f"https://d.apkpure.com/b/XAPK/{pkg}?versionCode={spec['fallback_code']}", binary=True), True
+
+
 def mirror(pkg, spec):
     meta_path = os.path.join("apps", pkg + ".json")
     current = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
@@ -98,7 +131,9 @@ def mirror(pkg, spec):
 
     work = tempfile.mkdtemp()
     xapk = os.path.join(work, "app.xapk")
+    older = False
     data = get(f"https://d.apkpure.com/b/XAPK/{pkg}?version=latest", binary=True)
+    data, older = pick(pkg, spec, data, work)
     if data[:2] != b"PK":
         raise ValueError("download is not a package (blocked or error page)")
     open(xapk, "wb").write(data)
@@ -137,14 +172,18 @@ def mirror(pkg, spec):
     if listed and len(splits) + 1 < len([x for x in listed if x]):
         raise ValueError(f"parts missing: listed {listed}, got base + {splits}")
 
+    if has_pairip(base[0]):
+        raise ValueError(f"{b['name']} carries the Play license check")
+    if older and b["code"] != spec.get("fallback_code"):
+        raise ValueError(f"asked for {spec.get('fallback_code')}, got {b['code']}")
     if re.search(r"(beta|alpha|rc|preview)", b["name"], re.I):
         raise ValueError("beta build " + b["name"])
     # the same version Google Play offers now: its page data carries the version string
-    if page is not None and f'"{b["name"]}"' not in page:
+    if not older and page is not None and f'"{b["name"]}"' not in page:
         log(f"skip: {b['name']} is not the version on Google Play right now (beta, or Play not updated yet); waiting")
         return False
-    play = b["name"] if page is not None else None
-    if current.get("versionCode", 0) >= b["code"]:
+    play = b["name"] if page is not None and not older else None
+    if current.get("versionCode", 0) == b["code"] or (not older and current.get("versionCode", 0) > b["code"] and not current.get("older")):
         log("already published")
         return False
 
@@ -163,14 +202,14 @@ def mirror(pkg, spec):
     meta = {"package": pkg, "title": spec["title"], "versionName": b["name"], "versionCode": b["code"],
             "url": f"https://github.com/{REPO}/releases/download/{tag}/{os.path.basename(out)}",
             "size": os.path.getsize(out), "sha256": sha, "parts": ["base"] + splits, "playVersion": play,
-            "publishedAt": int(time.time() * 1000)}
+            "publishedAt": int(time.time() * 1000), "older": older}
     os.makedirs("apps", exist_ok=True)
     json.dump(meta, open(meta_path, "w"), indent=1)
     log("published", meta["url"])
     # keep the last three releases of this app
     rel = subprocess.run(["gh", "release", "list", "--repo", REPO, "--limit", "100"], capture_output=True, text=True).stdout
     tags = sorted([l.split("\t")[2] for l in rel.splitlines() if f"\tapp-{pkg}-" in l], key=lambda t: int(t.rsplit("-", 1)[1]))
-    for t in tags[:-3]:
+    for t in [t for t in tags[:-3] if t != tag]:
         subprocess.run(["gh", "release", "delete", t, "--repo", REPO, "--yes", "--cleanup-tag"])
     shutil.rmtree(work, ignore_errors=True)
     return True
