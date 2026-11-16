@@ -314,6 +314,62 @@ details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-s
 .dtabs button:hover{color:var(--on-bg,#191c1a)}
 .itabs button{flex:1;justify-content:center;padding:13px 6px}
 @media (max-width:480px){.itabs button{font-size:13px;gap:4px}.itabs button .i{display:none}}
+
+/* ---- install page */
+.ins{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.ins-stage,.ins-hero,.ins-tools>*{min-width:0}
+.ins-hero{display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;padding:24px 26px;border-radius:24px;border:1px solid color-mix(in srgb,var(--primary) 22%,var(--outline-v));
+  background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--primary-c) 70%,var(--surface)) 0%,var(--surface) 62%)}
+.ins-ht{flex:1 1 360px;min-width:0}
+.ins-hero h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.2px}
+.ins-hero p{margin:6px 0 0;color:var(--on-variant);font-size:14.5px;max-width:560px}
+.ins-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.ins-chip{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;font-size:13px;background:var(--surface);border:1px solid var(--outline-v)}
+.ins-chip .i{width:16px;height:16px}.ins-chip.ok .i{color:var(--primary)}.ins-chip.warn{background:var(--warn-c);border-color:transparent}.ins-chip.warn .i{color:var(--warn)}
+.ins-for{display:grid;gap:6px;flex:0 1 280px;font-size:13px;font-weight:600;color:var(--on-variant)}
+.ins-for select{font:inherit;font-size:14.5px;font-weight:500;color:var(--on);padding:10px 12px;border-radius:12px;border:1px solid var(--outline-v);background:var(--surface)}
+.ins-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.ins-m{position:relative;display:grid;gap:6px;justify-items:start;text-align:right;font:inherit;color:inherit;background:var(--surface);border:1.5px solid var(--outline-v);border-radius:20px;padding:18px 18px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.ins-m:hover{border-color:color-mix(in srgb,var(--primary) 60%,var(--outline-v));transform:translateY(-1px)}
+.ins-m:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.ins-m .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--surface-hi);color:var(--on-variant);margin-bottom:6px;transition:background .15s,color .15s}
+.ins-m .ic .i{width:24px;height:24px}
+.ins-m b{font-size:16px}.ins-m small{color:var(--on-variant);font-size:13px;line-height:1.45}
+.ins-m.on{border-color:var(--primary);background:color-mix(in srgb,var(--secondary-c) 38%,var(--surface));box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}
+.ins-m.on .ic{background:var(--primary);color:var(--on-primary)}
+.ins-tag{position:absolute;top:16px;left:16px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--primary-c);color:var(--on-primary-c)}
+.ins-stage{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;padding:24px;border-radius:24px;background:var(--surface);border:1px solid var(--outline-v);box-shadow:var(--shadow)}
+.ins-sh{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.ins-sh h3{margin:0;font-size:19px;font-weight:700}.ins-sh p{margin:4px 0 0;color:var(--on-variant);font-size:14px}
+.ins-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;counter-reset:st}
+.ins-steps li{counter-increment:st;display:grid;gap:4px;align-content:start;padding:16px;border-radius:16px;background:var(--surface-hi);font-size:13.5px;color:var(--on-variant)}
+.ins-steps li::before{content:counter(st);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:var(--on-primary);font-weight:700;font-size:14px;margin-bottom:6px}
+.ins-steps li b{color:var(--on);font-size:14.5px}
+.ins-cta{display:flex;justify-content:center}
+.ins-cta .btn{min-width:min(100%,320px);justify-content:center}
+.ins-opts{display:flex;gap:18px 28px;flex-wrap:wrap}
+.ins-opt{display:grid;gap:8px}.ins-opt .seg{margin-top:0}.ins-opt .seg button{display:inline-flex;gap:6px;align-items:center}.ins-opt .seg .i{width:17px;height:17px}
+.ins-ol{font-size:12.5px;font-weight:700;color:var(--on-variant)}
+.ins-explain{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:var(--surface-hi)}
+.ins-explain>.i{width:22px;height:22px;flex:none;margin-top:2px;color:var(--primary)}
+.ins-explain b{display:block}.ins-explain span{display:block;color:var(--on-variant);font-size:13.5px;margin-top:2px}
+.ins-stage .gemopt{margin-top:0}
+.ins-link{display:flex;gap:8px;align-items:center;padding:8px 8px 8px 14px;border-radius:16px;background:var(--surface-hi);border:1px dashed var(--outline)}
+.ins-link span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.ins-code{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:16px;background:var(--surface-hi);font-size:13.5px;color:var(--on-variant)}
+.ins-code b{font-size:20px;letter-spacing:4px;color:var(--on)}
+.ins-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.ins-ef{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.ins-files .item{gap:12px}
+.ins-fi{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--surface-hi);color:var(--on-variant)}
+.ins-fi .i{width:18px;height:18px}
+@media (max-width:720px){
+  .ins-hero{padding:20px}.ins-hero h2{font-size:21px}.ins-for{flex:1 1 100%}
+  .ins-m{grid-template-columns:auto 1fr;column-gap:12px;padding:14px;justify-items:stretch}
+  .ins-m .ic{grid-row:span 2;margin:0;width:42px;height:42px}.ins-tag{top:12px;left:12px}
+  .ins-steps{grid-template-columns:1fr}.ins-steps li{grid-template-columns:auto 1fr;column-gap:12px}.ins-steps li::before{grid-row:span 2;margin:0}
+  .ins-stage{padding:18px}.ins-tools{grid-template-columns:1fr}
+}
 .dtabs .count{background:#b3261e;color:#fff;border-radius:9px;padding:0 6px;font-size:11.5px}
 .tdot{width:8px;height:8px;border-radius:50%;background:#b3261e;display:inline-block}
 .dbody{display:grid;gap:16px;padding-bottom:8px}
@@ -425,6 +481,7 @@ const ICON = {
   link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
   pc:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
   key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M15 8l2 2"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>'};
 const icon = n => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';
 function ago(ms){
@@ -643,7 +700,7 @@ const PAGE_HEAD={
   requests:()=>["בקשות","בקשות שינוי ששלחו המשתמשים מהאפליקציה"],
   messages:()=>["פניות למערכת","הודעות ובקשות עזרה מהמשתמשים, אליך בלבד"],
   installers:()=>["מתקינים","צוות המתקינים, ההרשאות שלהם והמכשירים של כל אחד"],
-  install:()=>["התקנה והורדות","קישור אישי, קובצי התקנה, וקודי חירום למכשירים בלי אינטרנט"],
+  install:()=>["התקנה והורדות","מתקינים מכשיר חדש בשלוש דרכים, ונותנים קוד חירום למכשיר בלי אינטרנט"],
   guide:()=>["מדריך",me.role==="owner"?"כל מה שמתקין צריך לדעת, ומה שרק מנהל המערכת צריך":"כל מה שצריך לדעת: התקנה, הפעלה, נעילה, ניהול וקודי חירום"],
   settings:()=>["הגדרות",me.role==="owner"?"ברירות מחדל, פרטי המוקד, מתגים וחשבון":"ברירת המחדל שלך והחשבון"]};
 function renderTabs(route){
@@ -1591,21 +1648,23 @@ const usbOk = () => !!navigator.usb && window.isSecureContext;
 const WEB_STEPS=[["connect","חיבור לטלפון"],["auth","אישור בטלפון"],["prep","הכנת קובץ אישי"],["push","העתקה לטלפון"],["install","התקנה"],["activate","הפעלת ניהול מכשיר"],["open","פתיחת קיידרואיד"]];
 let webBusy=false;
 function webCard(who){
-  const own=me.role==="owner", t=fileTarget(who);
-  return `<section class="card webcard"><div class="hd">${icon("pc")}<h2>התקנה מכאן, בכבל למחשב</h2><span class="pill active">הכי מהיר</span></div><div class="bd">
-    <p class="muted" style="margin-top:0">מחברים את הטלפון בכבל USB למחשב הזה ולוחצים "התקן". בלי להוריד שום קובץ ובלי להתקין תוכנה: הכל קורה מהדפדפן, והמכשיר נרשם אצל${own&&t.installerId!=="owner"?" "+esc(t.iName):"ך"}${own?"":", עם ברירת המחדל שלך וקודי חירום משלו"}.</p>
-    <ol class="webhow"><li><b>בטלפון</b>: הגדרות ← אודות הטלפון ← 7 הקשות על "מספר Build", ואז באפשרויות מפתחים: "ניפוי באגים ב-USB".</li>
-      <li><b>מחברים בכבל</b> שמעביר נתונים, ופותחים את מסך הטלפון.</li>
-      <li><b>לוחצים "התקן"</b>, בוחרים את הטלפון ברשימה שהדפדפן פותח, ומאשרים בטלפון "אפשר תמיד מהמחשב הזה".</li></ol>
-    ${usbOk()?"":`<div class="note warn">הדפדפן הזה לא יכול להתחבר לטלפון בכבל. פתחו את הפאנל במחשב, ב-Chrome או ב-Edge.</div>`}
-    <button class="btn fill big" id="webGo" ${usbOk()?"":"disabled"}>${icon("phone")}התקן בטלפון המחובר</button>
+  const ok=usbOk();
+  return `<div class="ins-stage">
+    <div class="ins-sh"><div><h3>התקנה בכבל, ישר מהדפדפן</h3><p>בלי להוריד שום קובץ ובלי להתקין תוכנה. המכשיר נרשם מיד, עם קודי חירום משלו.</p></div></div>
+    <ol class="ins-steps">
+      <li><b>מכינים את הטלפון</b><span>הגדרות ← אודות הטלפון ← 7 הקשות על "מספר Build". אחר כך באפשרויות מפתחים: "ניפוי באגים ב-USB".</span></li>
+      <li><b>מחברים בכבל</b><span>כבל שמעביר נתונים, למחשב הזה. פותחים את מסך הטלפון.</span></li>
+      <li><b>לוחצים "התקן"</b><span>בוחרים את הטלפון ברשימה, ומאשרים בטלפון "אפשר תמיד מהמחשב הזה".</span></li>
+    </ol>
+    ${ok?"":`<div class="note warn">הדפדפן הזה לא יכול להתחבר לטלפון בכבל. פתחו את הפאנל במחשב, ב-Chrome או ב-Edge.</div>`}
+    <div class="ins-cta"><button class="btn fill big" id="webGo" ${ok?"":"disabled"}>${icon("phone")}התקן בטלפון המחובר</button></div>
     <div class="webflow" id="webFlow" hidden><div class="mkrow"><b id="webT"></b><span id="webP" class="num"></span></div><div class="mkbar"><i id="webB"></i></div>
       <ol class="wsteps" id="webSteps"></ol><div class="muted" id="webS" style="font-size:13.5px;margin-top:8px"></div></div>
-    <details class="gd" style="margin-top:12px"><summary>זה לא עובד?</summary><div><ul class="gl">
-      <li><b>"הטלפון תפוס" / לא מתחבר</b>: תוכנה אחרת במחשב מחזיקה את הטלפון (adb, Samsung Smart Switch, Mi PC Suite). סגרו אותה, נתקו וחברו את הכבל.</li>
-      <li><b>הטלפון לא מופיע ברשימה</b>: בדקו את ניפוי הבאגים ואת הכבל. בחלק מהטלפונים (בעיקר סמסונג) Windows צריך מנהל התקן של היצרן: אז השתמשו בלשונית "קובץ להורדה" ← "למחשב", שעובד עם כל מנהל התקן.</li>
+    <details class="gd"><summary>זה לא עובד?</summary><div><ul class="gl">
+      <li><b>"הטלפון תפוס" או לא מתחבר</b>: תוכנה אחרת במחשב מחזיקה את הטלפון (adb, Samsung Smart Switch, Mi PC Suite). סגרו אותה, נתקו וחברו את הכבל.</li>
+      <li><b>הטלפון לא מופיע ברשימה</b>: בדקו את ניפוי הבאגים ואת הכבל. בחלק מהטלפונים (בעיקר סמסונג) Windows צריך מנהל התקן של היצרן: אז בחרו למעלה "קובץ להורדה" ← "למחשב", שעובד עם כל מנהל התקן.</li>
       <li><b>יש חשבונות בטלפון</b>: מסירים זמנית בהגדרות ← חשבונות, מתקינים, ומחזירים.</li></ul></div></details>
-  </div></section>`;
+  </div>`;
 }
 function bindWeb(v,who){
   const go=$("webGo"); if(!go) return;
@@ -1800,64 +1859,77 @@ let instTab=null;
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
-  const filesOff = !own && (D.config.features||{}).installerFiles===false;
-  const TABS=[...(filesOff?[]:[["web","pc","בכבל, מכאן"],["file","download","קובץ להורדה"]]),["link","link",own?"אתר ציבורי":"קישור אישי"]];
+  const f=D.config.features||{}, filesOff = !own && f.installerFiles===false, linksOff = !own && f.links===false;
+  const M=[...(filesOff?[]:[
+      ["web","pc","בכבל, מכאן","הטלפון מחובר למחשב הזה. בלי להוריד כלום.","הכי מהיר"],
+      ["file","download","קובץ להורדה","לטלפון או למחשב. עובד גם בלי אינטרנט.",""]]),
+    ...(linksOff?[]:[["link","link",own?"אתר ציבורי":"קישור לשליחה",own?"כל אחד מתקין לבד מהאתר.":"הלקוח מתקין לבד, והמכשיר מגיע אליך.",""]])];
   if(!instTab){ try{ instTab=localStorage.getItem("kd.instTab"); }catch(e){} }
-  if(!TABS.some(x=>x[0]===instTab)) instTab=TABS[0][0];
-  const forWhom = own&&t.installerId!=="owner" ? "של "+esc(t.iName) : (own?"שלך כמוקד":"שלך");
-  const head = `<section class="card"><div class="hd">${icon("download")}<h2>התקנת מכשיר חדש</h2></div><div class="bd">
-      ${own?`<div class="field" style="margin-top:0"><label class="f" for="ftWho">המכשיר יירשם אצל</label><select id="ftWho">
+  if(!M.some(x=>x[0]===instTab)) instTab=M.length?M[0][0]:null;
+  const nRules=prof?SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length:0;
+  const mine=t.installerId===(own?"owner":me.uid);
+  const profChip = prof
+    ? `<span class="ins-chip ok">${icon("shield")}ברירת מחדל: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${nRules} הגבלות</span>`
+    : `<span class="ins-chip warn">${icon("alert")}אין ברירת מחדל: בהתקנה יבחרו הגדרות${mine?` · <a href="#settings">לקבוע</a>`:""}</span>`;
+  const hero = `<section class="ins-hero">
+      <div class="ins-ht"><h2>התקנת מכשיר חדש</h2><p>בחרו איך להתקין. בכל הדרכים המכשיר נרשם ${own&&t.installerId!=="owner"?"אצל "+esc(t.iName):"אצלך"}, עם ברירת המחדל וקודי חירום משלו.</p>
+        <div class="ins-chips">${profChip}</div></div>
+      ${own?`<label class="ins-for"><span>המכשיר יירשם אצל</span><select id="ftWho">
         <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
-        ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
-      ${prof?`<div class="note ok" style="margin-top:${own?12:0}px">ברירת המחדל ${forWhom}: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
-            :`<div class="note warn" style="margin-top:${own?12:0}px">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
-      <p class="muted" style="margin:14px 0 0">${filesOff?"הורדת קבצים כבויה כרגע על ידי מנהל המערכת. אפשר להתקין דרך הקישור.":"בחרו איך להתקין:"}</p>
-    </div>
-    <div class="dtabs itabs" role="tablist" aria-label="דרך ההתקנה">${TABS.map(([k,ic,l])=>`<button type="button" role="tab" data-itab="${k}" class="${k===instTab?"on":""}" aria-selected="${k===instTab}">${icon(ic)}${l}</button>`).join("")}</div>
-  </section>`;
-  const tabHint = {web:"אתם ליד מחשב (Chrome או Edge) והטלפון איתכם. הכי מהיר: בלי להוריד שום דבר.",
-    file:"קובץ שמתקין גם בלי אינטרנט: לטלפון עצמו, או תוכנה למחשב Windows. מתאים גם לשליחה ללקוח.",
-    link:own?"הלקוח מתקין לבד מהאתר. המכשיר מגיע אליך כמוקד.":"שולחים ללקוח את הקישור, והוא מתקין לבד. המכשיר מגיע אליך."}[instTab];
-  const filesCard = `<section class="card"><div class="hd">${icon("download")}<h2>קובץ להורדה</h2></div><div class="bd">
-      <p class="muted" style="margin-top:0">${tabHint} כל קובץ כולל את הגרסה העדכנית, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל.</p>
-      <div class="pick">
-        <div class="pickrow" role="radiogroup" aria-label="בשביל מה הקובץ">
-          <button type="button" role="radio" class="pk ${mkType==="phone"?"on":""}" aria-checked="${mkType==="phone"}" data-type="phone"><span class="badgeicon">${icon("phone")}</span>
-            <span><b>לטלפון</b><span class="muted">מתקינים מהטלפון עצמו: מולטימדיה, ניפוי באגים אלחוטי או רוט</span></span></button>
-          <button type="button" role="radio" class="pk ${mkType==="pc"?"on":""}" aria-checked="${mkType==="pc"}" data-type="pc"><span class="badgeicon">${icon("pc")}</span>
-            <span><b>למחשב</b><span class="muted">קובץ אחד ל-Windows שמתקין דרך כבל USB, עם הדרכה מלאה. עובד גם בלי אינטרנט, ומתעדכן לבד כשיש</span></span></button>
-        </div>
-        <div class="seg" role="radiogroup" aria-label="סוג הקובץ">
-          <button type="button" role="radio" class="${mkKeep?"":"on"}" aria-checked="${!mkKeep}" data-keep2="0">נמחק בסוף ההתקנה</button>
-          <button type="button" role="radio" class="${mkKeep?"on":""}" aria-checked="${mkKeep}" data-keep2="1">קבוע</button>
-        </div>
-        ${me.role==="owner"&&(who||"owner")==="owner"?`<label class="gemopt"><input type="checkbox" id="mkTrack" ${mkTrack?"checked":""}><span><b>קובץ גמ"ח: עם איתור מיקום</b><span class="muted">למכשירים של הגמ"ח בלבד. בנעילה מוצג לשואל שהמיקום נשלח אליך, ואם המכשיר יאבד תוכל לנעול אותו מהפאנל.</span></span></label>`:""}
-        <p class="muted" style="margin:8px 2px 0">${mkKeep?"נשאר אצלך, ואפשר להתקין ממנו שוב ושוב בלי להוריד מחדש."+(mkType==="pc"?" כשיש אינטרנט הוא מוריד לבד את הגרסה החדשה ביותר.":""):"לשליחה ללקוח. בסוף ההתקנה הקובץ נמחק, ולא נשאר אצלו כלום חוץ מהאפליקציה."}</p>
-        <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
+        ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></label>`:""}
+    </section>`;
+  const methods = M.length ? `<div class="ins-methods" role="radiogroup" aria-label="דרך ההתקנה">${M.map(([k,ic,ti,de,tag])=>`
+      <button type="button" role="radio" aria-checked="${k===instTab}" class="ins-m ${k===instTab?"on":""}" data-itab="${k}">
+        ${tag?`<span class="ins-tag">${tag}</span>`:""}<span class="ic">${icon(ic)}</span><b>${ti}</b><small>${de}</small></button>`).join("")}</div>`
+    : `<div class="note warn">ההתקנה דרך הפאנל כבויה כרגע על ידי מנהל המערכת.</div>`;
+  const fileStage = `<div class="ins-stage">
+      <div class="ins-sh"><div><h3>קובץ להורדה</h3><p>כולל את הגרסה העדכנית, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל. מתקין גם בלי אינטרנט.</p></div></div>
+      <div class="ins-opts">
+        <div class="ins-opt"><span class="ins-ol">לאן</span><div class="seg" role="radiogroup" aria-label="בשביל מה הקובץ">
+          <button type="button" role="radio" class="${mkType==="phone"?"on":""}" aria-checked="${mkType==="phone"}" data-type="phone">${icon("phone")}לטלפון</button>
+          <button type="button" role="radio" class="${mkType==="pc"?"on":""}" aria-checked="${mkType==="pc"}" data-type="pc">${icon("pc")}למחשב Windows</button></div></div>
+        <div class="ins-opt"><span class="ins-ol">אחרי ההתקנה</span><div class="seg" role="radiogroup" aria-label="סוג הקובץ">
+          <button type="button" role="radio" class="${mkKeep?"":"on"}" aria-checked="${!mkKeep}" data-keep2="0">הקובץ נמחק</button>
+          <button type="button" role="radio" class="${mkKeep?"on":""}" aria-checked="${mkKeep}" data-keep2="1">נשאר (קבוע)</button></div></div>
       </div>
+      <div class="ins-explain">${icon(mkType==="pc"?"pc":"phone")}<div><b>${mkType==="pc"?"תוכנה אחת ל-Windows":"קובץ שמתקינים מהטלפון עצמו"}</b><span>${mkType==="pc"?"מתקינה דרך כבל USB עם הדרכה מלאה, עובדת גם בלי אינטרנט, ומתעדכנת לבד כשיש.":"בדרך של מולטימדיה, ניפוי באגים אלחוטי או רוט: הקובץ מדריך צעד אחר צעד."}
+        ${mkKeep?" נשאר אצלך, ואפשר להתקין ממנו שוב ושוב.":" מתאים לשליחה ללקוח: בסוף ההתקנה הקובץ נמחק, ונשארת רק האפליקציה."}</span></div></div>
+      ${own&&(who||"owner")==="owner"?`<label class="gemopt"><input type="checkbox" id="mkTrack" ${mkTrack?"checked":""}><span><b>קובץ גמ"ח: עם איתור מיקום</b><span class="muted">למכשירים של הגמ"ח בלבד. בנעילה מוצג לשואל שהמיקום נשלח אליך.</span></span></label>`:""}
+      <div class="ins-cta"><button class="btn fill big" id="mkBtn">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button></div>
       <div id="mkStatus" class="${mkResult?"note "+mkResult[0]:"mkprog"}" ${mkResult?"":"hidden"}>${mkResult?esc(mkResult[1]):`<div class="mkrow"><span id="mkMsg"></span><b id="mkPct" class="num"></b></div><div class="mkbar"><i id="mkBar"></i></div>`}</div>
-    </div></section>`;
-  const linkTab = `${linkCard()}
-    ${own?`<section class="card"><div class="hd"><h2>מלאי ההורדה הציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
-      <p class="muted" style="margin-top:0">מי שמוריד מדף ההורדה הציבורי מקבל קובץ ייחודי משלו מהמלאי. המכשיר יופיע אצלך כמוקד, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>
-      <div id="stockBox" class="note info">בודק את המלאי…</div></div></section>`:""}`;
-  const body = instTab==="web" ? webCard(who) : instTab==="file" ? filesCard : linkTab;
-  v.innerHTML=`<div class="split"><div class="grid">
-    ${head}
-    ${instTab==="web"?`<p class="muted" style="margin:-4px 4px 0">${tabHint}</p>`:""}
-    ${body}
-  </div><div class="grid">
-    <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
-      <p class="muted" style="margin-top:0">למכשיר שהותקן מקובץ ועוד לא התחבר לאינטרנט. במסך "קוד חירום" שלו מופיעים מספר הקובץ ומספר הקוד. מכשיר שכבר מופיע בפאנל מקבל קוד מהעמוד שלו.</p>
-      <div class="field"><label class="f" for="ofFid">מספר הקובץ</label><input id="ofFid" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="6 ספרות"></div>
-      <div class="field"><label class="f" for="ofAct">הבקשה</label><select id="ofAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,x])=>`<option value="${k}">${x}</option>`).join("")}</select></div>
-      <div class="field"><label class="f" for="ofK">מספר הקוד</label><input id="ofK" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="1"></div>
-      <button class="btn tonal" id="ofBtn" style="width:100%">צור קוד</button>
-      <div id="ofOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode long num" id="ofCode" dir="ltr"></div></div>
-    </div></section>
-    ${filesOff?"":`<section class="card"><div class="hd">${icon("download")}<h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>`}
-  </div></div>`;
+    </div>`;
+  const url=own?siteUrl(""):siteUrl(me.code), siteOn=f.site!==false;
+  const linkStage = `<div class="ins-stage">
+      <div class="ins-sh"><div><h3>${own?"אתר ההורדה הציבורי":"הקישור האישי שלך"}</h3><p>${own?"כל אחד יכול להתקין מכאן לבד. המכשירים מגיעים אליך כמוקד.":"שולחים ללקוח, והוא מתקין לבד: מהדפדפן במחשב, קובץ לטלפון או תוכנה למחשב. המכשיר נרשם אצלך."}</p></div>
+        ${own?`<span class="pill ${siteOn?"active":"released"}">${siteOn?"פתוח":"סגור"}</span>`:""}</div>
+      <div class="ins-link"><span dir="ltr">${esc(url)}</span>
+        <button class="btn tonal" data-copy="${esc(url)}">${icon("copy")}העתק</button>
+        ${navigator.share?`<button class="btn text" id="lkShare">${icon("share")}שתף</button>`:""}</div>
+      ${own?`<div id="stockBox" class="note info">בודק את המלאי…</div>
+        <p class="muted" style="margin:0">כל הורדה מהאתר מקבלת קובץ ייחודי מהמלאי, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>`
+        :`<div class="ins-code"><span>קוד המתקין שלך, למי שמתקין בלי הקישור</span><b class="num" dir="ltr">${esc(me.code)}</b></div>`}
+    </div>`;
+  const stage = instTab==="web"?webCard(who):instTab==="file"?fileStage:instTab==="link"?linkStage:"";
+  v.innerHTML=`<div class="ins">
+    ${hero}
+    ${methods}
+    ${stage}
+    <div class="ins-tools">
+      <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
+        <p class="muted" style="margin-top:0">למכשיר שהותקן מקובץ ועוד לא התחבר לאינטרנט. את מספר הקובץ ומספר הקוד רואים במסך "קוד חירום" שלו.</p>
+        <div class="ins-ef">
+          <div class="field"><label class="f" for="ofFid">מספר הקובץ</label><input id="ofFid" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="6 ספרות"></div>
+          <div class="field"><label class="f" for="ofK">מספר הקוד</label><input id="ofK" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="1"></div>
+        </div>
+        <div class="field"><label class="f" for="ofAct">הבקשה</label><select id="ofAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,x])=>`<option value="${k}">${x}</option>`).join("")}</select></div>
+        <button class="btn tonal" id="ofBtn" style="width:100%;margin-top:4px">צור קוד</button>
+        <div id="ofOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode long num" id="ofCode" dir="ltr"></div></div>
+      </div></section>
+      ${filesOff?"":`<section class="card"><div class="hd">${icon("download")}<h2>הורדות אחרונות</h2></div><div class="list ins-files" id="fileList"><div class="empty">טוען…</div></div></section>`}
+    </div>
+  </div>`;
   v.querySelectorAll("[data-itab]").forEach(b=>b.onclick=()=>{ if(fileBusy||webBusy) return; instTab=b.dataset.itab; try{ localStorage.setItem("kd.instTab",instTab); }catch(e){} vInstall(v); });
+  if($("lkShare")) $("lkShare").onclick=()=>navigator.share({title:"התקנת קיידרואיד",url}).catch(()=>{});
   if($("mkTrack")) $("mkTrack").onchange=e=>{ mkTrack=e.target.checked; };
   bindWeb(v,who);
   if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
@@ -1901,8 +1973,8 @@ async function listFiles(){
   const el=$("fileList"); if(!el) return;
   try{
     if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).filter(f=>f.kind!=="public").sort((a,b)=>b.createdAt-a.createdAt);
-    const n=el.dataset.all?40:8;
-    el.innerHTML=myFiles.slice(0,n).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":f.kind==="web"?"התקנה מהפאנל":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
+    const n=el.dataset.all?40:6;
+    el.innerHTML=myFiles.slice(0,n).map(f=>`<div class="item"><span class="ins-fi">${icon(f.kind==="pc"?"pc":f.kind==="web"?"link":"phone")}</span><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":f.kind==="web"?"התקנה מהפאנל":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
       <div class="muted">${when(f.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(f.installerId)):""}</div></div></div>`).join("")||'<div class="empty">עוד לא הורדו קבצים</div>';
     if(myFiles.length>n){ el.insertAdjacentHTML("beforeend",`<button class="btn text sm" id="flMore" style="margin:6px 12px 10px">הצג עוד (${Math.min(myFiles.length,40)-n})</button>`); $("flMore").onclick=()=>{ el.dataset.all="1"; listFiles(); }; }
   }catch(e){ el.innerHTML='<div class="empty">לא הצלחתי לטעון</div>'; }
