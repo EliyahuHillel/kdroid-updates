@@ -21,6 +21,8 @@ APPS = {
         # Play Store; while the latest has it, the store gets this version, the newest without it (checked by
         # tools/probe.py). A newer version without the check is taken automatically.
         "fallback_code": 130607,
+        # more copies without the check, for phones the first one does not fit (32-bit processors)
+        "fallback_extra": [130609],
     },
 }
 UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
@@ -209,10 +211,77 @@ def mirror(pkg, spec):
     # keep the last three releases of this app
     rel = subprocess.run(["gh", "release", "list", "--repo", REPO, "--limit", "100"], capture_output=True, text=True).stdout
     tags = sorted([l.split("\t")[2] for l in rel.splitlines() if f"\tapp-{pkg}-" in l], key=lambda t: int(t.rsplit("-", 1)[1]))
-    for t in [t for t in tags[:-3] if t != tag]:
+    keep = {tag} | {f"app-{pkg}-{c}" for c in spec.get("fallback_extra", [])}
+    for t in [t for t in tags[:-3] if t not in keep]:
         subprocess.run(["gh", "release", "delete", t, "--repo", REPO, "--yes", "--cleanup-tag"])
     shutil.rmtree(work, ignore_errors=True)
     return True
+
+
+def extra(pkg, spec, code):
+    """one more verified copy (an older version without the Play check) for phones the main copy does not fit"""
+    work = tempfile.mkdtemp()
+    data = get(f"https://d.apkpure.com/b/XAPK/{pkg}?versionCode={code}", binary=True)
+    if data[:2] != b"PK":
+        raise ValueError("download is not a package")
+    parts = os.path.join(work, "parts")
+    with zipfile.ZipFile(__import__("io").BytesIO(data)) as z:
+        for n in [n for n in z.namelist() if n.lower().endswith(".apk") and "/" not in n.strip("/")]:
+            z.extract(n, parts)
+    apks = sorted(glob.glob(os.path.join(parts, "*.apk")))
+    base, splits = None, []
+    for a in apks:
+        if spec["cert_sha1"] not in cert_sha1(a):
+            raise ValueError(os.path.basename(a) + ": not signed with the app's certificate")
+        b = badging(a)
+        if b["pkg"] != pkg:
+            raise ValueError("wrong package " + b["pkg"])
+        if b["split"]:
+            splits.append(b["split"])
+        else:
+            base = (a, b)
+    if not base or base[1]["code"] != code:
+        raise ValueError(f"asked for {code}, got {base[1]['code'] if base else 'no base'}")
+    if has_pairip(base[0]):
+        raise ValueError(f"{code} carries the Play license check")
+    if not any(re.search(r"(arm64_v8a|armeabi_v7a|armeabi|x86_64|x86)$", x) for x in splits):
+        raise ValueError("no processor part")
+    out = os.path.join(work, f"{pkg.split('.')[-1]}-{code}.apks")
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:
+        z.write(base[0], "base.apk")
+        for a in apks:
+            if a != base[0]:
+                z.write(a, os.path.basename(a))
+    tag = f"app-{pkg}-{code}"
+    subprocess.run(["gh", "release", "delete", tag, "--repo", REPO, "--yes", "--cleanup-tag"], capture_output=True)
+    subprocess.run(["gh", "release", "create", tag, out, "--repo", REPO, "--title", f"{spec['title']} {base[1]['name']}",
+                    "--notes", f"Verified copy of {pkg} {base[1]['name']} ({code}) without Google Play's license check, parts: {', '.join(splits)}."], check=True)
+    v = {"versionName": base[1]["name"], "versionCode": code, "url": f"https://github.com/{REPO}/releases/download/{tag}/{os.path.basename(out)}",
+         "size": os.path.getsize(out), "sha256": hashlib.sha256(open(out, "rb").read()).hexdigest(), "parts": ["base"] + splits}
+    shutil.rmtree(work, ignore_errors=True)
+    log("extra copy published", v["url"], splits)
+    return v
+
+
+def variants(pkg, spec):
+    """the extra copies stay listed in apps/<package>.json while the main copy is the fallback one"""
+    meta_path = os.path.join("apps", pkg + ".json")
+    if not os.path.exists(meta_path):
+        return False
+    meta = json.load(open(meta_path))
+    if not meta.get("older"):
+        if meta.pop("variants", None) is not None:
+            json.dump(meta, open(meta_path, "w"), indent=1); return True
+        return False
+    have = {v.get("versionCode") for v in meta.get("variants", [])}
+    changed = False
+    for code in spec.get("fallback_extra", []):
+        if code in have:
+            continue
+        meta.setdefault("variants", []).append(extra(pkg, spec, code)); changed = True
+    if changed:
+        json.dump(meta, open(meta_path, "w"), indent=1)
+    return changed
 
 
 def main():
@@ -221,6 +290,11 @@ def main():
     for pkg, spec in APPS.items():
         try:
             changed |= bool(mirror(pkg, spec))
+        except Exception as e:
+            failed = True
+            log(f"{pkg}: not published ({e}); the last good version stays")
+        try:
+            changed |= bool(variants(pkg, spec))
         except Exception as e:
             failed = True
             log(f"{pkg}: not published ({e}); the last good version stays")
