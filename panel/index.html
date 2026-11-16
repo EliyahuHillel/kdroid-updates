@@ -312,6 +312,8 @@ details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-s
 .dtabs button .i{width:17px;height:17px}
 .dtabs button.on{color:var(--primary,#006c51);border-bottom-color:var(--primary,#006c51)}
 .dtabs button:hover{color:var(--on-bg,#191c1a)}
+.itabs button{flex:1;justify-content:center;padding:13px 6px}
+@media (max-width:480px){.itabs button{font-size:13px;gap:4px}.itabs button .i{display:none}}
 .dtabs .count{background:#b3261e;color:#fff;border-radius:9px;padding:0 6px;font-size:11.5px}
 .tdot{width:8px;height:8px;border-radius:50%;background:#b3261e;display:inline-block}
 .dbody{display:grid;gap:16px;padding-bottom:8px}
@@ -1601,7 +1603,7 @@ function webCard(who){
       <ol class="wsteps" id="webSteps"></ol><div class="muted" id="webS" style="font-size:13.5px;margin-top:8px"></div></div>
     <details class="gd" style="margin-top:12px"><summary>זה לא עובד?</summary><div><ul class="gl">
       <li><b>"הטלפון תפוס" / לא מתחבר</b>: תוכנה אחרת במחשב מחזיקה את הטלפון (adb, Samsung Smart Switch, Mi PC Suite). סגרו אותה, נתקו וחברו את הכבל.</li>
-      <li><b>הטלפון לא מופיע ברשימה</b>: בדקו את ניפוי הבאגים ואת הכבל. בחלק מהטלפונים (בעיקר סמסונג) Windows צריך מנהל התקן של היצרן: אז השתמשו ב"קובץ למחשב" שלמטה, שעובד עם כל מנהל התקן.</li>
+      <li><b>הטלפון לא מופיע ברשימה</b>: בדקו את ניפוי הבאגים ואת הכבל. בחלק מהטלפונים (בעיקר סמסונג) Windows צריך מנהל התקן של היצרן: אז השתמשו בלשונית "קובץ להורדה" ← "למחשב", שעובד עם כל מנהל התקן.</li>
       <li><b>יש חשבונות בטלפון</b>: מסירים זמנית בהגדרות ← חשבונות, מתקינים, ומחזירים.</li></ul></div></details>
   </div></section>`;
 }
@@ -1794,20 +1796,30 @@ function usbWizard({d=null,code=null,fid=""}={}){
   step1(); dlg.showModal();
 }
 
+let instTab=null;
 function vInstall(v){
   const own=me.role==="owner";
   const who=own?(v.dataset.who||"owner"):null, t=fileTarget(who), prof=t.profile;
   const filesOff = !own && (D.config.features||{}).installerFiles===false;
-  v.innerHTML=`<div class="split"><div class="grid">
-    ${filesOff?"":webCard(who)}
-    ${linkCard()}
-    <section class="card" ${filesOff?"hidden":""}><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd">
-      ${own?`<div class="field"><label class="f" for="ftWho">הקובץ בשביל</label><select id="ftWho">
+  const TABS=[...(filesOff?[]:[["web","pc","בכבל, מכאן"],["file","download","קובץ להורדה"]]),["link","link",own?"אתר ציבורי":"קישור אישי"]];
+  if(!instTab){ try{ instTab=localStorage.getItem("kd.instTab"); }catch(e){} }
+  if(!TABS.some(x=>x[0]===instTab)) instTab=TABS[0][0];
+  const forWhom = own&&t.installerId!=="owner" ? "של "+esc(t.iName) : (own?"שלך כמוקד":"שלך");
+  const head = `<section class="card"><div class="hd">${icon("download")}<h2>התקנת מכשיר חדש</h2></div><div class="bd">
+      ${own?`<div class="field" style="margin-top:0"><label class="f" for="ftWho">המכשיר יירשם אצל</label><select id="ftWho">
         <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
         ${D.installers.filter(i=>i.active).map(i=>`<option value="${esc(i._id)}">${esc(i.name)}</option>`).join("")}</select></div>`:""}
-      <p class="muted" style="margin-top:0">כל קובץ כולל את הגרסה העדכנית של האפליקציה, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל ${own?"שלו":"שלך"}, ועובד בלי אינטרנט.</p>
-      ${prof?`<div class="note ok">ברירת המחדל בקובץ: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
-            :`<div class="note warn">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
+      ${prof?`<div class="note ok" style="margin-top:${own?12:0}px">ברירת המחדל ${forWhom}: <b>${esc(MODE_NAME[prof.filter_mode]||"")}</b> · ${SETTINGS.filter(([k])=>prof.settings&&prof.settings[k]).length} הגבלות. בהתקנה אפשר לבחור בה או להגדיר אחרת.</div>`
+            :`<div class="note warn" style="margin-top:${own?12:0}px">אין ${own&&t.installerId!=="owner"?"למתקין":"לך"} עדיין ברירת מחדל, אז בהתקנה יצטרכו לבחור הגדרות. ${t.installerId===(own?"owner":me.uid)?'אפשר לקבוע אותה ב<a href="#settings">הגדרות</a>.':""}</div>`}
+      <p class="muted" style="margin:14px 0 0">${filesOff?"הורדת קבצים כבויה כרגע על ידי מנהל המערכת. אפשר להתקין דרך הקישור.":"בחרו איך להתקין:"}</p>
+    </div>
+    <div class="dtabs itabs" role="tablist" aria-label="דרך ההתקנה">${TABS.map(([k,ic,l])=>`<button type="button" role="tab" data-itab="${k}" class="${k===instTab?"on":""}" aria-selected="${k===instTab}">${icon(ic)}${l}</button>`).join("")}</div>
+  </section>`;
+  const tabHint = {web:"אתם ליד מחשב (Chrome או Edge) והטלפון איתכם. הכי מהיר: בלי להוריד שום דבר.",
+    file:"קובץ שמתקין גם בלי אינטרנט: לטלפון עצמו, או תוכנה למחשב Windows. מתאים גם לשליחה ללקוח.",
+    link:own?"הלקוח מתקין לבד מהאתר. המכשיר מגיע אליך כמוקד.":"שולחים ללקוח את הקישור, והוא מתקין לבד. המכשיר מגיע אליך."}[instTab];
+  const filesCard = `<section class="card"><div class="hd">${icon("download")}<h2>קובץ להורדה</h2></div><div class="bd">
+      <p class="muted" style="margin-top:0">${tabHint} כל קובץ כולל את הגרסה העדכנית, את הקוד ${own?"של המתקין":"שלך"} ואת ברירת המחדל.</p>
       <div class="pick">
         <div class="pickrow" role="radiogroup" aria-label="בשביל מה הקובץ">
           <button type="button" role="radio" class="pk ${mkType==="phone"?"on":""}" aria-checked="${mkType==="phone"}" data-type="phone"><span class="badgeicon">${icon("phone")}</span>
@@ -1824,22 +1836,28 @@ function vInstall(v){
         <button class="btn fill" id="mkBtn" style="margin-top:14px">${icon("download")}הורד ${mkType==="pc"?"תוכנה למחשב":"קובץ לטלפון"}</button>
       </div>
       <div id="mkStatus" class="${mkResult?"note "+mkResult[0]:"mkprog"}" ${mkResult?"":"hidden"}>${mkResult?esc(mkResult[1]):`<div class="mkrow"><span id="mkMsg"></span><b id="mkPct" class="num"></b></div><div class="mkbar"><i id="mkBar"></i></div>`}</div>
-    </div></section>
-    ${own?`<section class="card"><div class="hd"><h2>הורדה ציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
+    </div></section>`;
+  const linkTab = `${linkCard()}
+    ${own?`<section class="card"><div class="hd"><h2>מלאי ההורדה הציבורית</h2><span class="spacer"></span><a class="btn text sm" href="../download/" target="_blank" rel="noopener">לדף ההורדה</a></div><div class="bd">
       <p class="muted" style="margin-top:0">מי שמוריד מדף ההורדה הציבורי מקבל קובץ ייחודי משלו מהמלאי. המכשיר יופיע אצלך כמוקד, וקודי החירום שלו לא יעבדו על אף מכשיר אחר.</p>
-      <div id="stockBox" class="note info">בודק את המלאי…</div></div></section>`:""}
-    ${filesOff?`<section class="card"><div class="hd">${icon("download")}<h2>קובצי התקנה</h2></div><div class="bd"><div class="note warn">הורדת קבצים כבויה כרגע על ידי מנהל המערכת. אפשר להתקין דרך הקישור האישי.</div></div></section>`:""}
-    <section class="card"><div class="hd"><h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>
+      <div id="stockBox" class="note info">בודק את המלאי…</div></div></section>`:""}`;
+  const body = instTab==="web" ? webCard(who) : instTab==="file" ? filesCard : linkTab;
+  v.innerHTML=`<div class="split"><div class="grid">
+    ${head}
+    ${instTab==="web"?`<p class="muted" style="margin:-4px 4px 0">${tabHint}</p>`:""}
+    ${body}
   </div><div class="grid">
     <section class="card"><div class="hd">${icon("key")}<h2>קוד חירום למכשיר שלא התחבר</h2></div><div class="bd">
       <p class="muted" style="margin-top:0">למכשיר שהותקן מקובץ ועוד לא התחבר לאינטרנט. במסך "קוד חירום" שלו מופיעים מספר הקובץ ומספר הקוד. מכשיר שכבר מופיע בפאנל מקבל קוד מהעמוד שלו.</p>
       <div class="field"><label class="f" for="ofFid">מספר הקובץ</label><input id="ofFid" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="6 ספרות"></div>
       <div class="field"><label class="f" for="ofAct">הבקשה</label><select id="ofAct">${EMERG.filter(([k])=>k!=="release"||me.canRelease).map(([k,x])=>`<option value="${k}">${x}</option>`).join("")}</select></div>
-      <div class="field"><label class="f" for="ofK">קוד מספר</label><input id="ofK" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="1"></div>
+      <div class="field"><label class="f" for="ofK">מספר הקוד</label><input id="ofK" type="text" inputmode="numeric" dir="ltr" class="num" placeholder="1"></div>
       <button class="btn tonal" id="ofBtn" style="width:100%">צור קוד</button>
       <div id="ofOut" hidden style="margin-top:14px"><div class="muted" style="text-align:center">הקריאו למשתמש:</div><div class="bigcode long num" id="ofCode" dir="ltr"></div></div>
     </div></section>
+    ${filesOff?"":`<section class="card"><div class="hd">${icon("download")}<h2>קבצים שהורדו</h2></div><div class="list" id="fileList"><div class="empty">טוען…</div></div></section>`}
   </div></div>`;
+  v.querySelectorAll("[data-itab]").forEach(b=>b.onclick=()=>{ if(fileBusy||webBusy) return; instTab=b.dataset.itab; try{ localStorage.setItem("kd.instTab",instTab); }catch(e){} vInstall(v); });
   if($("mkTrack")) $("mkTrack").onchange=e=>{ mkTrack=e.target.checked; };
   bindWeb(v,who);
   if($("ftWho")){ $("ftWho").value=v.dataset.who||"owner"; $("ftWho").onchange=e=>{ v.dataset.who=e.target.value; vInstall(v); }; }
@@ -1883,8 +1901,10 @@ async function listFiles(){
   const el=$("fileList"); if(!el) return;
   try{
     if(!myFiles) myFiles=(me.role==="owner"?await listAll("installFiles"):await query("installFiles","installerId",me.uid)).filter(f=>f.kind!=="public").sort((a,b)=>b.createdAt-a.createdAt);
-    el.innerHTML=myFiles.slice(0,40).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":f.kind==="web"?"התקנה מהפאנל":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
+    const n=el.dataset.all?40:8;
+    el.innerHTML=myFiles.slice(0,n).map(f=>`<div class="item"><div class="main"><div class="t">${f.kind==="pc"?"קובץ למחשב":f.kind==="web"?"התקנה מהפאנל":"קובץ לטלפון"} · <span class="num">${esc(f._id)}</span></div>
       <div class="muted">${when(f.createdAt)}${me.role==="owner"?" · "+esc(installerLabel(f.installerId)):""}</div></div></div>`).join("")||'<div class="empty">עוד לא הורדו קבצים</div>';
+    if(myFiles.length>n){ el.insertAdjacentHTML("beforeend",`<button class="btn text sm" id="flMore" style="margin:6px 12px 10px">הצג עוד (${Math.min(myFiles.length,40)-n})</button>`); $("flMore").onclick=()=>{ el.dataset.all="1"; listFiles(); }; }
   }catch(e){ el.innerHTML='<div class="empty">לא הצלחתי לטעון</div>'; }
 }
 
