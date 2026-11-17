@@ -405,6 +405,26 @@ dialog.wide .applist{max-height:260px;overflow:auto}
 </head>
 <body>
 
+<section id="resetView" class="login" hidden>
+  <div class="brandbig"><img src="icon.webp" alt=""><b>קיידרואיד</b><span class="muted">מערכת הניהול למתקינים</span></div>
+  <form class="card" id="resetForm"><div class="bd">
+    <h2 style="margin:0 0 6px;font-size:19px">קביעת סיסמה</h2>
+    <p class="muted" id="rsFor" style="margin:0 0 14px">בודק את הקישור…</p>
+    <div id="rsFields" hidden>
+      <div class="field"><label class="f" for="rsPass">סיסמה חדשה</label><input id="rsPass" type="password" autocomplete="new-password" dir="ltr" minlength="6"></div>
+      <div class="field"><label class="f" for="rsPass2">שוב, לאימות</label><input id="rsPass2" type="password" autocomplete="new-password" dir="ltr" minlength="6"></div>
+      <label class="row" style="gap:8px;font-size:13.5px;margin:-4px 0 12px;cursor:pointer"><input type="checkbox" id="rsShow">הצג את הסיסמה</label>
+      <button class="btn fill" style="width:100%" type="submit" id="rsGo">שמירה וכניסה</button>
+    </div>
+    <div id="rsAgain" hidden>
+      <div class="field"><label class="f" for="rsEmail">המייל שלכם</label><input id="rsEmail" type="email" dir="ltr"></div>
+      <button class="btn fill" style="width:100%" type="button" id="rsSend">שלחו לי קישור חדש</button>
+    </div>
+    <p class="err" id="rsErr" style="margin:12px 0 0"></p>
+    <p style="margin:10px 0 0;text-align:center"><a class="btn text sm" href="./">חזרה לכניסה</a></p>
+  </div></form>
+</section>
+
 <section id="loginView" class="login" hidden>
   <div class="brandbig"><img src="icon.webp" alt=""><b>קיידרואיד</b><span class="muted">מערכת הניהול למתקינים</span></div>
   <form class="card" id="loginForm"><div class="bd">
@@ -547,8 +567,14 @@ let fileBusy=false, mkResult=null, mkTrack=false; // the last file made: its mes
 // typing in any form on the page pauses the automatic redraw, so nothing typed is lost
 document.addEventListener("input",e=>{ if(e.target.closest("#view")) typing=true; });
 
+// a "set / reset password" link from the email opens here (the panel's address), not on Firebase's own page,
+// which filtered internet (NetFree) may not have opened. The email templates point here (Firebase console:
+// Authentication -> Templates -> Customize action URL).
+const AP=new URLSearchParams(location.search);
+let resetMode=AP.get("mode")==="resetPassword"&&!!AP.get("oobCode");
 auth.onAuthStateChanged(async u=>{
   clearInterval(pollT); me=null; loaded=false; draft=null;
+  if(resetMode){ $("loginView").hidden=true; $("appView").hidden=true; return; }
   if(!u){ $("loginView").hidden=false; $("appView").hidden=true; return; }
   try{
     if(u.email===OWNER_EMAIL) me={uid:u.uid,email:u.email,role:"owner",name:"מנהל המערכת",canRelease:true,canDelete:true};
@@ -592,8 +618,40 @@ function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescap
 function savedPw(uid){ try{ const v=localStorage.getItem("kd.pw."+uid); return v?decodeURIComponent(escape(atob(v))):""; }catch(e){ return ""; } }
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
-  try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
+  try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
 };
+if(resetMode) (async()=>{
+  const oob=AP.get("oobCode"); $("resetView").hidden=false;
+  const again=msg=>{ $("rsFor").textContent=msg; $("rsFields").hidden=true; $("rsAgain").hidden=false; };
+  let email="";
+  try{ email=await auth.verifyPasswordResetCode(oob);
+       $("rsFor").innerHTML=`לחשבון <b dir="ltr">${esc(email)}</b>. בחרו סיסמה של 6 תווים לפחות.`; $("rsFields").hidden=false; $("rsPass").focus(); }
+  catch(e){ again(e&&e.code==="auth/expired-action-code"?"הקישור הזה כבר פג תוקף. הקלידו את המייל ונשלח קישור חדש."
+                  :"הקישור הזה כבר שומש או שאינו תקין. הקלידו את המייל ונשלח קישור חדש."); }
+  $("rsShow").onchange=e=>{ $("rsPass").type=$("rsPass2").type=e.target.checked?"text":"password"; };
+  $("resetForm").addEventListener("submit",async ev=>{
+    ev.preventDefault(); $("rsErr").textContent="";
+    const pw=$("rsPass").value;
+    if(pw.length<6){ $("rsErr").textContent="הסיסמה צריכה להיות באורך 6 תווים לפחות."; return; }
+    if(pw!==$("rsPass2").value){ $("rsErr").textContent="שתי הסיסמאות לא זהות."; return; }
+    const b=$("rsGo"); b.disabled=true; b.textContent="שומר…";
+    try{
+      await auth.confirmPasswordReset(oob,pw);
+      try{ const r=await auth.signInWithEmailAndPassword(email,pw); rememberPw(r.user.uid,pw); }catch(e){}
+      resetMode=false; location.replace(location.pathname+"#overview");
+    }catch(e){
+      b.disabled=false; b.textContent="שמירה וכניסה";
+      if(e&&e.code==="auth/weak-password") $("rsErr").textContent="הסיסמה חלשה מדי. נסו סיסמה ארוכה יותר.";
+      else if(e&&(e.code==="auth/expired-action-code"||e.code==="auth/invalid-action-code")) again("הקישור כבר לא תקף. הקלידו את המייל ונשלח קישור חדש.");
+      else $("rsErr").textContent="השמירה נכשלה. בדקו את החיבור ונסו שוב.";
+    }
+  });
+  $("rsSend").onclick=async()=>{
+    const em=$("rsEmail").value.trim(); if(!em){ $("rsErr").textContent="הקלידו את המייל."; return; }
+    try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(em); $("rsErr").textContent=""; $("rsFor").textContent="נשלח קישור חדש למייל. פתחו אותו משם."; $("rsAgain").hidden=true; }
+    catch(e){ $("rsErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
+  };
+})();
 $("navBtn").onclick=()=>document.body.classList.toggle("navopen");
 $("scrim").onclick=()=>document.body.classList.remove("navopen");
 $("tabs").addEventListener("click",e=>{ if(e.target.closest("a")) document.body.classList.remove("navopen"); });
