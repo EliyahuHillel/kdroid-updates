@@ -434,6 +434,13 @@ dialog.wide .applist{max-height:260px;overflow:auto}
     <p class="err" id="loginErr" style="margin:12px 0 0"></p>
     <p style="margin:10px 0 0;text-align:center"><button class="btn text sm" type="button" id="forgotBtn">שכחתי סיסמה</button></p>
   </div></form>
+  <form class="card" id="pasteForm" style="margin-top:12px"><div class="bd">
+    <b style="display:block">קיבלתם מייל לקביעת סיסמה?</b>
+    <p class="muted" style="margin:4px 0 10px;font-size:13.5px">אם הקישור במייל לא נפתח (למשל בנטפרי): העתיקו את כל הקישור מהמייל, הדביקו כאן ולחצו "המשך".</p>
+    <div class="field" style="margin-bottom:10px"><input id="pasteLink" type="text" dir="ltr" placeholder="https://kiydroid.firebaseapp.com/__/auth/action?mode=..." aria-label="הקישור מהמייל"></div>
+    <button class="btn tonal" style="width:100%" type="submit">המשך</button>
+    <p class="err" id="pasteErr" style="margin:10px 0 0"></p>
+  </div></form>
 </section>
 
 <div id="appView" hidden>
@@ -616,6 +623,14 @@ $("loginForm").addEventListener("submit",async e=>{
 /** the current password, kept only in this browser (never on the server) so the installer can look at it in settings */
 function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescape(encodeURIComponent(pw)))); }catch(e){} }
 function savedPw(uid){ try{ const v=localStorage.getItem("kd.pw."+uid); return v?decodeURIComponent(escape(atob(v))):""; }catch(e){ return ""; } }
+$("pasteForm").addEventListener("submit",e=>{
+  e.preventDefault(); $("pasteErr").textContent="";
+  const raw=$("pasteLink").value.trim().replace(/&amp;/g,"&");
+  const m=raw.match(/[?&]oobCode=([^&\s#]+)/), md=raw.match(/[?&]mode=([^&\s#]+)/);
+  if(!m){ $("pasteErr").textContent="זה לא נראה כמו הקישור מהמייל. העתיקו את כל הקישור, מ-https ועד הסוף."; return; }
+  if(md&&md[1]!=="resetPassword"){ $("pasteErr").textContent="הקישור הזה אינו לקביעת סיסמה."; return; }
+  location.assign(location.pathname+"?mode=resetPassword&oobCode="+m[1]);
+});
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
   try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
