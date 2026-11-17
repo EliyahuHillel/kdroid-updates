@@ -907,6 +907,17 @@ function vGuide(v){
     <li>מכשיר שהותקן בלי קובץ (מהאתר או מהקישור) מקבל קודי חירום רק אחרי שהתחבר פעם אחת.</li>
     ${rel?"":"<li>קודי שחרור יוצר רק מי שיש לו הרשאת שחרור.</li>"}</ul>`],
 
+  ...(own?[["instpw","קביעת סיסמה למתקין",`
+    <p>בעמוד <a href="#installers">מתקינים</a>, אצל כל מתקין: "הצג" מראה את הסיסמה שלו, ו"שינוי" או "קביעה" קובעים לו סיסמה חדשה, שמועתקת אוטומטית כדי לשלוח לו.</p>
+    <ul class="gl"><li><b>כשהסיסמה ידועה</b> (מתקין חדש, או מתקין שנכנס לפאנל אחרי העדכון): השינוי עובד מיד, בלי שום הגדרה.</li>
+    <li><b>כשהסיסמה לא ידועה</b> (מתקין שעוד לא קבע סיסמה): Firebase דורש אישור של בעל הפרויקט, כלומר חשבון Google שלך. זה חיבור חד-פעמי:</li></ul>
+    <ol class="gl">
+      <li>נכנסים ל-<a href="https://console.cloud.google.com/auth/overview?project=kiydroid" target="_blank" rel="noopener">Google Auth Platform של הפרויקט</a>. אם מופיע "Get started": שם האפליקציה <b>Kiydroid</b>, מייל תמיכה: המייל שלך ← Audience: <b>External</b> ← מייל ליצירת קשר: המייל שלך ← מסכימים ← Create.</li>
+      <li>נכנסים ל-<a href="https://console.cloud.google.com/auth/audience?project=kiydroid" target="_blank" rel="noopener">Audience</a> ← Test users ← Add users ← המייל שלך ← Save.</li>
+      <li>נכנסים ל-<a href="https://console.cloud.google.com/auth/clients?project=kiydroid" target="_blank" rel="noopener">Clients</a> ← Create client ← Application type: <b>Web application</b> ← שם: Kiydroid panel ← תחת "Authorized JavaScript origins" לוחצים Add URI ומדביקים <code dir="ltr">https://eliyahuhillel.github.io</code> ← Create.</li>
+      <li>מעתיקים את ה-<b>Client ID</b> (נגמר ב-<span dir="ltr">.apps.googleusercontent.com</span>).</li>
+      <li>בפאנל: מתקינים ← המתקין ← "קביעה" ← מדביקים את ה-Client ID ← שמירה. נפתח חלון של Google: בוחרים את החשבון שלך. אם כתוב "Google hasn't verified this app", לוחצים Continue (זו האפליקציה שלך) ← מאשרים.</li></ol>
+    <p class="muted">מכאן הכל אוטומטי: ה-Client ID נשמר, ובפעם הבאה רק מאשרים בחלון של Google.</p>`]]:[]),
   ...(own?[]:[["account","החשבון שלכם",`
     <ul class="gl"><li><b>כניסה ראשונה</b>: מנהל המערכת יוצר לכם חשבון, ומגיע אליכם מייל עם קישור לקביעת סיסמה. קובעים סיסמה ונכנסים איתה לפאנל. לא הגיע? בדקו בספאם, או בקשו ממנהל המערכת לשלוח שוב.</li>
     <li><b>הסיסמה שלכם</b>: ב<a href="#settings">הגדרות</a> ← "חשבון וסיסמה" אפשר לראות את הסיסמה הנוכחית (היא שמורה רק בדפדפן שבו נכנסתם, לא בשרת). כדי להחליף, מקלידים את הנוכחית ואת החדשה פעמיים.</li>
@@ -1467,9 +1478,8 @@ function vInstallers(v){
     const account = i.self?"":`<div class="ir-sec"><h4>חשבון</h4>
         <div class="ir-kv"><span>סיסמה</span><div class="ir-pw">
           ${pw?`<code dir="ltr" data-pwv="${esc(i._id)}">••••••••</code><button class="btn text sm" data-pwshow="${esc(i._id)}">הצג</button><button class="btn text sm" data-pwcopy="${esc(i._id)}">${icon("copy")}</button>`
-              :`<span class="muted" title="תופיע אחרי שהמתקין ייכנס לפאנל">עוד לא ידועה</span>`}
-          <button class="btn tonal sm" data-pwset="${esc(i._id)}" ${pw?"":"disabled"}>${icon("edit")}שינוי</button></div></div>
-        ${pw?"":`<p class="muted ir-hint">הסיסמה תופיע כאן אחרי שהמתקין ייכנס לפאנל בפעם הבאה. עד אז אפשר לשלוח לו מייל לקביעת סיסמה.</p>`}
+              :`<span class="muted" title="תופיע אחרי שהמתקין ייכנס לפאנל, או אחרי שתקבעו לו סיסמה">לא ידועה</span>`}
+          <button class="btn tonal sm" data-pwset="${esc(i._id)}">${icon("edit")}${pw?"שינוי":"קביעה"}</button></div></div>
         <div class="ir-kv"><span>קישור אישי</span><div><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק</button></div></div>
         <div class="ir-kv"><span>מייל סיסמה</span><div><button class="btn text sm" data-reset="${esc(i.email)}">שלח שוב</button></div></div>
       </div>
@@ -1561,29 +1571,60 @@ function wireInst(v){
 }
 let instQ="", newInstOpen=false;
 async function loadSecrets(){ try{ const l=await listAll("installerSecrets"); D.secrets=Object.fromEntries(l.map(x=>[x._id,x])); }catch(e){ D.secrets={}; } }
-/** the owner changes an installer's password: signs in as the installer with the known password, then sets the new one */
+/** Google approval of the owner (the project owner), needed to set a password Firebase does not let a web page set
+ *  otherwise: for an installer whose current password is not known. One OAuth client ID, saved once in config/public. */
+let gTok=null;
+function adminToken(clientId){
+  if(gTok&&gTok.until>Date.now()) return Promise.resolve(gTok.t);
+  return new Promise((res,rej)=>{
+    const go=()=>{ try{ google.accounts.oauth2.initTokenClient({client_id:clientId,scope:"https://www.googleapis.com/auth/identitytoolkit",
+        callback:r=>{ if(r&&r.access_token){ gTok={t:r.access_token,until:Date.now()+(r.expires_in-120)*1000}; res(r.access_token); } else rej(new Error(r&&r.error||"denied")); },
+        error_callback:e=>rej(new Error(e&&e.type||"popup")) }).requestAccessToken(); }catch(e){ rej(e); } };
+    if(window.google&&google.accounts&&google.accounts.oauth2) return go();
+    const sc=document.createElement("script"); sc.src="https://accounts.google.com/gsi/client"; sc.onload=go; sc.onerror=()=>rej(new Error("gsi")); document.head.appendChild(sc);
+  });
+}
+/** the owner sets an installer's password: with the known current one (sign in as him, then change), or else with Google approval */
 function setInstallerPw(i,v){
-  const dlg=$("dlg"), cur=((D.secrets||{})[i._id]||{}).pw;
+  const dlg=$("dlg"), cur=((D.secrets||{})[i._id]||{}).pw, cid=D.config.oauthClient||"";
   const gen=()=>{ const r=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join(""); return r(4)+"-"+r(4); };
-  $("dlgIn").innerHTML=`<h3>סיסמה חדשה ל${esc(i.name)}</h3>
-    <p class="muted">הסיסמה הנוכחית תפסיק לעבוד מיד, והמתקין יצטרך להיכנס לפאנל מחדש עם החדשה.</p>
-    <div class="field"><label class="f" for="npw">סיסמה חדשה</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="npw" type="text" dir="ltr" value="${gen()}" style="flex:1"><button class="btn text sm" id="npwGen" type="button">אחרת</button></div></div>
+  $("dlgIn").innerHTML=`<h3>${cur?"סיסמה חדשה":"קביעת סיסמה"} ל${esc(i.name)}</h3>
+    <p class="muted">${cur?"הסיסמה הנוכחית תפסיק לעבוד מיד, והמתקין יצטרך להיכנס לפאנל מחדש עם החדשה.":"המתקין עוד לא קבע סיסמה (או שהיא לא ידועה). קבעו לו סיסמה ושלחו לו אותה."}</p>
+    <div class="field"><label class="f" for="npw">סיסמה</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="npw" type="text" dir="ltr" value="${gen()}" style="flex:1"><button class="btn text sm" id="npwGen" type="button">אחרת</button></div></div>
+    ${cur||cid?"":`<details class="gd" open><summary>חיבור חד-פעמי לחשבון Google שלך</summary><div>
+      <p class="muted" style="margin-top:0;font-size:13.5px">כדי לקבוע סיסמה כשהנוכחית לא ידועה, Firebase דורש אישור של בעל הפרויקט. מדביקים כאן פעם אחת את מזהה החיבור (Client ID). איך משיגים אותו: מדריך ← "קביעת סיסמה למתקין".</p>
+      <div class="field" style="margin-bottom:0"><label class="f" for="oaCid">Client ID</label><input id="oaCid" type="text" dir="ltr" placeholder="1234…apps.googleusercontent.com"></div></div></details>`}
     <p class="err" id="npwErr" style="margin:0"></p>
     <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn fill" id="dlgOk">שמירה</button></div>`;
   $("npwGen").onclick=()=>{ $("npw").value=gen(); };
   $("dlgNo").onclick=()=>dlg.close();
+  const call=async(path,body,tok)=>{ const r=await fetch("https://identitytoolkit.googleapis.com/v1/"+path+(tok?"":"?key="+KEY),{method:"POST",
+      headers:Object.assign({"Content-Type":"application/json"},tok?{Authorization:"Bearer "+tok}:{}),body:JSON.stringify(body)});
+    const j=await r.json(); if(!r.ok) throw new Error(j.error&&j.error.message||"err"); return j; };
   $("dlgOk").onclick=async()=>{
     const np=$("npw").value.trim(); if(np.length<6){ $("npwErr").textContent="לפחות 6 תווים."; return; }
     const ok=$("dlgOk"); ok.disabled=true; $("npwErr").textContent="";
     try{
-      const call=async(path,body)=>{ const r=await fetch("https://identitytoolkit.googleapis.com/v1/"+path+"?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-        const j=await r.json(); if(!r.ok) throw new Error(j.error&&j.error.message||"err"); return j; };
-      const s1=await call("accounts:signInWithPassword",{email:i.email,password:cur,returnSecureToken:true});
-      await call("accounts:update",{idToken:s1.idToken,password:np,returnSecureToken:false});
-      await commit([{set:"installerSecrets/"+i._id,data:{pw:np,at:Date.now()}},audit("","permission",i.name+": הסיסמה שונתה")]);
-      D.secrets[i._id]={pw:np,at:Date.now()}; dlg.close(); toast("הסיסמה של "+i.name+" שונתה"); vInstallers(v);
-    }catch(e){ ok.disabled=false;
-      $("npwErr").textContent=/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS/.test(e.message)?"הסיסמה השמורה כבר לא נכונה (המתקין החליף אותה). היא תתעדכן כשייכנס לפאנל.":/WEAK_PASSWORD/.test(e.message)?"הסיסמה חלשה מדי.":"השינוי נכשל. נסו שוב."; }
+      let done=false;
+      if(cur){ try{ const s1=await call("accounts:signInWithPassword",{email:i.email,password:cur,returnSecureToken:true});
+                    await call("accounts:update",{idToken:s1.idToken,password:np,returnSecureToken:false}); done=true; }
+               catch(e){ if(!/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS/.test(e.message)) throw e; } }
+      if(!done){
+        let id=cid||($("oaCid")?$("oaCid").value.trim():"");
+        if(!/\.apps\.googleusercontent\.com$/.test(id)){ ok.disabled=false;
+          $("npwErr").textContent=cur?"הסיסמה השמורה כבר לא נכונה. כדי לקבוע סיסמה בלעדיה צריך חיבור חד-פעמי לחשבון Google (מדריך ← \"קביעת סיסמה למתקין\").":"הדביקו את ה-Client ID (מדריך ← \"קביעת סיסמה למתקין\")."; return; }
+        if(!cid){ await commit([{set:"config/public",data:{oauthClient:id},mask:["oauthClient"]}]); D.config.oauthClient=id; }
+        const tok=await adminToken(id);
+        await call("projects/kiydroid/accounts:update",{localId:i._id,password:np},tok);
+      }
+      await commit([{set:"installerSecrets/"+i._id,data:{pw:np,at:Date.now()}},audit("","permission",i.name+": נקבעה סיסמה")]);
+      (D.secrets=D.secrets||{})[i._id]={pw:np,at:Date.now()}; dlg.close(); vInstallers(v);
+      copyText(np,"הסיסמה של "+i.name+" נקבעה והועתקה. שלחו לו אותה.");
+    }catch(e){ ok.disabled=false; console.error(e);
+      $("npwErr").textContent=/WEAK_PASSWORD/.test(e.message)?"הסיסמה חלשה מדי."
+        :/denied|access_denied|popup|popup_closed/.test(e.message)?"האישור של Google לא הושלם. נסו שוב ואשרו בחלון שנפתח."
+        :/PERMISSION|403|INSUFFICIENT/.test(e.message)?"לחשבון Google שאישרתם אין הרשאה לפרויקט. אשרו עם החשבון של הפרויקט."
+        :"הקביעה נכשלה. נסו שוב."; }
   };
   dlg.showModal();
 }
