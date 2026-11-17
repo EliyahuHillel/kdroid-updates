@@ -606,15 +606,27 @@ auth.onAuthStateChanged(async u=>{
 });
 /** an installer's first login: where things are, and the option to change the password right away */
 function welcome(){
-  const dlg=$("dlg");
+  const dlg=$("dlg"), done=()=>{ dlg.removeEventListener("cancel",stay); dlg.close(); };
+  const stay=e=>e.preventDefault();
   $("dlgIn").innerHTML=`<h3>ברוכים הבאים, ${esc(me.name)}</h3>
-    <p class="muted">זה האזור האישי שלכם: המכשירים שלכם, הקישור האישי, קובצי התקנה והתקנה ישירה מהמחשב. מדריך מלא נמצא בתפריט, תחת "מדריך".</p>
-    <p class="muted">רוצים להחליף עכשיו את הסיסמה שקבעתם מהמייל?</p>
-    <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">אחר כך</button><button class="btn tonal" id="dlgGuide">למדריך</button><button class="btn fill" id="dlgOk">החלפת סיסמה</button></div>`;
-  $("dlgNo").onclick=()=>dlg.close();
-  $("dlgGuide").onclick=()=>{ dlg.close(); location.hash="#guide"; };
-  $("dlgOk").onclick=()=>{ dlg.close(); setTab="account"; location.hash="#settings"; render(); };
-  dlg.showModal();
+    <p class="muted">לפני שמתחילים: בחרו סיסמה משלכם במקום הסיסמה הזמנית שקיבלתם.</p>
+    <div class="field"><label class="f" for="wPw">סיסמה חדשה</label><input id="wPw" type="password" dir="ltr" autocomplete="new-password"></div>
+    <div class="field"><label class="f" for="wPw2">שוב, לאימות</label><input id="wPw2" type="password" dir="ltr" autocomplete="new-password"></div>
+    <p class="err" id="wErr" style="margin:0"></p>
+    <div class="row" style="justify-content:space-between;margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn text sm" id="wKeep">כבר בחרתי סיסמה משלי</button>
+      <button class="btn fill" id="wSave">שמירה</button></div>
+    <p class="muted" style="font-size:13px;margin:12px 0 0">מדריך מלא לכל מה שבפאנל נמצא בתפריט, תחת "מדריך".</p>`;
+  dlg.addEventListener("cancel",stay);
+  $("wKeep").onclick=done;
+  $("wSave").onclick=async()=>{
+    const pw=$("wPw").value; $("wErr").textContent="";
+    if(pw.length<6){ $("wErr").textContent="הסיסמה צריכה להיות באורך 6 תווים לפחות."; return; }
+    if(pw!==$("wPw2").value){ $("wErr").textContent="שתי הסיסמאות לא זהות."; return; }
+    const b=$("wSave"); b.disabled=true;
+    try{ await auth.currentUser.updatePassword(pw); rememberPw(me.uid,pw); done(); toast("הסיסמה נשמרה"); }
+    catch(e){ b.disabled=false; $("wErr").textContent=e&&e.code==="auth/requires-recent-login"?"צריך להיכנס מחדש ואז לבחור סיסמה.":"השמירה נכשלה. נסו שוב."; }
+  };
+  dlg.showModal(); setTimeout(()=>$("wPw")&&$("wPw").focus(),50);
 }
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
@@ -1458,13 +1470,14 @@ function vInstallers(v){
       <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
       <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
       <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
-      <div class="note info" style="margin-bottom:12px">אין צורך בסיסמה: המתקין יקבל למייל קישור לקביעת סיסמה, וייכנס איתה לפאנל. אם המייל לא הגיע, בדקו בספאם או לחצו "שלח שוב" ליד שמו.</div>
+      <div class="note info" style="margin-bottom:12px">אחרי היצירה תקבלו סיסמה זמנית. שלחו אותה למתקין יחד עם המייל, והוא ייכנס איתה לפאנל ויחליף אותה לסיסמה משלו. בלי קישורים במייל, כך שזה עובד גם בנטפרי.</div>
       <button class="btn fill" type="submit" style="width:100%">צור מתקין</button><p class="err" id="niErr"></p></form></section></div>`;
   $("newInst").onsubmit=async e=>{
     e.preventDefault(); $("niErr").textContent="";
     const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase();
-    // a long random password nobody sees; the installer sets his own from the e-mail
-    const pw=Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>"abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b%56]).join("");
+    // a temporary password the owner hands over (easy to read aloud); the installer replaces it at the first login
+    const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
+    const pw=rnd(4)+"-"+rnd(4)+"-"+rnd(4);
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
     try{
       const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
@@ -1474,8 +1487,14 @@ function vInstallers(v){
       if(!code) throw new Error("code");
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
-      let mailed=true; try{ await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
-      toast(mailed?"המתקין נוצר (קוד "+code+"). נשלח אליו מייל לקביעת סיסמה.":"המתקין נוצר (קוד "+code+"), אבל המייל לא נשלח. לחצו \"שלח שוב\" ליד שמו."); load();
+      const msg=`שלום ${name}, נפתח לך חשבון מתקין בקיידרואיד.\nכניסה: ${new URL("./",location.href).href}\nמייל: ${email}\nסיסמה זמנית: ${pw}\nבכניסה הראשונה תתבקש לבחור סיסמה משלך.`;
+      const dlg=$("dlg");
+      $("dlgIn").innerHTML=`<h3>המתקין נוצר ✓</h3>
+        <p class="muted">שלחו למתקין את פרטי הכניסה (בוואטסאפ, SMS או בטלפון). הסיסמה מוצגת רק עכשיו.</p>
+        <div class="note ok" style="font-size:14.5px;line-height:1.8"><div>מייל: <b dir="ltr">${esc(email)}</b></div><div>סיסמה זמנית: <b dir="ltr" class="num" style="letter-spacing:1px">${esc(pw)}</b></div><div>קוד מתקין: <b class="num">${esc(code)}</b></div></div>
+        <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">סגירה</button><button class="btn fill" id="dlgOk">${icon("copy")}העתק הודעה למתקין</button></div>`;
+      $("dlgNo").onclick=()=>dlg.close(); $("dlgOk").onclick=()=>copyText(msg,"ההודעה הועתקה. הדביקו אותה בוואטסאפ למתקין.");
+      dlg.showModal(); e.target.reset(); btn.disabled=false; load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
   v.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ const id=b.dataset.open; instOpen.has(id)?instOpen.delete(id):instOpen.add(id); vInstallers(v); });
