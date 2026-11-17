@@ -578,7 +578,8 @@ document.addEventListener("input",e=>{ if(e.target.closest("#view")) typing=true
 // which filtered internet (NetFree) may not have opened. The email templates point here (Firebase console:
 // Authentication -> Templates -> Customize action URL).
 const AP=new URLSearchParams(location.search);
-let resetMode=AP.get("mode")==="resetPassword"&&!!AP.get("oobCode");
+// also from our own email text: <a href="...panel/?link=%LINK%">, where Firebase's link lands inside ours
+let resetMode=!!AP.get("oobCode")&&(AP.get("mode")==="resetPassword"||/mode=resetPassword/.test(AP.get("link")||""));
 auth.onAuthStateChanged(async u=>{
   clearInterval(pollT); me=null; loaded=false; draft=null;
   if(resetMode){ $("loginView").hidden=true; $("appView").hidden=true; return; }
@@ -633,7 +634,7 @@ $("pasteForm").addEventListener("submit",e=>{
 });
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
-  try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
+  try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
 };
 if(resetMode) (async()=>{
   const oob=AP.get("oobCode"); $("resetView").hidden=false;
@@ -663,7 +664,7 @@ if(resetMode) (async()=>{
   });
   $("rsSend").onclick=async()=>{
     const em=$("rsEmail").value.trim(); if(!em){ $("rsErr").textContent="הקלידו את המייל."; return; }
-    try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(em); $("rsErr").textContent=""; $("rsFor").textContent="נשלח קישור חדש למייל. פתחו אותו משם."; $("rsAgain").hidden=true; }
+    try{ await auth.sendPasswordResetEmail(em); $("rsErr").textContent=""; $("rsFor").textContent="נשלח קישור חדש למייל. פתחו אותו משם."; $("rsAgain").hidden=true; }
     catch(e){ $("rsErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
   };
 })();
@@ -1473,7 +1474,7 @@ function vInstallers(v){
       if(!code) throw new Error("code");
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
-      let mailed=true; try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
+      let mailed=true; try{ await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
       toast(mailed?"המתקין נוצר (קוד "+code+"). נשלח אליו מייל לקביעת סיסמה.":"המתקין נוצר (קוד "+code+"), אבל המייל לא נשלח. לחצו \"שלח שוב\" ליד שמו."); load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
@@ -1497,7 +1498,7 @@ function vInstallers(v){
       on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:shownPhone(i),profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
-  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ auth.languageCode="he"; await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
 }
 
 // ---------------------------------------------------------------- install files (personal installer per installer)
