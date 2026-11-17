@@ -370,6 +370,44 @@ details.gd>div{padding:0 14px 12px;font-size:14px}details.gd ol{padding-inline-s
   .ins-steps{grid-template-columns:1fr}.ins-steps li{grid-template-columns:auto 1fr;column-gap:12px}.ins-steps li::before{grid-row:span 2;margin:0}
   .ins-stage{padding:18px}.ins-tools{grid-template-columns:1fr}
 }
+
+/* ---- installers page */
+.instpage{max-width:1000px;margin:0 auto;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.ip-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ip-stats{display:flex;gap:16px;color:var(--on-variant);font-size:14px}.ip-stats b{color:var(--on);font-size:16px}
+.ip-bar input[type=search]{flex:1;min-width:200px;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--outline-v);background:var(--surface);font:inherit;font-size:14px}
+.ip-newgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 12px}
+.ip-list{display:grid;gap:8px}
+.ir{border:1px solid var(--outline-v);border-radius:16px;background:var(--surface);overflow:hidden}
+.ir.open{box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--primary) 30%,var(--outline-v))}
+.ir-head{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:none;border:0;font:inherit;color:inherit;text-align:right;cursor:pointer}
+.ir-head:hover{background:var(--surface-hi)}
+.ir-av{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;background:var(--secondary-c);color:var(--on-secondary-c)}
+.ir-av.self{background:var(--surface-hi);color:var(--on-variant)}.ir-av.off{background:var(--surface-hi);color:var(--outline)}.ir-av .i{width:19px;height:19px}
+.ir-main{flex:1;min-width:0;display:grid;gap:1px}
+.ir-name{font-weight:700;font-size:15px}
+.ir-sub{color:var(--on-variant);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ir-sub .ir-dot{margin:0 6px}
+.ir-chip{display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 10px;border-radius:999px;background:var(--surface-hi);font-size:12.5px;color:var(--on-variant)}
+.ir-chip b{color:var(--on)}.ir-chip .i{width:14px;height:14px}.ir-chip.zero{opacity:.6}
+.ir-chev{color:var(--outline);font-size:12px;width:14px;text-align:center}
+.ir-body{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:0;border-top:1px solid var(--outline-v)}
+.ir-body.self{grid-template-columns:1fr}
+.ir-sec{padding:14px 16px;min-width:0}.ir-sec+.ir-sec{border-inline-start:1px solid var(--outline-v)}
+.ir-sec h4{margin:0 0 8px;font-size:12.5px;font-weight:700;color:var(--on-variant);letter-spacing:.2px}
+.ir-kv{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:36px;font-size:13.5px}
+.ir-kv>span{color:var(--on-variant)}
+.ir-pw{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end}.ir-pw code{font-size:14px;padding:0 6px}
+.ir-hint{font-size:12.5px;margin:2px 0 6px}
+.ir-sw{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:40px;font-size:13.5px;cursor:pointer}
+.btn.ir-danger{color:var(--error)}
+.ir-dev{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--outline-v)}
+.ir-dm{min-width:0;display:grid;font-size:14px}.ir-dm a{font-weight:600;text-decoration:none}.ir-dm .muted{font-size:12.5px}
+.ir-move,.ir-add{display:flex;gap:4px;align-items:center;flex:none}
+.ir-move select,.ir-add select{height:32px;padding:0 8px;font-size:13px;border-radius:8px;max-width:150px}
+.ir-add{margin-top:10px}.ir-add select{flex:1;max-width:none}
+.ir .btn.sm{min-height:32px;padding:0 10px;font-size:13px}
+@media (max-width:860px){.ir-body{grid-template-columns:1fr}.ir-sec+.ir-sec{border-inline-start:0;border-top:1px solid var(--outline-v)}}
+@media (max-width:560px){.ir-chip:not(:last-of-type){display:none}.ip-stats{width:100%}}
 .dtabs .count{background:#b3261e;color:#fff;border-radius:9px;padding:0 6px;font-size:11.5px}
 .tdot{width:8px;height:8px;border-radius:50%;background:#b3261e;display:inline-block}
 .dbody{display:grid;gap:16px;padding-bottom:8px}
@@ -434,13 +472,6 @@ dialog.wide .applist{max-height:260px;overflow:auto}
     <p class="err" id="loginErr" style="margin:12px 0 0"></p>
     <p style="margin:10px 0 0;text-align:center"><button class="btn text sm" type="button" id="forgotBtn">שכחתי סיסמה</button></p>
   </div></form>
-  <form class="card" id="pasteForm" style="margin-top:12px"><div class="bd">
-    <b style="display:block">קיבלתם מייל לקביעת סיסמה?</b>
-    <p class="muted" style="margin:4px 0 10px;font-size:13.5px">אם הקישור במייל לא נפתח (למשל בנטפרי): העתיקו את כל הקישור מהמייל, הדביקו כאן ולחצו "המשך".</p>
-    <div class="field" style="margin-bottom:10px"><input id="pasteLink" type="text" dir="ltr" placeholder="https://kiydroid.firebaseapp.com/__/auth/action?mode=..." aria-label="הקישור מהמייל"></div>
-    <button class="btn tonal" style="width:100%" type="submit">המשך</button>
-    <p class="err" id="pasteErr" style="margin:10px 0 0"></p>
-  </div></form>
 </section>
 
 <div id="appView" hidden>
@@ -464,12 +495,6 @@ dialog.wide .applist{max-height:260px;overflow:auto}
 <script>
 "use strict";
 const OWNER_EMAIL = "7152207@gmail.com";
-/** the owner's mail service (Google Apps Script in the owner's account: kdroid/mailer). Empty: the old e-mail links */
-const MAILER = "";
-async function mailer(body){
-  const r=await fetch(MAILER,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
-  const j=await r.json(); if(!j.ok) throw new Error(j.err||"mail"); return j;
-}
 const firebaseConfig = {apiKey:"AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI",authDomain:"kiydroid.firebaseapp.com",projectId:"kiydroid",
   storageBucket:"kiydroid.firebasestorage.app",messagingSenderId:"303401885325",appId:"1:303401885325:web:5be1b385c598384d5a4cc4"};
 firebase.initializeApp(firebaseConfig);
@@ -612,27 +637,15 @@ auth.onAuthStateChanged(async u=>{
 });
 /** an installer's first login: where things are, and the option to change the password right away */
 function welcome(){
-  const dlg=$("dlg"), done=()=>{ dlg.removeEventListener("cancel",stay); dlg.close(); };
-  const stay=e=>e.preventDefault();
+  const dlg=$("dlg");
   $("dlgIn").innerHTML=`<h3>ברוכים הבאים, ${esc(me.name)}</h3>
-    <p class="muted">לפני שמתחילים: בחרו סיסמה משלכם במקום הסיסמה הזמנית שקיבלתם.</p>
-    <div class="field"><label class="f" for="wPw">סיסמה חדשה</label><input id="wPw" type="password" dir="ltr" autocomplete="new-password"></div>
-    <div class="field"><label class="f" for="wPw2">שוב, לאימות</label><input id="wPw2" type="password" dir="ltr" autocomplete="new-password"></div>
-    <p class="err" id="wErr" style="margin:0"></p>
-    <div class="row" style="justify-content:space-between;margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn text sm" id="wKeep">כבר בחרתי סיסמה משלי</button>
-      <button class="btn fill" id="wSave">שמירה</button></div>
-    <p class="muted" style="font-size:13px;margin:12px 0 0">מדריך מלא לכל מה שבפאנל נמצא בתפריט, תחת "מדריך".</p>`;
-  dlg.addEventListener("cancel",stay);
-  $("wKeep").onclick=done;
-  $("wSave").onclick=async()=>{
-    const pw=$("wPw").value; $("wErr").textContent="";
-    if(pw.length<6){ $("wErr").textContent="הסיסמה צריכה להיות באורך 6 תווים לפחות."; return; }
-    if(pw!==$("wPw2").value){ $("wErr").textContent="שתי הסיסמאות לא זהות."; return; }
-    const b=$("wSave"); b.disabled=true;
-    try{ await auth.currentUser.updatePassword(pw); rememberPw(me.uid,pw); done(); toast("הסיסמה נשמרה"); }
-    catch(e){ b.disabled=false; $("wErr").textContent=e&&e.code==="auth/requires-recent-login"?"צריך להיכנס מחדש ואז לבחור סיסמה.":"השמירה נכשלה. נסו שוב."; }
-  };
-  dlg.showModal(); setTimeout(()=>$("wPw")&&$("wPw").focus(),50);
+    <p class="muted">זה האזור האישי שלכם: המכשירים שלכם, הקישור האישי, קובצי התקנה והתקנה ישירה מהמחשב. מדריך מלא נמצא בתפריט, תחת "מדריך".</p>
+    <p class="muted">רוצים להחליף עכשיו את הסיסמה שקבעתם מהמייל?</p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">אחר כך</button><button class="btn tonal" id="dlgGuide">למדריך</button><button class="btn fill" id="dlgOk">החלפת סיסמה</button></div>`;
+  $("dlgNo").onclick=()=>dlg.close();
+  $("dlgGuide").onclick=()=>{ dlg.close(); location.hash="#guide"; };
+  $("dlgOk").onclick=()=>{ dlg.close(); setTab="account"; location.hash="#settings"; render(); };
+  dlg.showModal();
 }
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
@@ -640,22 +653,12 @@ $("loginForm").addEventListener("submit",async e=>{
   catch(err){ $("loginErr").textContent="הכניסה נכשלה. בדקו מייל וסיסמה."; }
 });
 /** the current password, kept only in this browser (never on the server) so the installer can look at it in settings */
-function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescape(encodeURIComponent(pw)))); }catch(e){} }
+function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescape(encodeURIComponent(pw)))); }catch(e){}
+  // the owner can look at an installer's password and change it (installerSecrets: only the owner reads it)
+  try{ const u=auth.currentUser; if(u&&u.uid===uid&&u.email!==OWNER_EMAIL) commit([{set:"installerSecrets/"+uid,data:{pw,at:Date.now()}}]).catch(()=>{}); }catch(e){} }
 function savedPw(uid){ try{ const v=localStorage.getItem("kd.pw."+uid); return v?decodeURIComponent(escape(atob(v))):""; }catch(e){ return ""; } }
-if(MAILER) $("pasteForm").hidden=true;
-$("pasteForm").addEventListener("submit",e=>{
-  e.preventDefault(); $("pasteErr").textContent="";
-  const raw=$("pasteLink").value.trim().replace(/&amp;/g,"&");
-  const m=raw.match(/[?&]oobCode=([^&\s#]+)/), md=raw.match(/[?&]mode=([^&\s#]+)/);
-  if(!m){ $("pasteErr").textContent="זה לא נראה כמו הקישור מהמייל. העתיקו את כל הקישור, מ-https ועד הסוף."; return; }
-  if(md&&md[1]!=="resetPassword"){ $("pasteErr").textContent="הקישור הזה אינו לקביעת סיסמה."; return; }
-  location.assign(location.pathname+"?mode=resetPassword&oobCode="+m[1]);
-});
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
-  if(MAILER){ try{ const j=await mailer({action:"reset",email:em});
-      $("loginErr").textContent=j.wait?"כבר נשלחה סיסמה זמנית בדקות האחרונות. בדקו את המייל (גם בספאם).":"אם המייל רשום כמתקין, נשלחה אליו עכשיו סיסמה זמנית. בדקו את המייל (גם בספאם)."; }
-    catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. נסו שוב בעוד רגע."; } return; }
   try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
 };
 if(resetMode) (async()=>{
@@ -1447,45 +1450,73 @@ function vInstallers(v){
   const devsOf = id => D.devices.filter(d=>d.installerId===id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const opts = sel => `<option value="owner" ${sel==="owner"?"selected":""}>${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>`
     + D.installers.filter(i=>i.active||i._id===sel).map(i=>`<option value="${esc(i._id)}" ${sel===i._id?"selected":""}>${esc(i.name)}</option>`).join("");
-  const block = i => { const list=devsOf(i._id), open=instOpen.has(i._id);
+  const sec = id => (D.secrets||{})[id];
+  const q=(instQ||"").trim().toLowerCase();
+  const match = i => !q || [i.name,i.phone,i.email,i.code].some(x=>String(x||"").toLowerCase().includes(q));
+  const row = i => { const list=devsOf(i._id), open=instOpen.has(i._id), pw=sec(i._id);
     const others=D.devices.filter(d=>d.installerId!==i._id).sort((a,b)=>String(a.name).localeCompare(String(b.name),"he"));
-    return `<div class="instblock">
-      <div class="insthead">
-        <div class="main"><div class="t"><b>${esc(i.name)}</b> ${i.self?"":i.active?'<span class="pill active">פעיל</span>':'<span class="pill released">מושבת</span>'}</div>
-          ${i.self?`<div class="muted">מכשירים שנרשמו בלי קוד מתקין</div>`:`<div class="muted"><span class="num" dir="ltr">${esc(i.phone)}</span> · <span dir="ltr">${esc(i.email)}</span> · קוד <b class="num" style="letter-spacing:2px">${esc(i.code)}</b></div>`}</div>
-        <button class="btn tonal sm" data-open="${esc(i._id)}" aria-expanded="${open}">מכשירים · <span class="num">${list.length}</span> ${open?"▴":"▾"}</button>
+    const head = `<button type="button" class="ir-head" data-open="${esc(i._id)}" aria-expanded="${open}">
+        <span class="ir-av ${i.self?"self":i.active?"":"off"}">${i.self?icon("home"):esc(String(i.name||"?").trim().charAt(0))}</span>
+        <span class="ir-main"><span class="ir-name">${esc(i.name)}${i.self||i.active?"":' <span class="pill released">מושבת</span>'}</span>
+          <span class="ir-sub">${i.self?"מכשירים שנרשמו בלי קוד מתקין":`<span dir="ltr">${esc(i.phone)}</span><span class="ir-dot">·</span><span dir="ltr">${esc(i.email)}</span>`}</span></span>
+        ${i.self?"":`<span class="ir-chip" title="קוד מתקין">קוד <b class="num">${esc(i.code)}</b></span>`}
+        <span class="ir-chip ${list.length?"":"zero"}">${icon("phone")}<b class="num">${list.length}</b></span>
+        <span class="ir-chev" aria-hidden="true">${open?"▴":"▾"}</span>
+      </button>`;
+    if(!open) return `<div class="ir">${head}</div>`;
+    const account = i.self?"":`<div class="ir-sec"><h4>חשבון</h4>
+        <div class="ir-kv"><span>סיסמה</span><div class="ir-pw">
+          ${pw?`<code dir="ltr" data-pwv="${esc(i._id)}">••••••••</code><button class="btn text sm" data-pwshow="${esc(i._id)}">הצג</button><button class="btn text sm" data-pwcopy="${esc(i._id)}">${icon("copy")}</button>`
+              :`<span class="muted" title="תופיע אחרי שהמתקין ייכנס לפאנל">עוד לא ידועה</span>`}
+          <button class="btn tonal sm" data-pwset="${esc(i._id)}" ${pw?"":"disabled"}>${icon("edit")}שינוי</button></div></div>
+        ${pw?"":`<p class="muted ir-hint">הסיסמה תופיע כאן אחרי שהמתקין ייכנס לפאנל בפעם הבאה. עד אז אפשר לשלוח לו מייל לקביעת סיסמה.</p>`}
+        <div class="ir-kv"><span>קישור אישי</span><div><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק</button></div></div>
+        <div class="ir-kv"><span>מייל סיסמה</span><div><button class="btn text sm" data-reset="${esc(i.email)}">שלח שוב</button></div></div>
       </div>
-      ${i.self?"":`<div class="instperm">
-        <div class="sw"><span>יכול לשחרר מכשירים</span><label class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""} aria-label="יכול לשחרר מכשירים"><i></i></label></div>
-        <div class="sw"><span>יכול למחוק מכשירים מהמערכת</span><label class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""} aria-label="יכול למחוק מכשירים"><i></i></label></div>
-        <div class="row"><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק קישור אישי</button>
-          <button class="btn text sm" data-reset="${esc(i.email)}">${MAILER?"שליחת סיסמה זמנית":"שלח שוב מייל סיסמה"}</button>
-          <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת מתקין":"הפעל מתקין"}</button></div>
-      </div>`}
-      ${open?`<div class="instdevs">
-        ${list.map(d=>`<div class="item"><div class="main"><div class="t"><a href="#device/${encodeURIComponent(d._id)}">${esc(d.name)}</a>${isReturning(d)?' <span class="pill wait">חוזר</span>':""}</div>
-            <div class="muted"><span class="num" dir="ltr">${esc(d.phone)}</span> · ${esc(statusOf(d).t)} · נרשם ${when(d.createdAt)}</div></div>
-          <div class="row"><select data-move="${esc(d._id)}" aria-label="העבר למתקין">${opts(d.installerId)}</select>
-            <button class="btn out sm" data-moveb="${esc(d._id)}">העבר</button></div></div>`).join("")||'<div class="empty">אין מכשירים</div>'}
-        ${others.length?`<div class="item addrow"><div class="main"><div class="t">הוספת מכשיר ל${esc(i.self?"ניהול שלי":i.name)}</div>
-            <div class="row" style="margin-top:6px"><select data-addsel="${esc(i._id)}" aria-label="בחירת מכשיר"><option value="">בחרו מכשיר…</option>
-            ${others.map(d=>`<option value="${esc(d._id)}">${esc(d.name)} · ${esc(d.phone)} · ${esc(installerLabel(d.installerId))}</option>`).join("")}</select>
-          <button class="btn fill sm" data-add="${esc(i._id)}">הוסף</button></div></div></div>`:""}
-      </div>`:""}
-    </div>`; };
-  v.innerHTML=`<div class="split"><section class="card"><div class="hd"><h2>מתקינים ומכשירים</h2></div>
-    <div class="bd"><p class="muted" style="margin-top:0">ברירת המחדל: כל מתקין יכול לשחרר מכשירים, ורק את/ה יכול/ה למחוק מכשיר מהמערכת. אפשר לשנות לכל מתקין בנפרד.</p>
-    ${groups.map(block).join("")}${D.installers.length?"":'<div class="empty">עוד אין מתקינים</div>'}</div></section>
-    <section class="card"><div class="hd"><h2>מתקין חדש</h2></div><form class="bd" id="newInst">
-      <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
-      <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
-      <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
-      <div class="note info" style="margin-bottom:12px">אחרי היצירה תקבלו סיסמה זמנית. שלחו אותה למתקין יחד עם המייל, והוא ייכנס איתה לפאנל ויחליף אותה לסיסמה משלו. בלי קישורים במייל, כך שזה עובד גם בנטפרי.</div>
-      <button class="btn fill" type="submit" style="width:100%">צור מתקין</button><p class="err" id="niErr"></p></form></section></div>`;
+      <div class="ir-sec"><h4>הרשאות</h4>
+        <label class="ir-sw"><span>יכול לשחרר מכשירים</span><span class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""}><i></i></span></label>
+        <label class="ir-sw"><span>יכול למחוק מכשירים מהמערכת</span><span class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""}><i></i></span></label>
+        <button class="btn text sm ${i.active?"ir-danger":""}" data-toggle="${esc(i._id)}" style="margin-top:6px">${i.active?"השבתת המתקין":"הפעלת המתקין מחדש"}</button>
+      </div>`;
+    const devices = `<div class="ir-sec ir-devs"><h4>מכשירים <span class="muted num">${list.length}</span></h4>
+        ${list.map(d=>`<div class="ir-dev"><div class="ir-dm"><a href="#device/${encodeURIComponent(d._id)}">${esc(d.name)}</a>${isReturning(d)?' <span class="pill wait">חוזר</span>':""}
+            <span class="muted"><span dir="ltr">${esc(d.phone)}</span> · ${esc(statusOf(d).t)}</span></div>
+          <div class="ir-move"><select data-move="${esc(d._id)}" aria-label="העברה למתקין">${opts(d.installerId)}</select><button class="btn text sm" data-moveb="${esc(d._id)}">העבר</button></div></div>`).join("")||'<div class="muted" style="padding:6px 0">אין מכשירים</div>'}
+        ${others.length?`<div class="ir-add"><select data-addsel="${esc(i._id)}" aria-label="בחירת מכשיר"><option value="">הוספת מכשיר מאחר…</option>
+            ${others.map(d=>`<option value="${esc(d._id)}">${esc(d.name)} · ${esc(installerLabel(d.installerId))}</option>`).join("")}</select>
+          <button class="btn tonal sm" data-add="${esc(i._id)}">הוסף</button></div>`:""}
+      </div>`;
+    return `<div class="ir open">${head}<div class="ir-body ${i.self?"self":""}">${account}${devices}</div></div>`; };
+  const shown=D.installers.filter(match), actN=D.installers.filter(i=>i.active).length;
+  v.innerHTML=`<div class="instpage">
+    <div class="ip-bar">
+      <div class="ip-stats"><span><b class="num">${actN}</b> מתקינים פעילים</span><span><b class="num">${D.devices.length}</b> מכשירים</span></div>
+      <input type="search" id="instQ" placeholder="חיפוש: שם, טלפון, מייל או קוד" value="${esc(instQ||"")}" aria-label="חיפוש מתקין">
+      <button class="btn fill sm" id="instNew">${newInstOpen?"סגירה":"+ מתקין חדש"}</button>
+    </div>
+    ${newInstOpen?`<section class="card ip-new"><form class="bd" id="newInst">
+      <div class="ip-newgrid">
+        <div class="field"><label class="f" for="niName">שם מלא *</label><input id="niName" type="text" required></div>
+        <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
+        <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
+      </div>
+      <p class="muted" style="margin:0 0 12px;font-size:13.5px">המתקין יקבל למייל קישור לקביעת סיסמה. אם המייל לא הגיע, בדקו בספאם או לחצו "שלח שוב" אצלו. ברירת המחדל: יכול לשחרר מכשירים, לא יכול למחוק.</p>
+      <div class="row" style="gap:8px"><button class="btn fill sm" type="submit">צור מתקין</button><p class="err" id="niErr" style="margin:0"></p></div></form></section>`:""}
+    <div class="ip-list">${shown.map(row).join("")||`<div class="empty">${q?"לא נמצא מתקין":"עוד אין מתקינים"}</div>`}</div>
+    ${q?"":`<div class="ip-list">${row(groups[0])}</div>`}
+  </div>`;
+  $("instQ").oninput=e=>{ instQ=e.target.value; const pos=e.target.selectionStart; vInstallers(v); const n=$("instQ"); n.focus(); n.setSelectionRange(pos,pos); };
+  $("instNew").onclick=()=>{ newInstOpen=!newInstOpen; vInstallers(v); if(newInstOpen) $("niName").focus(); };
+  if(!D.secrets) loadSecrets().then(()=>{ if(location.hash==="#installers") vInstallers(v); });
+  v.querySelectorAll("[data-pwshow]").forEach(b=>b.onclick=()=>{ const id=b.dataset.pwshow, c=v.querySelector(`[data-pwv="${id}"]`), on=c.textContent.startsWith("•");
+    c.textContent=on?(sec(id)||{}).pw||"":"••••••••"; b.textContent=on?"הסתר":"הצג"; });
+  v.querySelectorAll("[data-pwcopy]").forEach(b=>b.onclick=()=>copyText((sec(b.dataset.pwcopy)||{}).pw||"","הסיסמה הועתקה"));
+  v.querySelectorAll("[data-pwset]").forEach(b=>b.onclick=()=>setInstallerPw(D.installers.find(x=>x._id===b.dataset.pwset),v));
+  if(!$("newInst")){ wireInst(v); return; }
   $("newInst").onsubmit=async e=>{
     e.preventDefault(); $("niErr").textContent="";
     const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase();
-    // a temporary password the owner hands over (easy to read aloud); the installer replaces it at the first login
+    // a starting password the owner can see next to the installer's name; the installer also gets the e-mail to set his own
     const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
     const pw=rnd(4)+"-"+rnd(4)+"-"+rnd(4);
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
@@ -1497,21 +1528,15 @@ function vInstallers(v){
       if(!code) throw new Error("code");
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
-      if(MAILER){
-        try{ await mailer({action:"welcome",idToken:await auth.currentUser.getIdToken(),email,name,password:pw,code});
-             toast("המתקין נוצר (קוד "+code+"). נשלח אליו מייל עם פרטי הכניסה."); e.target.reset(); btn.disabled=false; load(); return; }
-        catch(err){ console.error(err); toast("המייל לא נשלח, אז הנה הפרטים לשליחה ידנית"); }
-      }
-      const msg=`שלום ${name}, נפתח לך חשבון מתקין בקיידרואיד.\nכניסה: ${new URL("./",location.href).href}\nמייל: ${email}\nסיסמה זמנית: ${pw}\nבכניסה הראשונה תתבקש לבחור סיסמה משלך.`;
-      const dlg=$("dlg");
-      $("dlgIn").innerHTML=`<h3>המתקין נוצר ✓</h3>
-        <p class="muted">שלחו למתקין את פרטי הכניסה (בוואטסאפ, SMS או בטלפון). הסיסמה מוצגת רק עכשיו.</p>
-        <div class="note ok" style="font-size:14.5px;line-height:1.8"><div>מייל: <b dir="ltr">${esc(email)}</b></div><div>סיסמה זמנית: <b dir="ltr" class="num" style="letter-spacing:1px">${esc(pw)}</b></div><div>קוד מתקין: <b class="num">${esc(code)}</b></div></div>
-        <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">סגירה</button><button class="btn fill" id="dlgOk">${icon("copy")}העתק הודעה למתקין</button></div>`;
-      $("dlgNo").onclick=()=>dlg.close(); $("dlgOk").onclick=()=>copyText(msg,"ההודעה הועתקה. הדביקו אותה בוואטסאפ למתקין.");
-      dlg.showModal(); e.target.reset(); btn.disabled=false; load();
+      commit([{set:"installerSecrets/"+uid,data:{pw,at:Date.now()}}]).catch(()=>{});
+      let mailed=true; try{ await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
+      toast(mailed?"המתקין נוצר (קוד "+code+"). נשלח אליו מייל לקביעת סיסמה.":"המתקין נוצר (קוד "+code+"), אבל המייל לא נשלח. לחצו \"שלח שוב\" אצלו."); newInstOpen=false; instOpen.add(uid); D.secrets=null; load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
+  wireInst(v);
+}
+
+function wireInst(v){
   v.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ const id=b.dataset.open; instOpen.has(id)?instOpen.delete(id):instOpen.add(id); vInstallers(v); });
   v.querySelectorAll("[data-perm]").forEach(c=>c.onchange=async()=>{
     const i=D.installers.find(x=>x._id===c.dataset.id), k=c.dataset.perm;
@@ -1532,10 +1557,35 @@ function vInstallers(v){
       on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:shownPhone(i),profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
-  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{
-    if(MAILER){ if(!confirm("לשלוח למתקין סיסמה זמנית חדשה במייל? הסיסמה הנוכחית שלו תפסיק לעבוד.")) return;
-      b.disabled=true; try{ await mailer({action:"reset",email:b.dataset.reset,idToken:await auth.currentUser.getIdToken()}); toast("נשלחה למתקין סיסמה זמנית חדשה במייל"); }catch(e){ toast("השליחה נכשלה"); } b.disabled=false; return; }
-    try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+}
+let instQ="", newInstOpen=false;
+async function loadSecrets(){ try{ const l=await listAll("installerSecrets"); D.secrets=Object.fromEntries(l.map(x=>[x._id,x])); }catch(e){ D.secrets={}; } }
+/** the owner changes an installer's password: signs in as the installer with the known password, then sets the new one */
+function setInstallerPw(i,v){
+  const dlg=$("dlg"), cur=((D.secrets||{})[i._id]||{}).pw;
+  const gen=()=>{ const r=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join(""); return r(4)+"-"+r(4); };
+  $("dlgIn").innerHTML=`<h3>סיסמה חדשה ל${esc(i.name)}</h3>
+    <p class="muted">הסיסמה הנוכחית תפסיק לעבוד מיד, והמתקין יצטרך להיכנס לפאנל מחדש עם החדשה.</p>
+    <div class="field"><label class="f" for="npw">סיסמה חדשה</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="npw" type="text" dir="ltr" value="${gen()}" style="flex:1"><button class="btn text sm" id="npwGen" type="button">אחרת</button></div></div>
+    <p class="err" id="npwErr" style="margin:0"></p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn fill" id="dlgOk">שמירה</button></div>`;
+  $("npwGen").onclick=()=>{ $("npw").value=gen(); };
+  $("dlgNo").onclick=()=>dlg.close();
+  $("dlgOk").onclick=async()=>{
+    const np=$("npw").value.trim(); if(np.length<6){ $("npwErr").textContent="לפחות 6 תווים."; return; }
+    const ok=$("dlgOk"); ok.disabled=true; $("npwErr").textContent="";
+    try{
+      const call=async(path,body)=>{ const r=await fetch("https://identitytoolkit.googleapis.com/v1/"+path+"?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+        const j=await r.json(); if(!r.ok) throw new Error(j.error&&j.error.message||"err"); return j; };
+      const s1=await call("accounts:signInWithPassword",{email:i.email,password:cur,returnSecureToken:true});
+      await call("accounts:update",{idToken:s1.idToken,password:np,returnSecureToken:false});
+      await commit([{set:"installerSecrets/"+i._id,data:{pw:np,at:Date.now()}},audit("","permission",i.name+": הסיסמה שונתה")]);
+      D.secrets[i._id]={pw:np,at:Date.now()}; dlg.close(); toast("הסיסמה של "+i.name+" שונתה"); vInstallers(v);
+    }catch(e){ ok.disabled=false;
+      $("npwErr").textContent=/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS/.test(e.message)?"הסיסמה השמורה כבר לא נכונה (המתקין החליף אותה). היא תתעדכן כשייכנס לפאנל.":/WEAK_PASSWORD/.test(e.message)?"הסיסמה חלשה מדי.":"השינוי נכשל. נסו שוב."; }
+  };
+  dlg.showModal();
 }
 
 // ---------------------------------------------------------------- install files (personal installer per installer)
