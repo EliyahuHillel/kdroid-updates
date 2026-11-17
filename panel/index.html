@@ -464,6 +464,12 @@ dialog.wide .applist{max-height:260px;overflow:auto}
 <script>
 "use strict";
 const OWNER_EMAIL = "7152207@gmail.com";
+/** the owner's mail service (Google Apps Script in the owner's account: kdroid/mailer). Empty: the old e-mail links */
+const MAILER = "";
+async function mailer(body){
+  const r=await fetch(MAILER,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+  const j=await r.json(); if(!j.ok) throw new Error(j.err||"mail"); return j;
+}
 const firebaseConfig = {apiKey:"AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI",authDomain:"kiydroid.firebaseapp.com",projectId:"kiydroid",
   storageBucket:"kiydroid.firebasestorage.app",messagingSenderId:"303401885325",appId:"1:303401885325:web:5be1b385c598384d5a4cc4"};
 firebase.initializeApp(firebaseConfig);
@@ -636,6 +642,7 @@ $("loginForm").addEventListener("submit",async e=>{
 /** the current password, kept only in this browser (never on the server) so the installer can look at it in settings */
 function rememberPw(uid,pw){ try{ localStorage.setItem("kd.pw."+uid,btoa(unescape(encodeURIComponent(pw)))); }catch(e){} }
 function savedPw(uid){ try{ const v=localStorage.getItem("kd.pw."+uid); return v?decodeURIComponent(escape(atob(v))):""; }catch(e){ return ""; } }
+if(MAILER) $("pasteForm").hidden=true;
 $("pasteForm").addEventListener("submit",e=>{
   e.preventDefault(); $("pasteErr").textContent="";
   const raw=$("pasteLink").value.trim().replace(/&amp;/g,"&");
@@ -646,6 +653,9 @@ $("pasteForm").addEventListener("submit",e=>{
 });
 $("forgotBtn").onclick=async()=>{
   const em=$("lEmail").value.trim(); if(!em){ $("loginErr").textContent="הקלידו קודם את המייל."; return; }
+  if(MAILER){ try{ const j=await mailer({action:"reset",email:em});
+      $("loginErr").textContent=j.wait?"כבר נשלחה סיסמה זמנית בדקות האחרונות. בדקו את המייל (גם בספאם).":"אם המייל רשום כמתקין, נשלחה אליו עכשיו סיסמה זמנית. בדקו את המייל (גם בספאם)."; }
+    catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. נסו שוב בעוד רגע."; } return; }
   try{ await auth.sendPasswordResetEmail(em); $("loginErr").textContent="נשלח קישור לאיפוס הסיסמה למייל."; }catch(e){ $("loginErr").textContent="לא הצלחתי לשלוח. בדקו את המייל."; }
 };
 if(resetMode) (async()=>{
@@ -1449,7 +1459,7 @@ function vInstallers(v){
         <div class="sw"><span>יכול לשחרר מכשירים</span><label class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""} aria-label="יכול לשחרר מכשירים"><i></i></label></div>
         <div class="sw"><span>יכול למחוק מכשירים מהמערכת</span><label class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""} aria-label="יכול למחוק מכשירים"><i></i></label></div>
         <div class="row"><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק קישור אישי</button>
-          <button class="btn text sm" data-reset="${esc(i.email)}">שלח שוב מייל סיסמה</button>
+          <button class="btn text sm" data-reset="${esc(i.email)}">${MAILER?"שליחת סיסמה זמנית":"שלח שוב מייל סיסמה"}</button>
           <button class="btn ${i.active?"danger":"out"} sm" data-toggle="${esc(i._id)}">${i.active?"השבת מתקין":"הפעל מתקין"}</button></div>
       </div>`}
       ${open?`<div class="instdevs">
@@ -1487,6 +1497,11 @@ function vInstallers(v){
       if(!code) throw new Error("code");
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
+      if(MAILER){
+        try{ await mailer({action:"welcome",idToken:await auth.currentUser.getIdToken(),email,name,password:pw,code});
+             toast("המתקין נוצר (קוד "+code+"). נשלח אליו מייל עם פרטי הכניסה."); e.target.reset(); btn.disabled=false; load(); return; }
+        catch(err){ console.error(err); toast("המייל לא נשלח, אז הנה הפרטים לשליחה ידנית"); }
+      }
       const msg=`שלום ${name}, נפתח לך חשבון מתקין בקיידרואיד.\nכניסה: ${new URL("./",location.href).href}\nמייל: ${email}\nסיסמה זמנית: ${pw}\nבכניסה הראשונה תתבקש לבחור סיסמה משלך.`;
       const dlg=$("dlg");
       $("dlgIn").innerHTML=`<h3>המתקין נוצר ✓</h3>
@@ -1517,7 +1532,10 @@ function vInstallers(v){
       on?{set:"installerCodes/"+i.code,data:{installerId:i._id,name:i.name,phone:shownPhone(i),profile:i.defaultProfile||""}}:{del:"installerCodes/"+i.code}];
     try{ await commit(w); toast(on?"המתקין הופעל":"המתקין הושבת. הקוד שלו כבר לא יקבל מכשירים חדשים."); load(); }catch(e){ toast("הפעולה נכשלה"); }
   });
-  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
+  v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{
+    if(MAILER){ if(!confirm("לשלוח למתקין סיסמה זמנית חדשה במייל? הסיסמה הנוכחית שלו תפסיק לעבוד.")) return;
+      b.disabled=true; try{ await mailer({action:"reset",email:b.dataset.reset,idToken:await auth.currentUser.getIdToken()}); toast("נשלחה למתקין סיסמה זמנית חדשה במייל"); }catch(e){ toast("השליחה נכשלה"); } b.disabled=false; return; }
+    try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
 }
 
 // ---------------------------------------------------------------- install files (personal installer per installer)
