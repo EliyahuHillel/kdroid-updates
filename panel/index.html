@@ -1509,12 +1509,13 @@ function vInstallers(v){
               :`<span class="muted" title="תופיע אחרי שהמתקין ייכנס לפאנל, או אחרי שתקבעו לו סיסמה">לא ידועה</span>`}
           <button class="btn tonal sm" data-pwset="${esc(i._id)}">${icon("edit")}${pw?"שינוי":"קביעה"}</button></div></div>
         <div class="ir-kv"><span>קישור אישי</span><div><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק</button></div></div>
-        <div class="ir-kv"><span>מייל סיסמה</span><div><button class="btn text sm" data-reset="${esc(i.email)}">שלח שוב</button></div></div>
+        <div class="ir-kv"><span>פרטי כניסה</span><div><a class="btn text sm" target="_blank" rel="noopener" href="${esc(welcomeMail(i,pw?pw.pw:DEFAULT_PW))}">${icon("chat")}שליחה במייל</a></div></div>
       </div>
       <div class="ir-sec"><h4>הרשאות</h4>
         <label class="ir-sw"><span>יכול לשחרר מכשירים</span><span class="toggle"><input type="checkbox" data-perm="canRelease" data-id="${esc(i._id)}" ${i.canRelease!==false?"checked":""}><i></i></span></label>
         <label class="ir-sw"><span>יכול למחוק מכשירים מהמערכת</span><span class="toggle"><input type="checkbox" data-perm="canDelete" data-id="${esc(i._id)}" ${i.canDelete===true?"checked":""}><i></i></span></label>
-        <button class="btn text sm ${i.active?"ir-danger":""}" data-toggle="${esc(i._id)}" style="margin-top:6px">${i.active?"השבתת המתקין":"הפעלת המתקין מחדש"}</button>
+        <div class="row" style="gap:4px;margin-top:6px"><button class="btn text sm ${i.active?"ir-danger":""}" data-toggle="${esc(i._id)}">${i.active?"השבתה":"הפעלה מחדש"}</button>
+          <button class="btn text sm ir-danger" data-idel="${esc(i._id)}">מחיקה לגמרי</button></div>
       </div>`;
     const devices = `<div class="ir-sec ir-devs"><h4>מכשירים <span class="muted num">${list.length}</span></h4>
         ${list.map(d=>`<div class="ir-dev"><div class="ir-dm"><a href="#device/${encodeURIComponent(d._id)}">${esc(d.name)}</a>${isReturning(d)?' <span class="pill wait">חוזר</span>':""}
@@ -1538,7 +1539,7 @@ function vInstallers(v){
         <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
         <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
       </div>
-      <p class="muted" style="margin:0 0 12px;font-size:13.5px">הסיסמה הראשונה של כל מתקין חדש היא <b dir="ltr">12345678</b>. בכניסה הראשונה הוא חייב לבחור סיסמה משלו. ברירת המחדל: יכול לשחרר מכשירים, לא יכול למחוק.</p>
+      <p class="muted" style="margin:0 0 12px;font-size:13.5px">הסיסמה הראשונה של כל מתקין חדש היא <b dir="ltr">12345678</b>, ובכניסה הראשונה הוא בוחר סיסמה משלו. אחרי היצירה נפתח Gmail עם מייל מוכן אליו (קישור לפאנל, מייל וסיסמה): לוחצים "שליחה". ברירת המחדל: יכול לשחרר מכשירים, לא יכול למחוק.</p>
       <div class="row" style="gap:8px"><button class="btn fill sm" type="submit">צור מתקין</button><p class="err" id="niErr" style="margin:0"></p></div></form></section>`:""}
     <div class="ip-list">${shown.map(row).join("")||`<div class="empty">${q?"לא נמצא מתקין":"עוד אין מתקינים"}</div>`}</div>
     ${q?"":`<div class="ip-list">${row(groups[0])}</div>`}
@@ -1549,6 +1550,7 @@ function vInstallers(v){
   v.querySelectorAll("[data-pwshow]").forEach(b=>b.onclick=()=>{ const id=b.dataset.pwshow, c=v.querySelector(`[data-pwv="${id}"]`), on=c.textContent.startsWith("•");
     c.textContent=on?(sec(id)||{}).pw||"":"••••••••"; b.textContent=on?"הסתר":"הצג"; });
   v.querySelectorAll("[data-pwcopy]").forEach(b=>b.onclick=()=>copyText((sec(b.dataset.pwcopy)||{}).pw||"","הסיסמה הועתקה"));
+  v.querySelectorAll("[data-idel]").forEach(b=>b.onclick=()=>deleteInstaller(D.installers.find(x=>x._id===b.dataset.idel),v));
   v.querySelectorAll("[data-pwset]").forEach(b=>b.onclick=()=>setInstallerPw(D.installers.find(x=>x._id===b.dataset.pwset),v));
   if(!$("newInst")){ wireInst(v); return; }
   $("newInst").onsubmit=async e=>{
@@ -1557,6 +1559,7 @@ function vInstallers(v){
     // every new installer starts with the same default password and must choose his own at the first login
     const pw=DEFAULT_PW;
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
+    const mailWin=window.open("about:blank","_blank");
     try{
       const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
       const j=await r.json(); if(!r.ok) throw new Error(j.error&&j.error.message||"signup");
@@ -1566,8 +1569,10 @@ function vInstallers(v){
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
       commit([{set:"installerSecrets/"+uid,data:{pw,at:Date.now()}}]).catch(()=>{});
-      toast("המתקין נוצר (קוד "+code+"). הסיסמה הראשונה שלו: 12345678"); newInstOpen=false; instOpen.add(uid); D.secrets=null; load();
-    }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
+      const url=welcomeMail({name,email,code},pw);
+      if(mailWin&&!mailWin.closed){ mailWin.location.href=url; toast("המתקין נוצר. נפתח Gmail עם מייל מוכן אליו: לחצו \"שליחה\"."); }
+      else toast("המתקין נוצר (קוד "+code+"). לשליחת הפרטים: אצלו ← \"שליחה במייל\"."); newInstOpen=false; instOpen.add(uid); D.secrets=null; load();
+    }catch(err){ try{ mailWin&&mailWin.close(); }catch(x){} $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
   wireInst(v);
 }
@@ -1596,6 +1601,45 @@ function wireInst(v){
   v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
 }
 let instQ="", newInstOpen=false;
+/** the e-mail to a new installer: opens the owner's Gmail with everything filled in; one click on "Send" */
+function welcomeMail(i,pw){
+  const panel=new URL("./",location.href).href;
+  const body=`שלום ${i.name},\n\nנפתח לך חשבון מתקין במערכת הניהול של קיידרואיד.\n\nכניסה לפאנל: ${panel}\nמייל: ${i.email}\nסיסמה זמנית: ${pw}\nקוד מתקין: ${i.code}\n\nבכניסה הראשונה תתבקש לבחור סיסמה משלך.\nמדריך מלא נמצא בפאנל, בתפריט "מדריך".\n\n${D.config.ownerName||"קיידרואיד"}`;
+  return "https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(i.email)+"&su="+encodeURIComponent("פרטי הכניסה שלך לקיידרואיד")+"&body="+encodeURIComponent(body);
+}
+/** removes an installer completely: his devices go to whoever the owner picks, then his account, code and password */
+function deleteInstaller(i,v){
+  const dlg=$("dlg"), devs=D.devices.filter(d=>d.installerId===i._id);
+  $("dlgIn").innerHTML=`<h3>מחיקת ${esc(i.name)}</h3>
+    <p class="muted">המתקין יימחק מהמערכת: החשבון שלו, הקוד (${esc(i.code)}) והסיסמה. הוא לא יוכל להיכנס יותר, וקבצים שהוריד לא ירשמו מכשירים חדשים אצלו.</p>
+    ${devs.length?`<div class="field"><label class="f" for="delTo">יש לו ${devs.length} מכשירים. להעביר אותם אל</label><select id="delTo">
+      <option value="owner">${esc(D.config.ownerName||"מוקד קיידרואיד")} (אני)</option>
+      ${D.installers.filter(x=>x.active&&x._id!==i._id).map(x=>`<option value="${esc(x._id)}">${esc(x.name)}</option>`).join("")}</select></div>`:""}
+    <label class="row" style="gap:8px;font-size:14px;margin:4px 0 0;cursor:pointer"><input type="checkbox" id="delOk"> כן, למחוק את ${esc(i.name)} לגמרי</label>
+    <p class="err" id="delErr" style="margin:8px 0 0"></p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;gap:8px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn danger" id="dlgOk" disabled>מחיקה</button></div>`;
+  $("delOk").onchange=e=>{ $("dlgOk").disabled=!e.target.checked; };
+  $("dlgNo").onclick=()=>dlg.close();
+  $("dlgOk").onclick=async()=>{
+    const b=$("dlgOk"); b.disabled=true; b.textContent="מוחק…"; $("delErr").textContent="";
+    try{
+      const to=$("delTo")?$("delTo").value:"owner";
+      for(const d of devs) await reassign(d,to);
+      // the sign-in account: removed with his known password; otherwise it stays (it cannot get in without the installer record)
+      let authGone=false; const pw=((D.secrets||{})[i._id]||{}).pw;
+      if(pw){ try{
+        const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:i.email,password:pw,returnSecureToken:true})});
+        const j=await r.json();
+        if(r.ok){ const r2=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:delete?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idToken:j.idToken})}); authGone=r2.ok; }
+      }catch(e){} }
+      await commit([{del:"installers/"+i._id},{del:"installerCodes/"+i.code},{del:"installerSecrets/"+i._id},audit("","deleted","מתקין נמחק: "+i.name+(devs.length?" · "+devs.length+" מכשירים הועברו אל "+installerLabel(to):""))]);
+      dlg.close(); instOpen.delete(i._id); if(D.secrets) delete D.secrets[i._id];
+      toast(authGone?i.name+" נמחק לגמרי":i.name+" נמחק. כדי להשתמש שוב באותו מייל, מחקו אותו גם ב-Firebase ← Authentication ← Users");
+      await load();
+    }catch(e){ console.error(e); b.disabled=false; b.textContent="מחיקה"; $("delErr").textContent="המחיקה נכשלה. נסו שוב."; }
+  };
+  dlg.showModal();
+}
 async function loadSecrets(){ try{ const l=await listAll("installerSecrets"); D.secrets=Object.fromEntries(l.map(x=>[x._id,x])); }catch(e){ D.secrets={}; } }
 /** Google approval of the owner (the project owner), needed to set a password Firebase does not let a web page set
  *  otherwise: for an installer whose current password is not known. One OAuth client ID, saved once in config/public. */
