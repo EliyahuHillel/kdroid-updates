@@ -549,8 +549,8 @@ function ago(ms){
   if(!ms) return "עוד לא התחבר";
   const m=Math.round((Date.now()-ms)/60000);
   if(m<2) return "עכשיו"; if(m<60) return "לפני "+m+" דקות";
-  const h=Math.round(m/60); if(h<24) return h===1?"לפני שעה":"לפני "+h+" שעות";
-  const d=Math.round(h/24); return d===1?"אתמול":"לפני "+d+" ימים";
+  const h=Math.round(m/60); if(h<24) return h===1?"לפני שעה":h===2?"לפני שעתיים":"לפני "+h+" שעות";
+  const d=Math.round(h/24); return d===1?"אתמול":d===2?"לפני יומיים":"לפני "+d+" ימים";
 }
 const when = ms => ms ? new Date(Number(ms)).toLocaleString("he-IL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
 function toast(s){ const t=$("toast"); t.textContent=s; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,3500); }
@@ -753,7 +753,24 @@ async function load(){
     }
     loaded=true;
   }catch(e){ console.error(e); toast("לא הצלחתי לטעון נתונים מהשרת."); }
-  loading=false; if(!draft&&!typing&&!fileBusy) render(); else renderTabs();
+  loading=false;
+  // redraw only when something changed (or every 2 minutes, for "seen X minutes ago"), keeping the scroll position:
+  // a redraw of the same data made the page jump
+  let sig=""; try{ sig=JSON.stringify([D.devices,D.reports,D.requests,D.messages,D.installers,D.config,D.secrets&&Object.keys(D.secrets)]); }catch(e){}
+  const changed=sig!==lastSig||Date.now()-lastFull>120000;
+  if(!draft&&!typing&&!fileBusy&&changed){ lastSig=sig; renderKeep(); } else renderTabs();
+}
+let lastSig="", lastFull=0;
+/** redraws the page and puts back where the user was: scroll positions, open sections */
+function renderKeep(){
+  const v=$("view"), se=document.scrollingElement||document.documentElement;
+  const scrolls=[se,...document.querySelectorAll("main,#appView,.content,#view")].map(el=>[el,el.scrollTop]);
+  const inner=[...v.querySelectorAll("*")].filter(el=>el.scrollTop>0).map(el=>[el.id||el.className,el.scrollTop]);
+  const open=[...v.querySelectorAll("details")].map(d=>d.open);
+  render(); lastFull=Date.now();
+  const ds=[...v.querySelectorAll("details")]; if(ds.length===open.length) ds.forEach((d,i)=>{ d.open=open[i]; });
+  inner.forEach(([k,t])=>{ const el=[...v.querySelectorAll("*")].find(x=>(x.id||x.className)===k); if(el) el.scrollTop=t; });
+  scrolls.forEach(([el,t])=>{ if(el&&el.scrollTop!==t) el.scrollTop=t; });
 }
 
 /** installers who saved a default profile before installing phones could read it: copy it onto their code, once */
@@ -1145,17 +1162,17 @@ function gemachCard(d){
   // location and "lost" exist from 0.9.9.75 on; an older app on the phone ignores them
   const ver=String((stateOf(d._id)||{}).appVersion||d.appVersion||""), vp=ver.split(".").map(Number), old=ver&&(vp[0]*1e6+vp[1]*1e4+vp[2]*100+(vp[3]||0))<(0*1e6+9*1e4+9*100+75);
   const oldNote = old ? `<div class="note warn" style="margin-bottom:12px"><b>בטלפון מותקנת גרסה ${esc(ver)}, שעוד לא תומכת באיתור ובמצב אבד.</b> הוא לא ישלח מיקום ולא יינעל עד שיעודכן לגרסה 0.9.9.75 ומעלה (העדכון נעשה בטלפון עצמו, או בהתקנה מחדש בכבל).</div>` : "";
-  if(!d.track) return `<section class="card" id="gemCard"><div class="hd">${icon("pin")}<h2>מכשיר גמ"ח: מיקום ואבד</h2></div><div class="bd">${oldNote}
-    <p class="muted" style="margin-top:0">למכשירים של הגמ"ח בלבד: המכשיר שולח את המיקום שלו כל 30 דקות, ואם הוא אובד אפשר לנעול אותו ולשלוח אליו הודעות. רק אתה רואה את זה.</p>
-    <button class="btn tonal" id="trackOn">${icon("pin")}הפעל איתור במכשיר הזה</button></div></section>`;
+  if(!d.track) return `<section class="card" id="gemCard"><div class="hd">${icon("pin")}<h2>מכשיר גמ"ח: מיקום ומצב אבד</h2></div><div class="bd">${oldNote}
+    <p class="muted" style="margin-top:0">למכשירים של הגמ"ח בלבד: המכשיר שולח את המיקום שלו כל 30 דקות, ואם הוא אבד אפשר לנעול אותו ולשלוח אליו הודעות. רק אתה רואה את המיקום.</p>
+    <button class="btn tonal" id="trackOn">${icon("pin")}הפעלת איתור במכשיר הזה</button></div></section>`;
   return `<section class="card ${lost?"lostcard":""}" id="gemCard"><div class="hd">${icon("pin")}<h2>${lost?"המכשיר במצב אבד":"מיקום המכשיר"}</h2>
       ${lost?'<span class="pill lostpill">אבד</span>':'<span class="pill active">איתור פעיל</span>'}</div><div class="bd">${oldNote}
     <div id="locBox"><div class="empty">טוען מיקום…</div></div>
     ${lost?`<div class="lostmsgs">${(L.msgs||[]).slice().reverse().map(m=>`<div class="lm"><div>${esc(m.t)}</div><small>${when(m.at)}</small></div>`).join("")||'<div class="muted">עוד לא נשלחו הודעות.</div>'}</div>
       <div class="field" style="margin-top:12px"><label class="f" for="lostMsg">הודעה חדשה למסך הטלפון</label><textarea id="lostMsg" rows="2" maxlength="300" placeholder="למשל: מי שמצא, נא להתקשר. יש פרס למוצא."></textarea></div>
-      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn fill" id="lostSend">${icon("chat")}שלח הודעה</button><span style="flex:1"></span><button class="btn out" id="lostOff">נמצא: שחרר את הנעילה</button></div>
-      <p class="muted" style="margin:10px 0 0;font-size:13px">הנעילה וההודעות מגיעות לטלפון בחיבור הבא שלו (עד 15 דקות). בזמן מצב אבד הטלפון בודק כל דקה ושולח מיקום כל 2 דקות.</p>`
-    :`<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn danger fill" id="lostOn">${icon("alert")}סמן כאבד ונעל</button><span style="flex:1"></span><button class="btn text sm" id="trackOff">כבה איתור</button></div>`}
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn fill" id="lostSend">${icon("chat")}שליחת ההודעה</button><span style="flex:1"></span><button class="btn out" id="lostOff">המכשיר נמצא: שחרור הנעילה</button></div>
+      <p class="muted" style="margin:10px 0 0;font-size:13px">הנעילה וההודעות מגיעות לטלפון בחיבור הבא שלו, תוך 15 דקות לכל היותר. במצב אבד הטלפון בודק כל דקה ושולח את המיקום שלו כל 2 דקות.</p>`
+    :`<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn danger fill" id="lostOn">${icon("alert")}סימון כאבד ונעילה</button><span style="flex:1"></span><button class="btn text sm" id="trackOff">כיבוי האיתור</button></div>`}
   </div></section>`;
 }
 let leafletP=null;
@@ -1164,19 +1181,27 @@ function loadLeaflet(){
     const l=document.createElement("link"); l.rel="stylesheet"; l.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(l);
     const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"; s.onload=()=>ok(window.L); s.onerror=no; document.head.appendChild(s); }));
 }
-const LOC_STATE={noperm:"אין למכשיר הרשאת מיקום. אפשר לתת אותה בחיבור למחשב (תוכנת ההתקנה) או בהתקנה מחדש מקובץ גמ\"ח.",off:"המיקום כבוי במכשיר ולא הצלחתי להדליק אותו.",nofix:"המכשיר לא הצליח לקבל מיקום בבדיקה האחרונה (אולי בתוך מבנה)."};
+const LOC_STATE={noperm:"אין למכשיר הרשאת מיקום. אפשר לתת אותה בחיבור למחשב (תוכנת ההתקנה) או בהתקנה מחדש מקובץ גמ\"ח.",off:"המיקום כבוי במכשיר, ולא הצלחנו להדליק אותו מרחוק.",nofix:"בבדיקה האחרונה המכשיר לא הצליח לקבל מיקום (אולי הוא בתוך מבנה)."};
+/** the last location of each device, drawn at once on a redraw (no "loading" flash, no jumping) and refreshed after */
+const locCache={};
 async function fillLocation(d){
-  const box=$("locBox"); if(!box) return;
-  let loc=null; try{ loc=await getDoc("locations/"+d._id); }catch(e){}
   if(!$("locBox")) return;
-  if(!loc){ box.innerHTML='<div class="note info">עוד לא התקבל מיקום. המכשיר ישלח אותו בחיבור הבא שלו (עד 15 דקות).</div>'; return; }
+  if(d._id in locCache) await drawLoc(d,locCache[d._id]);
+  let loc=null; try{ loc=await getDoc("locations/"+d._id); }catch(e){ if(d._id in locCache) return; }
+  if(!$("locBox")) return;
+  const same=(d._id in locCache)&&JSON.stringify(loc)===JSON.stringify(locCache[d._id]);
+  locCache[d._id]=loc; if(!same) await drawLoc(d,loc);
+}
+async function drawLoc(d,loc){
+  const box=$("locBox"); if(!box) return;
+  if(!loc){ box.innerHTML='<div class="note info">עוד לא התקבל מיקום. המכשיר ישלח אותו בחיבור הבא שלו, תוך 15 דקות לכל היותר.</div>'; return; }
   const hist=(()=>{ try{ return JSON.parse(loc.hist||"[]"); }catch(e){ return []; } })();
   const has=loc.lat!=null&&loc.lng!=null;
   box.innerHTML=`${loc.state&&loc.state!=="ok"&&LOC_STATE[loc.state]?`<div class="note warn" style="margin-bottom:10px">${esc(LOC_STATE[loc.state])}</div>`:""}
     ${has?`<div id="map" class="locmap"></div>
-    <div class="locinfo"><span><b>${ago(loc.at)}</b> · דיוק ${loc.acc||"?"} מ'${loc.battery>=0?` · סוללה ${loc.battery}%`:""}</span>
-      <a class="btn tonal sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}">${icon("link")}פתח בגוגל מפות</a></div>
-    <div class="muted" style="font-size:12.5px">נבדק לאחרונה ${ago(loc.checkedAt)} · ${hist.length} נקודות אחרונות במפה</div>`:'<div class="muted">אין עדיין נקודת מיקום.</div>'}`;
+    <div class="locinfo"><span>עודכן <b>${ago(loc.at)}</b> · דיוק של כ-${loc.acc||"?"} מטר${loc.battery>=0?` · סוללה <span dir="ltr">${loc.battery}%</span>`:""}</span>
+      <a class="btn tonal sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}">${icon("link")}פתיחה בגוגל מפות</a></div>
+    <div class="muted" style="font-size:12.5px">בדיקה אחרונה: ${ago(loc.checkedAt)} · במפה: ${hist.length===1?"המיקום האחרון":hist.length+" המיקומים האחרונים"}</div>`:'<div class="muted">אין עדיין נקודת מיקום.</div>'}`;
   if(!has) return;
   try{
     const L=await loadLeaflet(); if(!$("map")) return;
@@ -1186,15 +1211,15 @@ async function fillLocation(d){
     if(pts.length>1) L.polyline(pts,{color:"#006c51",weight:3,opacity:.55}).addTo(m);
     hist.slice(0,-1).forEach(h=>L.circleMarker([h[0],h[1]],{radius:3,color:"#006c51",weight:1,fillOpacity:.5}).addTo(m).bindTooltip(when(h[3])));
     L.circle([loc.lat,loc.lng],{radius:Math.max(10,loc.acc||10),color:"#b3261e",weight:1,fillOpacity:.12}).addTo(m);
-    L.circleMarker([loc.lat,loc.lng],{radius:8,color:"#fff",weight:3,fillColor:"#b3261e",fillOpacity:1}).addTo(m).bindTooltip("עכשיו: "+when(loc.at));
-  }catch(e){ const mp=$("map"); if(mp) mp.outerHTML='<div class="note info">לא הצלחתי לטעון את המפה. אפשר לפתוח בגוגל מפות.</div>'; }
+    L.circleMarker([loc.lat,loc.lng],{radius:8,color:"#fff",weight:3,fillColor:"#b3261e",fillOpacity:1}).addTo(m).bindTooltip("המיקום האחרון: "+when(loc.at));
+  }catch(e){ const mp=$("map"); if(mp) mp.outerHTML='<div class="note info">לא הצלחנו לטעון את המפה. אפשר לפתוח את המיקום בגוגל מפות.</div>'; }
 }
 function bindGemach(d){
   const id=d._id, ownName=D.config.ownerName||"", ownPhone=D.config.ownerPhone||"";
   const setLost=async L=>{ await commit([{set:"devices/"+id,data:{lost:JSON.stringify(L)},mask:["lost"]},audit(id,L.on?"lost_on":"lost_off",L.on?"":"")]); load(); };
-  if($("trackOn")) $("trackOn").onclick=()=>confirmDlg("הפעלת איתור במכשיר","המכשיר ישלח את המיקום שלו כל 30 דקות, ותוכל לסמן אותו כאבד. מכשיר שלא הותקן מקובץ גמ\"ח לא הציג למשתמש הסבר על כך בנעילה: הפעל רק במכשיר של הגמ\"ח, ויידע את השואל.","הפעל איתור",async()=>{
+  if($("trackOn")) $("trackOn").onclick=()=>confirmDlg("הפעלת איתור במכשיר","המכשיר ישלח את המיקום שלו כל 30 דקות, ותוכל לסמן אותו כאבד. מכשיר שלא הותקן מקובץ גמ\"ח לא הציג למשתמש הסבר על כך בנעילה, לכן הפעל רק במכשיר של הגמ\"ח ויידע את השואל.","הפעלת איתור",async()=>{
     await commit([{set:"devices/"+id,data:{track:true},mask:["track"]},audit(id,"track_on","")]); load(); });
-  if($("trackOff")) $("trackOff").onclick=()=>confirmDlg("כיבוי האיתור","המכשיר יפסיק לשלוח את המיקום שלו.","כבה",async()=>{
+  if($("trackOff")) $("trackOff").onclick=()=>confirmDlg("כיבוי האיתור","המכשיר יפסיק לשלוח את המיקום שלו.","כיבוי",async()=>{
     await commit([{set:"devices/"+id,data:{track:false,lost:""},mask:["track","lost"]},audit(id,"track_off","")]); load(); });
   if($("lostOn")) $("lostOn").onclick=()=>{
     const dlg=$("dlg");
@@ -1202,7 +1227,7 @@ function bindGemach(d){
       <div class="field"><label class="f" for="lN">שם שיוצג</label><input id="lN" type="text" value="${esc(ownName)}"></div>
       <div class="field"><label class="f" for="lP">טלפון להתקשרות</label><input id="lP" type="tel" dir="ltr" class="num" value="${esc(ownPhone)}"></div>
       <div class="field"><label class="f" for="lM">הודעה על המסך</label><textarea id="lM" rows="2" maxlength="300">מכשיר זה שייך לגמ"ח. מי שמצא, נא להתקשר ולהחזיר. תודה!</textarea></div>
-      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn danger fill" id="dlgOk">נעל את הטלפון</button></div>`;
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn text" id="dlgNo">ביטול</button><button class="btn danger fill" id="dlgOk">נעילת הטלפון</button></div>`;
     $("dlgNo").onclick=()=>dlg.close();
     $("dlgOk").onclick=async()=>{ $("dlgOk").disabled=true;
       const t=$("lM").value.trim();
@@ -1213,7 +1238,7 @@ function bindGemach(d){
   if($("lostSend")) $("lostSend").onclick=async()=>{ const t=$("lostMsg").value.trim(); if(!t) return;
     const L=parseLost(d); L.msgs=(L.msgs||[]).concat([{t,at:Date.now()}]).slice(-20);
     $("lostSend").disabled=true; try{ await setLost(L); toast("ההודעה תופיע בטלפון תוך דקה"); }catch(e){ toast("השליחה נכשלה"); $("lostSend").disabled=false; } };
-  if($("lostOff")) $("lostOff").onclick=()=>confirmDlg("שחרור הנעילה","הטלפון יחזור לעבוד כרגיל בחיבור הבא שלו (תוך דקה). האיתור נשאר פעיל.","שחרר",async()=>{
+  if($("lostOff")) $("lostOff").onclick=()=>confirmDlg("שחרור הנעילה","הטלפון יחזור לעבוד כרגיל בחיבור הבא שלו, תוך דקה. האיתור נשאר פעיל.","שחרור",async()=>{
     const L=parseLost(d); L.on=false; L.msgs=[]; await setLost(L); });
   if(d.track) fillLocation(d);
 }
