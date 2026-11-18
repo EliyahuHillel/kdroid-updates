@@ -936,15 +936,15 @@ function vGuide(v){
     ${rel?"":"<li>קודי שחרור יוצר רק מי שיש לו הרשאת שחרור.</li>"}</ul>`],
 
   ...(own?[["mailer","מייל אוטומטי למתקינים",`
-    <p>חיבור חד-פעמי, ומאז כל מתקין חדש מקבל לבד מייל מ"קיידרואיד מתקינים" (מהחשבון hebrewbookssystem@gmail.com) עם קישור לפאנל, המייל שלו והסיסמה הזמנית.</p>
+    <p>הגדרה חד-פעמית, ומאז כל מתקין חדש מקבל לבד מייל מ"קיידרואיד מתקינים" (hebrewbookssystem@gmail.com) עם קישור לפאנל, המייל שלו והסיסמה הזמנית. את המייל שולח הבוט של קיידרואיד ב-GitHub, עם סיסמת אפליקציה ששמורה שם בכספת הסודות.</p>
     <ol class="gl">
-      <li>נכנסים <b>לחשבון hebrewbookssystem@gmail.com</b>, ופותחים <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">פרויקט חדש ב-Apps Script</a>.</li>
-      <li>למעלה משנים את השם ל-<b>Kiydroid mail</b>. בקובץ Code.gs מוחקים הכל ומדביקים את הקוד ששלחנו (Code.gs).</li>
-      <li>בגלגל השיניים (Project Settings) מסמנים "Show appsscript.json manifest file in editor", פותחים את appsscript.json, מוחקים הכל ומדביקים את התוכן ששלחנו.</li>
-      <li>שומרים (Ctrl+S). למעלה בוחרים את הפונקציה <b>check</b> ולוחצים Run ← Review permissions ← בוחרים את החשבון ← Advanced ← Go to Kiydroid mail ← Allow.</li>
-      <li>Deploy ← New deployment ← בגלגל השיניים: Web app ← Execute as: <b>Me</b> ← Who has access: <b>Anyone</b> ← Deploy. מעתיקים את ה-Web app URL.</li>
-      <li>בפאנל: הגדרות ← "פרטי המוקד" ← "מייל אוטומטי למתקינים" ← מדביקים ← "שמור ובדוק".</li></ol>
-    <p class="muted">רק את/ה יכול/ה לשלוח דרכו: כל בקשה נבדקת מול הכניסה שלך לפאנל. Gmail מאפשר עד 100 מיילים ביום מחשבון כזה.</p>`]]:[]),
+      <li><b>סיסמת אפליקציה</b>: בחשבון hebrewbookssystem@gmail.com נכנסים ל-<a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">סיסמאות אפליקציה</a> (צריך אימות דו-שלבי פעיל), שם: Kiydroid ← Create ← מעתיקים את 16 האותיות.</li>
+      <li><b>מפתח הפרויקט</b>: נכנסים ל-<a href="https://console.firebase.google.com/project/kiydroid/settings/serviceaccounts/adminsdk" target="_blank" rel="noopener">Firebase ← Service accounts</a> ← Generate new private key ← Generate key. יורד קובץ JSON.</li>
+      <li><b>שמירה בכספת של GitHub</b>: נכנסים ל-<a href="https://github.com/EliyahuHillel/kdroid-updates/settings/secrets/actions" target="_blank" rel="noopener">Secrets של המאגר</a> ← New repository secret, פעמיים:
+        <ul><li>Name: <code dir="ltr">MAIL_APP_PASSWORD</code>, Secret: 16 האותיות ← Add secret.</li>
+            <li>Name: <code dir="ltr">FIREBASE_SERVICE_ACCOUNT</code>, Secret: פותחים את קובץ ה-JSON בפנקס רשימות, מעתיקים את כל התוכן ומדביקים ← Add secret. אחר כך מוחקים את הקובץ מהמחשב.</li></ul></li>
+      <li>בפאנל: הגדרות ← פרטי המוקד ← מדליקים "מייל אוטומטי למתקינים". תוך כמה דקות יופיע שם "השליחה עובדת".</li></ol>
+    <p class="muted">הבוט בודק כל כמה דקות, אז המייל מגיע בדרך כלל תוך 5 עד 15 דקות. אף אחד לא רואה את הסיסמה: היא שמורה אצל GitHub ולא מופיעה בפאנל או ביומנים. Gmail מאפשר עד כ-500 מיילים ביום.</p>`]]:[]),
   ...(own?[["instpw","קביעת סיסמה למתקין",`
     <p>בעמוד <a href="#installers">מתקינים</a>, אצל כל מתקין: "הצג" מראה את הסיסמה שלו, ו"שינוי" או "קביעה" קובעים לו סיסמה חדשה, שמועתקת אוטומטית כדי לשלוח לו.</p>
     <ul class="gl"><li><b>כשהסיסמה ידועה</b> (מתקין חדש, או מתקין שנכנס לפאנל אחרי העדכון): השינוי עובד מיד, בלי שום הגדרה.</li>
@@ -1519,7 +1519,7 @@ function vInstallers(v){
               :`<span class="muted" title="תופיע אחרי שהמתקין ייכנס לפאנל, או אחרי שתקבעו לו סיסמה">לא ידועה</span>`}
           <button class="btn tonal sm" data-pwset="${esc(i._id)}">${icon("edit")}${pw?"שינוי":"קביעה"}</button></div></div>
         <div class="ir-kv"><span>קישור אישי</span><div><button class="btn text sm" data-copy="${esc(siteUrl(i.code))}">${icon("link")}העתק</button></div></div>
-        <div class="ir-kv"><span>פרטי כניסה</span><div>${mailerUrl()?`<button class="btn text sm" data-wmail="${esc(i._id)}">${icon("chat")}שליחה במייל</button>`
+        <div class="ir-kv"><span>פרטי כניסה</span><div>${mailOn()?`<button class="btn text sm" data-wmail="${esc(i._id)}">${icon("chat")}שליחה במייל</button>`
           :`<a class="btn text sm" target="_blank" rel="noopener" href="${esc(welcomeMail(i,pw?pw.pw:DEFAULT_PW))}">${icon("chat")}שליחה במייל</a>`}</div></div>
       </div>
       <div class="ir-sec"><h4>הרשאות</h4>
@@ -1562,7 +1562,7 @@ function vInstallers(v){
     c.textContent=on?(sec(id)||{}).pw||"":"••••••••"; b.textContent=on?"הסתר":"הצג"; });
   v.querySelectorAll("[data-pwcopy]").forEach(b=>b.onclick=()=>copyText((sec(b.dataset.pwcopy)||{}).pw||"","הסיסמה הועתקה"));
   v.querySelectorAll("[data-wmail]").forEach(b=>b.onclick=async()=>{ const i=D.installers.find(x=>x._id===b.dataset.wmail), k=(D.secrets||{})[i._id];
-    b.disabled=true; try{ await sendWelcome(i,k?k.pw:DEFAULT_PW); toast("נשלח מייל ל"+i.name); }catch(e){ toast("השליחה נכשלה"); } b.disabled=false; });
+    b.disabled=true; try{ await sendWelcome(i,k?k.pw:DEFAULT_PW); toast("המייל ל"+i.name+" יישלח תוך כמה דקות"); }catch(e){ toast("השליחה נכשלה"); } b.disabled=false; });
   v.querySelectorAll("[data-idel]").forEach(b=>b.onclick=()=>deleteInstaller(D.installers.find(x=>x._id===b.dataset.idel),v));
   v.querySelectorAll("[data-pwset]").forEach(b=>b.onclick=()=>setInstallerPw(D.installers.find(x=>x._id===b.dataset.pwset),v));
   if(!$("newInst")){ wireInst(v); return; }
@@ -1572,7 +1572,7 @@ function vInstallers(v){
     // every new installer starts with the same default password and must choose his own at the first login
     const pw=DEFAULT_PW;
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
-    const mailWin=mailerUrl()?null:window.open("about:blank","_blank");
+    const mailWin=mailOn()?null:window.open("about:blank","_blank");
     try{
       const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
       const j=await r.json(); let uid=j.localId;
@@ -1591,8 +1591,8 @@ function vInstallers(v){
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
       commit([{set:"installerSecrets/"+uid,data:{pw,at:Date.now()}}]).catch(()=>{});
       const url=welcomeMail({name,email,code},pw);
-      if(mailerUrl()){
-        try{ await sendWelcome({name,email,code},pw); toast("המתקין נוצר, ונשלח אליו מייל עם פרטי הכניסה ✓"); }
+      if(mailOn()){
+        try{ await sendWelcome({name,email,code},pw); toast("המתקין נוצר. המייל עם פרטי הכניסה יישלח אליו תוך כמה דקות ✓"); }
         catch(err){ console.error(err); toast("המתקין נוצר, אבל המייל לא נשלח. אצלו ← \"שליחה במייל\"."); }
       }
       else if(mailWin&&!mailWin.closed){ mailWin.location.href=url; toast("המתקין נוצר. נפתח Gmail עם מייל מוכן אליו: לחצו \"שליחה\"."); }
@@ -1627,12 +1627,12 @@ function wireInst(v){
   v.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{ try{ await auth.sendPasswordResetEmail(b.dataset.reset); toast("נשלח למתקין מייל לקביעת סיסמה"); }catch(e){ toast("השליחה נכשלה"); }});
 }
 let instQ="", newInstOpen=false;
-/** automatic e-mail through the sending account's mail service (Settings -> פרטי המוקד); empty: Gmail opens ready to send */
-const mailerUrl = () => (D.config&&D.config.mailer)||"";
+/** automatic e-mail: the panel queues it (mailQueue, owner only) and the bot on GitHub sends it within a few minutes
+ *  from the sending Gmail account with its app password (kdroid-updates: tools/mailer.py). Off: Gmail opens ready to send */
+const mailOn = () => !!(D.config&&D.config.mailQueue);
 async function sendWelcome(i,pw){
-  const r=await fetch(mailerUrl(),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body:JSON.stringify({action:"welcome",idToken:await auth.currentUser.getIdToken(),email:i.email,name:i.name,password:pw,code:i.code,from:D.config.ownerName||"קיידרואיד"})});
-  const j=await r.json(); if(!j.ok) throw new Error(j.err||"mail");
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  await commit([{set:"mailQueue/"+id,data:{to:i.email,name:i.name,password:pw||"",code:i.code||"",from:D.config.ownerName||"קיידרואיד",kind:"welcome",createdAt:Date.now()},create:true}]);
 }
 /** the e-mail to a new installer: opens the owner's Gmail with everything filled in; one click on "Send" */
 function welcomeMail(i,pw){
@@ -2316,10 +2316,10 @@ function vSettings(v){
       <div class="field"><label class="f" for="oName">שם</label><input id="oName" type="text" value="${esc(D.config.ownerName||"מוקד קיידרואיד")}"></div>
       <div class="field"><label class="f" for="oPhone">טלפון</label><input id="oPhone" type="tel" dir="ltr" value="${esc(D.config.ownerPhone||"")}"></div>
       <button class="btn tonal" type="submit">שמור</button></form></section>
-      <section class="card" style="margin-top:16px"><div class="hd"><h2>מייל אוטומטי למתקינים</h2>${D.config.mailer?'<span class="pill active">מחובר</span>':""}</div><div class="bd">
-        <p class="muted" style="margin-top:0">כשמחובר, מתקין חדש מקבל מייל מ"קיידרואיד מתקינים" עם קישור לפאנל, המייל והסיסמה הזמנית. בלי חיבור, נפתח Gmail עם מייל מוכן. איך מחברים: מדריך ← "מייל אוטומטי למתקינים".</p>
-        <div class="field"><label class="f" for="mlUrl">כתובת שירות המיילים</label><input id="mlUrl" type="url" dir="ltr" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(D.config.mailer||"")}"></div>
-        <div class="row" style="gap:8px"><button class="btn tonal" id="mlSave" type="button">שמור ובדוק</button><span class="muted" id="mlStat"></span></div></div></section>`,
+      <section class="card" style="margin-top:16px"><div class="hd"><h2>מייל אוטומטי למתקינים</h2><span class="spacer"></span>
+        <label class="toggle"><input type="checkbox" id="mlOn" ${D.config.mailQueue?"checked":""} aria-label="מייל אוטומטי"><i></i></label></div><div class="bd">
+        <p class="muted" style="margin-top:0">כשדלוק, מתקין חדש מקבל מייל מ"קיידרואיד מתקינים" (hebrewbookssystem@gmail.com) עם קישור לפאנל, המייל והסיסמה הזמנית, תוך כמה דקות. כבוי: נפתח Gmail עם מייל מוכן. ההגדרה החד-פעמית: מדריך ← "מייל אוטומטי למתקינים".</p>
+        <div id="mlStat" class="note info">בודק את מצב השליחה…</div></div></section></div></section>`,
     switches:`<div class="grid">${FEATURES.map(([g,items])=>`<section class="card"><div class="hd"><h2>${g}</h2></div><div class="bd" style="padding-top:4px">
       ${items.map(([k,t,d])=>`<div class="sw sw2"><span><b>${t}</b><span class="muted">${d}</span></span>
         <label class="toggle"><input type="checkbox" data-feat="${k}" ${isOn(k)?"checked":""} aria-label="${t}"><i></i></label></div>`).join("")}</div></section>`).join("")}
@@ -2355,14 +2355,18 @@ function vSettings(v){
   v.querySelectorAll('input[name=dmode]').forEach(r=>r.onchange=()=>v.querySelectorAll(".opt").forEach(o=>o.classList.toggle("on",o.contains(v.querySelector('input[name=dmode]:checked')))));
   if($("pubForm")) $("pubForm").onsubmit=async e=>{ e.preventDefault();
     try{ await commit([{set:"config/public",data:{ownerName:$("oName").value.trim(),ownerPhone:$("oPhone").value.trim()},mask:["ownerName","ownerPhone"]}]); toast("נשמר"); load(); }catch(err){ toast("השמירה נכשלה"); } };
-  if($("mlSave")) $("mlSave").onclick=async()=>{
-    const u=$("mlUrl").value.trim(); $("mlStat").textContent="";
-    if(u&&!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){ $("mlStat").textContent="הכתובת צריכה להיראות כך: https://script.google.com/macros/s/…/exec"; return; }
-    $("mlStat").textContent=u?"בודק…":"";
-    if(u){ try{ const r=await fetch(u,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:'{"action":"ping"}'}); const j=await r.json(); if(!j.ok) throw 0; }
-           catch(e){ $("mlStat").textContent="השירות לא עונה. בדקו שהפריסה היא Web app עם גישה ל-Anyone."; return; } }
-    try{ await commit([{set:"config/public",data:{mailer:u},mask:["mailer"]}]); D.config.mailer=u; toast(u?"המייל האוטומטי מחובר ✓":"המייל האוטומטי נותק"); vSettings(v); }catch(e){ $("mlStat").textContent="השמירה נכשלה."; }
-  };
+  if($("mlOn")){
+    $("mlOn").onchange=async e=>{ try{ await commit([{set:"config/public",data:{mailQueue:e.target.checked},mask:["mailQueue"]}]); D.config.mailQueue=e.target.checked;
+      toast(e.target.checked?"המייל האוטומטי הופעל":"המייל האוטומטי כובה"); }catch(x){ e.target.checked=!e.target.checked; toast("השמירה נכשלה"); } };
+    getDoc("config/mailStatus").then(st=>{ const el=$("mlStat"); if(!el) return;
+      const ago=st&&st.lastRunAt?Math.round((Date.now()-st.lastRunAt)/60000):null;
+      if(!st){ el.className="note warn"; el.textContent="הבוט עוד לא רץ אף פעם: צריך להוסיף את שני הסודות ב-GitHub (ראו במדריך)."; }
+      else if(st.lastError==="login"){ el.className="note err"; el.textContent="הכניסה ל-Gmail נכשלה: בדקו את סיסמת האפליקציה (MAIL_APP_PASSWORD)."; }
+      else if(ago>30){ el.className="note warn"; el.textContent="הבוט לא רץ כבר "+ago+" דקות. בדקו ב-GitHub ← Actions ← Installers mail."; }
+      else { el.className="note ok"; el.textContent="השליחה עובדת ✓ הבוט בדק לפני "+ago+" דקות"+(st.lastError?" (שגיאה אחרונה: "+st.lastError+")":"")+"."; }
+    }).catch(()=>{ const el=$("mlStat"); if(el){ el.className="note warn"; el.textContent="אין עדיין מידע מהבוט."; } });
+  }
+
   v.querySelectorAll("[data-feat]").forEach(c=>c.onchange=async()=>{
     const k=c.dataset.feat, onNow=c.checked;
     try{

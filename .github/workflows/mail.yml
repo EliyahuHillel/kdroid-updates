@@ -1,0 +1,27 @@
+name: Installers mail
+# Sends the panel's queued e-mails (tools/mailer.py). Needs the secrets MAIL_APP_PASSWORD and FIREBASE_SERVICE_ACCOUNT.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+concurrency: installers-mail
+jobs:
+  mail:
+    if: ${{ github.repository == 'EliyahuHillel/kdroid-updates' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        id: s
+        env:
+          A: ${{ secrets.MAIL_APP_PASSWORD }}
+          B: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: if [ -n "$A" ] && [ -n "$B" ]; then echo "ok=1" >> $GITHUB_OUTPUT; else echo "secrets not set yet"; fi
+      - if: steps.s.outputs.ok == '1'
+        run: pip install -q google-auth requests
+      - if: steps.s.outputs.ok == '1'
+        env:
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python3 tools/mailer.py
