@@ -495,6 +495,9 @@ dialog.wide .applist{max-height:260px;overflow:auto}
 <script>
 "use strict";
 const OWNER_EMAIL = "7152207@gmail.com";
+/** the starting password of every new installer; signing in with it always asks for a new password first */
+const DEFAULT_PW = "12345678";
+let mustChangePw=false;
 const firebaseConfig = {apiKey:"AIzaSyBmdgQkWz5wl7eL23Mgwc5m0X856L1t2NI",authDomain:"kiydroid.firebaseapp.com",projectId:"kiydroid",
   storageBucket:"kiydroid.firebasestorage.app",messagingSenderId:"303401885325",appId:"1:303401885325:web:5be1b385c598384d5a4cc4"};
 firebase.initializeApp(firebaseConfig);
@@ -629,12 +632,36 @@ auth.onAuthStateChanged(async u=>{
   $("whoAv").textContent=(me.role==="owner"?"מ":String(me.name||"?").trim().charAt(0));
   if(!location.hash) history.replaceState(null,"","#overview");
   render(); await load(); pollT=setInterval(()=>{ if(!draft) load(); },15000);
-  if(me.role==="installer"&&!me.firstLoginAt){
+  if(me.role==="installer"&&(mustChangePw||savedPw(me.uid)===DEFAULT_PW)){ forceNewPw(); }
+  else if(me.role==="installer"&&!me.firstLoginAt){
     me.firstLoginAt=Date.now();
     commit([{set:"installers/"+me.uid,data:{firstLoginAt:me.firstLoginAt},mask:["firstLoginAt"]}]).catch(()=>{});
     welcome();
   }
 });
+/** signed in with the default password: a password of his own first (the window does not close until it is saved) */
+function forceNewPw(){
+  const dlg=$("dlg"), stay=e=>e.preventDefault();
+  $("dlgIn").innerHTML=`<h3>ברוכים הבאים, ${esc(me.name)}</h3>
+    <p class="muted">נכנסתם עם הסיסמה הראשונית. כדי להמשיך, בחרו סיסמה משלכם.</p>
+    <div class="field"><label class="f" for="wPw">סיסמה חדשה</label><input id="wPw" type="password" dir="ltr" autocomplete="new-password"></div>
+    <div class="field"><label class="f" for="wPw2">שוב, לאימות</label><input id="wPw2" type="password" dir="ltr" autocomplete="new-password"></div>
+    <p class="err" id="wErr" style="margin:0"></p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn fill" id="wSave">שמירה</button></div>`;
+  dlg.addEventListener("cancel",stay);
+  $("wSave").onclick=async()=>{
+    const pw=$("wPw").value; $("wErr").textContent="";
+    if(pw.length<6){ $("wErr").textContent="הסיסמה צריכה להיות באורך 6 תווים לפחות."; return; }
+    if(pw===DEFAULT_PW){ $("wErr").textContent="בחרו סיסמה אחרת מהסיסמה הראשונית."; return; }
+    if(pw!==$("wPw2").value){ $("wErr").textContent="שתי הסיסמאות לא זהות."; return; }
+    const b=$("wSave"); b.disabled=true;
+    try{ await auth.currentUser.updatePassword(pw); rememberPw(me.uid,pw); mustChangePw=false;
+         if(!me.firstLoginAt){ me.firstLoginAt=Date.now(); commit([{set:"installers/"+me.uid,data:{firstLoginAt:me.firstLoginAt},mask:["firstLoginAt"]}]).catch(()=>{}); }
+         dlg.removeEventListener("cancel",stay); dlg.close(); toast("הסיסמה נשמרה. המדריך המלא נמצא בתפריט, תחת \"מדריך\"."); }
+    catch(e){ b.disabled=false; $("wErr").textContent="השמירה נכשלה. נסו שוב."; }
+  };
+  dlg.showModal(); setTimeout(()=>$("wPw")&&$("wPw").focus(),50);
+}
 /** an installer's first login: where things are, and the option to change the password right away */
 function welcome(){
   const dlg=$("dlg");
@@ -649,6 +676,7 @@ function welcome(){
 }
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); $("loginErr").textContent="";
+  mustChangePw=$("lPass").value===DEFAULT_PW;
   try{ const r=await auth.signInWithEmailAndPassword($("lEmail").value.trim(),$("lPass").value); rememberPw(r.user.uid,$("lPass").value); }
   catch(err){ $("loginErr").textContent="הכניסה נכשלה. בדקו מייל וסיסמה."; }
 });
@@ -1510,7 +1538,7 @@ function vInstallers(v){
         <div class="field"><label class="f" for="niPhone">טלפון *</label><input id="niPhone" type="tel" dir="ltr" required></div>
         <div class="field"><label class="f" for="niMail">מייל לכניסה לפאנל *</label><input id="niMail" type="email" dir="ltr" required></div>
       </div>
-      <p class="muted" style="margin:0 0 12px;font-size:13.5px">המתקין יקבל למייל קישור לקביעת סיסמה. אם המייל לא הגיע, בדקו בספאם או לחצו "שלח שוב" אצלו. ברירת המחדל: יכול לשחרר מכשירים, לא יכול למחוק.</p>
+      <p class="muted" style="margin:0 0 12px;font-size:13.5px">הסיסמה הראשונה של כל מתקין חדש היא <b dir="ltr">12345678</b>. בכניסה הראשונה הוא חייב לבחור סיסמה משלו. ברירת המחדל: יכול לשחרר מכשירים, לא יכול למחוק.</p>
       <div class="row" style="gap:8px"><button class="btn fill sm" type="submit">צור מתקין</button><p class="err" id="niErr" style="margin:0"></p></div></form></section>`:""}
     <div class="ip-list">${shown.map(row).join("")||`<div class="empty">${q?"לא נמצא מתקין":"עוד אין מתקינים"}</div>`}</div>
     ${q?"":`<div class="ip-list">${row(groups[0])}</div>`}
@@ -1526,9 +1554,8 @@ function vInstallers(v){
   $("newInst").onsubmit=async e=>{
     e.preventDefault(); $("niErr").textContent="";
     const name=$("niName").value.trim(), phone=$("niPhone").value.trim(), email=$("niMail").value.trim().toLowerCase();
-    // a starting password the owner can see next to the installer's name; the installer also gets the e-mail to set his own
-    const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
-    const pw=rnd(4)+"-"+rnd(4)+"-"+rnd(4);
+    // every new installer starts with the same default password and must choose his own at the first login
+    const pw=DEFAULT_PW;
     const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
     try{
       const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pw,returnSecureToken:false})});
@@ -1539,8 +1566,7 @@ function vInstallers(v){
       await commit([{set:"installers/"+uid,data:{name,phone,email,code,active:true,canRelease:true,canDelete:false,createdAt:Date.now()},create:true},
                     {set:"installerCodes/"+code,data:{installerId:uid,name,phone},create:true}]);
       commit([{set:"installerSecrets/"+uid,data:{pw,at:Date.now()}}]).catch(()=>{});
-      let mailed=true; try{ await auth.sendPasswordResetEmail(email); }catch(e){ mailed=false; }
-      toast(mailed?"המתקין נוצר (קוד "+code+"). נשלח אליו מייל לקביעת סיסמה.":"המתקין נוצר (קוד "+code+"), אבל המייל לא נשלח. לחצו \"שלח שוב\" אצלו."); newInstOpen=false; instOpen.add(uid); D.secrets=null; load();
+      toast("המתקין נוצר (קוד "+code+"). הסיסמה הראשונה שלו: 12345678"); newInstOpen=false; instOpen.add(uid); D.secrets=null; load();
     }catch(err){ $("niErr").textContent=/EMAIL_EXISTS/.test(err.message)?"כבר קיים חשבון עם המייל הזה.":/WEAK_PASSWORD/.test(err.message)?"הסיסמה חלשה מדי.":"יצירת המתקין נכשלה."; btn.disabled=false; }
   };
   wireInst(v);
@@ -1590,7 +1616,8 @@ function setInstallerPw(i,v){
   const gen=()=>{ const r=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join(""); return r(4)+"-"+r(4); };
   $("dlgIn").innerHTML=`<h3>${cur?"סיסמה חדשה":"קביעת סיסמה"} ל${esc(i.name)}</h3>
     <p class="muted">${cur?"הסיסמה הנוכחית תפסיק לעבוד מיד, והמתקין יצטרך להיכנס לפאנל מחדש עם החדשה.":"המתקין עוד לא קבע סיסמה (או שהיא לא ידועה). קבעו לו סיסמה ושלחו לו אותה."}</p>
-    <div class="field"><label class="f" for="npw">סיסמה</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="npw" type="text" dir="ltr" value="${gen()}" style="flex:1"><button class="btn text sm" id="npwGen" type="button">אחרת</button></div></div>
+    <div class="field"><label class="f" for="npw">סיסמה</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="npw" type="text" dir="ltr" value="${DEFAULT_PW}" style="flex:1"><button class="btn text sm" id="npwGen" type="button">אקראית</button></div>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 0">עם ${DEFAULT_PW} המתקין יתבקש לבחור סיסמה משלו בכניסה.</p></div>
     ${cur||cid?"":`<details class="gd" open><summary>חיבור חד-פעמי לחשבון Google שלך</summary><div>
       <p class="muted" style="margin-top:0;font-size:13.5px">כדי לקבוע סיסמה כשהנוכחית לא ידועה, Firebase דורש אישור של בעל הפרויקט. מדביקים כאן פעם אחת את מזהה החיבור (Client ID). איך משיגים אותו: מדריך ← "קביעת סיסמה למתקין".</p>
       <div class="field" style="margin-bottom:0"><label class="f" for="oaCid">Client ID</label><input id="oaCid" type="text" dir="ltr" placeholder="1234…apps.googleusercontent.com"></div></div></details>`}
